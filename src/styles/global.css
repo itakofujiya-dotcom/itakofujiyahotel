@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-background: 246 243 235;
+  --color-surface: 255 254 250;
+  --color-text-primary: 42 43 37;
+  --color-text-secondary: 103 101 91;
+  --color-border: 216 209 194;
+  --color-accent: 153 74 50;
+  --color-accent-hover: 121 55 36;
+  --color-moss: 66 82 63;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-text-primary));
+}
+body,
+button,
+input,
+select {
+  font-family:
+    'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+}
+img {
+  display: block;
+  max-width: 100%;
+}
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--color-accent));
+  outline-offset: 3px;
+}
+
+@layer components {
+  .page-shell {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12;
+  }
+  .eyebrow {
+    @apply mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-accent;
+  }
+  .page-title {
+    @apply font-serif text-4xl font-medium leading-tight tracking-[0.03em] sm:text-5xl;
+  }
+  .admin-input {
+    @apply min-h-11 w-full rounded-md border border-line bg-surface px-3 text-sm text-ink;
+  }
+}
