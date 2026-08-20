@@ -7,6 +7,8 @@ import {
   getAllowedNextStatuses,
   getCancellationFee,
   getReservationCalendarCounts,
+  getReservationCalendarCardInfo,
+  getReservationDetailPath,
   getStayDates,
   reservationStatusLabels,
   validateAdminReservationInput,
@@ -47,6 +49,17 @@ test('maps reservation status and booking source labels to Japanese', () => {
   assert.equal(reservationStatusLabels.confirmed, '予約確定')
   assert.equal(reservationStatusLabels.no_show, '無連絡不泊')
   assert.equal(bookingSourceLabels.phone, '電話')
+})
+
+test('builds a calendar card and detail route from the actual reservation id', () => {
+  assert.equal(
+    getReservationDetailPath(reservation.id),
+    '/admin/reservations/reservation-1',
+  )
+  assert.deepEqual(getReservationCalendarCardInfo(reservation), {
+    roomTypes: '和室',
+    paidGuests: 2,
+  })
 })
 
 test('filters by new online reservation and searchable guest fields', () => {

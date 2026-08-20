@@ -33,6 +33,24 @@ export const bookingSourceLabels: Record<BookingSource, string> = {
   admin: '管理者登録',
 }
 
+export function getReservationDetailPath(reservationId: string): string {
+  return `/admin/reservations/${reservationId}`
+}
+
+export function getReservationCalendarCardInfo(
+  reservation: ReservationListItem,
+) {
+  return {
+    roomTypes: [
+      ...new Set(reservation.rooms.map((room) => room.room_type.name_ja)),
+    ].join('・'),
+    paidGuests: reservation.rooms.reduce(
+      (total, room) => total + room.paid_guest_count,
+      0,
+    ),
+  }
+}
+
 export function filterReservations(
   reservations: ReservationListItem[],
   filters: ReservationFilters,

@@ -7,8 +7,14 @@ import {
   subMonths,
 } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { getSundayStartCalendarDays } from '../admin-rates/rate-helpers'
-import { getReservationCalendarCounts } from './reservation-helpers'
+import {
+  getReservationCalendarCardInfo,
+  getReservationCalendarCounts,
+  getReservationDetailPath,
+  reservationStatusLabels,
+} from './reservation-helpers'
 import type { ReservationListItem } from './types'
 
 export function ReservationCalendar({
@@ -16,15 +22,30 @@ export function ReservationCalendar({
 }: {
   reservations: ReservationListItem[]
 }) {
-  const [month, setMonth] = useState(startOfMonth(new Date()))
-  const [selectedDate, setSelectedDate] = useState(
-    format(new Date(), 'yyyy-MM-dd'),
+  const [searchParams, setSearchParams] = useSearchParams()
+  const dateFromUrl = searchParams.get('date')
+  const initialDate =
+    dateFromUrl && /^\d{4}-\d{2}-\d{2}$/.test(dateFromUrl)
+      ? dateFromUrl
+      : format(new Date(), 'yyyy-MM-dd')
+  const [month, setMonth] = useState(() =>
+    startOfMonth(new Date(`${initialDate}T00:00:00`)),
   )
+  const [selectedDate, setSelectedDate] = useState(initialDate)
   const days = getSundayStartCalendarDays(month)
   const selected = useMemo(
     () => getReservationCalendarCounts(reservations, selectedDate),
     [reservations, selectedDate],
   )
+
+  function selectDate(stayDate: string) {
+    setSelectedDate(stayDate)
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.set('date', stayDate)
+      return next
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -65,7 +86,7 @@ export function ReservationCalendar({
                 key={key}
                 type="button"
                 aria-pressed={active}
-                onClick={() => setSelectedDate(key)}
+                onClick={() => selectDate(key)}
                 className={`min-h-24 border-b border-r border-line p-1.5 text-left align-top transition sm:min-h-28 sm:p-2 ${!isSameMonth(day, month) ? 'bg-stone-50 text-muted/45' : 'hover:bg-background'} ${active ? 'ring-2 ring-inset ring-accent' : ''}`}
               >
                 <span className="text-xs sm:text-sm">{format(day, 'd')}</span>
@@ -100,12 +121,18 @@ export function ReservationCalendar({
           <ReservationDayGroup
             label="チェックイン"
             reservations={selected.checkIns}
+            selectedDate={selectedDate}
           />
           <ReservationDayGroup
             label="チェックアウト"
             reservations={selected.checkOuts}
+            selectedDate={selectedDate}
           />
-          <ReservationDayGroup label="宿泊中" reservations={selected.staying} />
+          <ReservationDayGroup
+            label="宿泊中"
+            reservations={selected.staying}
+            selectedDate={selectedDate}
+          />
         </div>
       </section>
     </div>
@@ -115,9 +142,11 @@ export function ReservationCalendar({
 function ReservationDayGroup({
   label,
   reservations,
+  selectedDate,
 }: {
   label: string
   reservations: ReservationListItem[]
+  selectedDate: string
 }) {
   return (
     <div>
@@ -128,18 +157,30 @@ function ReservationDayGroup({
         {reservations.length === 0 ? (
           <p className="text-sm text-muted">該当なし</p>
         ) : (
-          reservations.map((reservation) => (
-            <a
-              key={reservation.id}
-              href={`/admin/reservations/${reservation.id}`}
-              className="block border border-line p-3 text-sm hover:bg-background"
-            >
-              <span className="font-semibold">{reservation.guest.name}</span>
-              <span className="mt-1 block text-xs text-muted">
-                {reservation.reservation_number}
-              </span>
-            </a>
-          ))
+          reservations.map((reservation) => {
+            const info = getReservationCalendarCardInfo(reservation)
+            return (
+              <Link
+                key={reservation.id}
+                to={getReservationDetailPath(reservation.id)}
+                state={{
+                  reservationsReturnTo: `/admin/reservations?date=${selectedDate}`,
+                }}
+                className="block cursor-pointer border border-line p-3 text-sm transition hover:border-accent hover:bg-background focus-visible:bg-background"
+              >
+                <span className="font-semibold">{reservation.guest.name}</span>
+                <span className="mt-1 block text-xs text-muted">
+                  {reservation.reservation_number}
+                </span>
+                <span className="mt-2 block text-xs text-muted">
+                  {info.roomTypes || '客室タイプ未設定'} · {info.paidGuests}名
+                </span>
+                <span className="mt-1 inline-block rounded bg-stone-100 px-2 py-1 text-[10px]">
+                  {reservationStatusLabels[reservation.status]}
+                </span>
+              </Link>
+            )
+          })
         )}
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { differenceInCalendarDays, format } from 'date-fns'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader'
 import { formatYen } from '../../features/admin-rates/rate-helpers'
 import { RateConfirmDialog } from '../../features/admin-rates/RateConfirmDialog'
@@ -33,6 +33,14 @@ type ActionRequest =
 
 export function ReservationDetailPage() {
   const { id = '' } = useParams()
+  const location = useLocation()
+  const returnTo =
+    typeof location.state === 'object' &&
+    location.state !== null &&
+    'reservationsReturnTo' in location.state &&
+    typeof location.state.reservationsReturnTo === 'string'
+      ? location.state.reservationsReturnTo
+      : '/admin/reservations'
   const [reservation, setReservation] = useState<ReservationDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isMutating, setIsMutating] = useState(false)
@@ -212,7 +220,7 @@ export function ReservationDetailPage() {
       </div>
       <div className="mb-6 flex flex-wrap gap-3 print:hidden">
         <Link
-          to="/admin/reservations"
+          to={returnTo}
           className="inline-flex min-h-11 items-center border border-line bg-surface px-5 text-sm font-semibold"
         >
           一覧へ戻る
