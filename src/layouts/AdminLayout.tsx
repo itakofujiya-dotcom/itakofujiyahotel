@@ -1,15 +1,41 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { useState } from 'react'
+import { LogOut } from 'lucide-react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { adminNavigation } from '../data/navigation'
 import { hotelSettings } from '../data/hotel'
+import { adminRoleLabels } from '../features/auth/authorization'
+import { useAdminAuth } from '../features/auth/use-admin-auth'
 
 export function AdminLayout() {
+  const navigate = useNavigate()
+  const { adminProfile, logout } = useAdminAuth()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  async function handleLogout() {
+    if (isLoggingOut) return
+    setIsLoggingOut(true)
+    await logout()
+    navigate('/admin/login', { replace: true })
+  }
+
   return (
     <div className="min-h-screen bg-[#f2f3f1]">
-      <header className="border-b border-line bg-surface px-5 py-4 lg:hidden">
-        <p className="font-serif">
-          {hotelSettings.hotelNameJa}{' '}
-          <span className="ml-2 text-xs text-muted">管理画面</span>
-        </p>
+      <header className="flex items-center justify-between border-b border-line bg-surface px-5 py-4 lg:hidden">
+        <div>
+          <p className="font-serif">{hotelSettings.hotelNameJa}</p>
+          <p className="mt-1 text-xs text-muted">
+            {adminProfile?.display_name} ·{' '}
+            {adminProfile ? adminRoleLabels[adminProfile.role] : ''}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="inline-flex min-h-11 items-center gap-2 px-3 text-xs text-muted disabled:opacity-50"
+        >
+          <LogOut size={16} /> ログアウト
+        </button>
       </header>
       <div className="lg:grid lg:min-h-screen lg:grid-cols-[250px_1fr]">
         <aside className="hidden bg-[#26302b] p-7 text-white lg:block">
@@ -31,6 +57,23 @@ export function AdminLayout() {
               </NavLink>
             ))}
           </nav>
+          <div className="mt-10 border-t border-white/15 pt-6">
+            <p className="text-sm font-medium">
+              {adminProfile?.display_name ?? '管理者'}
+            </p>
+            <p className="mt-1 text-xs text-white/50">
+              {adminProfile ? adminRoleLabels[adminProfile.role] : ''}
+            </p>
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="mt-5 inline-flex min-h-11 items-center gap-2 text-xs text-white/65 transition hover:text-white disabled:opacity-50"
+            >
+              <LogOut size={15} />
+              {isLoggingOut ? 'ログアウト中…' : 'ログアウト'}
+            </button>
+          </div>
         </aside>
         <div>
           <nav className="flex gap-1 overflow-x-auto border-b border-line bg-surface p-2 lg:hidden">

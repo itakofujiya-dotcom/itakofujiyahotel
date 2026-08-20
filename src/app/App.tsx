@@ -11,13 +11,15 @@ import { BookingPage } from '../pages/public/BookingPage'
 import { InfoPage } from '../pages/public/InfoPage'
 import { LoginPage } from '../pages/admin/LoginPage'
 import { DashboardPage } from '../pages/admin/DashboardPage'
-import {
-  ReservationsAdminPage,
-  ReservationDetailPage,
-} from '../pages/admin/ReservationsAdminPage'
+import { ReservationsAdminPage } from '../pages/admin/ReservationsAdminPage'
+import { ReservationDetailPage } from '../pages/admin/ReservationDetailPage'
+import { NewReservationAdminPage } from '../pages/admin/NewReservationAdminPage'
 import { RoomsAdminPage } from '../pages/admin/RoomsAdminPage'
 import { RatesAdminPage } from '../pages/admin/RatesAdminPage'
+import { InventoryAdminPage } from '../pages/admin/InventoryAdminPage'
 import { SettingsAdminPage } from '../pages/admin/SettingsAdminPage'
+import { AdminAuthProvider } from '../features/auth/AdminAuthProvider'
+import { AdminProtectedRoute } from '../features/auth/AdminProtectedRoute'
 
 const router = createBrowserRouter([
   {
@@ -38,19 +40,30 @@ const router = createBrowserRouter([
   },
   { path: '/admin/login', element: <LoginPage /> },
   {
-    path: '/admin',
-    element: <AdminLayout />,
+    element: <AdminProtectedRoute />,
     children: [
-      { index: true, element: <DashboardPage /> },
-      { path: 'reservations', element: <ReservationsAdminPage /> },
-      { path: 'reservations/:id', element: <ReservationDetailPage /> },
-      { path: 'rooms', element: <RoomsAdminPage /> },
-      { path: 'rates', element: <RatesAdminPage /> },
-      { path: 'settings', element: <SettingsAdminPage /> },
+      {
+        path: '/admin',
+        element: <AdminLayout />,
+        children: [
+          { index: true, element: <DashboardPage /> },
+          { path: 'reservations', element: <ReservationsAdminPage /> },
+          { path: 'reservations/new', element: <NewReservationAdminPage /> },
+          { path: 'reservations/:id', element: <ReservationDetailPage /> },
+          { path: 'rooms', element: <RoomsAdminPage /> },
+          { path: 'inventory', element: <InventoryAdminPage /> },
+          { path: 'rates', element: <RatesAdminPage /> },
+          { path: 'settings', element: <SettingsAdminPage /> },
+        ],
+      },
     ],
   },
 ])
 
 export function App() {
-  return <RouterProvider router={router} />
+  return (
+    <AdminAuthProvider>
+      <RouterProvider router={router} />
+    </AdminAuthProvider>
+  )
 }

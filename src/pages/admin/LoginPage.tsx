@@ -1,16 +1,77 @@
-import { Link } from 'react-router-dom'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { hotelSettings } from '../../data/hotel'
+import { AdminAuthLoading } from '../../features/auth/AdminProtectedRoute'
+import { useAdminAuth } from '../../features/auth/use-admin-auth'
+import type { AdminAccessIssue } from '../../types/admin'
+
+const errorMessages: Record<AdminAccessIssue, string> = {
+  invalid_credentials: 'メールアドレスまたはパスワードが正しくありません。',
+  no_profile: '管理者権限がありません。',
+  inactive: 'この管理者アカウントは現在利用できません。',
+  profile_error:
+    '管理者情報を確認できませんでした。時間をおいて再度お試しください。',
+}
 
 export function LoginPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { login, isAdmin, isLoading, accessIssue } = useAdminAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formIssue, setFormIssue] = useState<AdminAccessIssue | null>(null)
+
+  useEffect(() => {
+    if (!isLoading && isAdmin) navigate('/admin', { replace: true })
+  }, [isAdmin, isLoading, navigate])
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (isSubmitting) return
+
+    setIsSubmitting(true)
+    setFormIssue(null)
+    const result = await login(email.trim(), password)
+    setIsSubmitting(false)
+
+    if (!result.success) {
+      setFormIssue(result.issue)
+      setPassword('')
+      return
+    }
+
+    const destination = getRequestedAdminPath(location.state)
+    navigate(destination, { replace: true })
+  }
+
+  if (isLoading && !isSubmitting) {
+    return <AdminAuthLoading message="ログイン状態を確認しています…" />
+  }
+
+  if (isAdmin) {
+    return <AdminAuthLoading message="管理画面へ移動しています…" />
+  }
+
+  const displayedIssue = formIssue ?? accessIssue
+
   return (
     <main className="grid min-h-screen place-items-center bg-[#e9ece8] p-5">
       <div className="w-full max-w-md bg-surface p-8 shadow-soft sm:p-10">
         <p className="font-serif text-xl">{hotelSettings.hotelNameJa}</p>
         <p className="mt-2 text-xs tracking-[.2em] text-muted">ADMIN LOGIN</p>
-        <form className="mt-9 space-y-5" onSubmit={(e) => e.preventDefault()}>
+        <form className="mt-9 space-y-5" onSubmit={handleSubmit} noValidate>
           <label className="block">
             <span className="mb-2 block text-sm">メールアドレス</span>
-            <input className="admin-input" type="email" autoComplete="email" />
+            <input
+              className="admin-input"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              disabled={isSubmitting}
+            />
           </label>
           <label className="block">
             <span className="mb-2 block text-sm">パスワード</span>
@@ -18,22 +79,46 @@ export function LoginPage() {
               className="admin-input"
               type="password"
               autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              disabled={isSubmitting}
             />
           </label>
+          {displayedIssue && (
+            <p
+              className="rounded border border-red-200 bg-red-50 p-3 text-sm leading-6 text-red-800"
+              role="alert"
+            >
+              {errorMessages[displayedIssue]}
+            </p>
+          )}
           <button
             type="submit"
-            className="min-h-12 w-full bg-moss font-semibold text-white"
+            disabled={isSubmitting || !email.trim() || !password}
+            className="min-h-12 w-full bg-moss font-semibold text-white transition hover:bg-[#344333] disabled:cursor-not-allowed disabled:opacity-55"
           >
-            ログイン
+            {isSubmitting ? '確認しています…' : 'ログイン'}
           </button>
         </form>
-        <p className="mt-5 text-xs leading-6 text-muted">
-          Supabase Auth接続前の画面です。現在ログインは実行されません。
-        </p>
         <Link to="/" className="mt-6 inline-block text-sm text-accent">
           ← ホテルサイトへ戻る
         </Link>
       </div>
     </main>
   )
+}
+
+function getRequestedAdminPath(state: unknown): string {
+  if (
+    typeof state === 'object' &&
+    state !== null &&
+    'from' in state &&
+    typeof state.from === 'string' &&
+    state.from.startsWith('/admin') &&
+    state.from !== '/admin/login'
+  ) {
+    return state.from
+  }
+  return '/admin'
 }
