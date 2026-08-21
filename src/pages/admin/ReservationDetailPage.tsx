@@ -27,12 +27,16 @@ import {
 } from '../../features/admin-reservations/payment-helpers'
 import { PaymentStatusBadge } from '../../features/admin-reservations/PaymentStatusBadge'
 import {
+  ADMIN_CHECK_IN_END_TIME,
+  ADMIN_CHECK_IN_START_TIME,
+  ADMIN_CHECK_IN_TIME_RANGE_MESSAGE,
   bookingSourceLabels,
   getAllowedNextStatuses,
   getCancellationFee,
   getRoomAssignmentSummary,
   getTodayOperationLabels,
   reservationStatusLabels,
+  isAdminExpectedCheckInTimeValid,
 } from '../../features/admin-reservations/reservation-helpers'
 import { ReservationStatusBadge } from '../../features/admin-reservations/ReservationStatusBadge'
 import type {
@@ -128,6 +132,11 @@ export function ReservationDetailPage() {
       !draft.email.trim()
     )
       return setFeedback('氏名・電話番号・メールアドレスを入力してください。')
+    if (
+      draft.expected_check_in_time &&
+      !isAdminExpectedCheckInTimeValid(draft.expected_check_in_time)
+    )
+      return setFeedback(ADMIN_CHECK_IN_TIME_RANGE_MESSAGE)
     setIsMutating(true)
     setFeedback(null)
     try {
@@ -587,6 +596,16 @@ export function ReservationDetailPage() {
                           : 'text'
                     }
                     className="admin-input"
+                    min={
+                      key === 'expected_check_in_time'
+                        ? ADMIN_CHECK_IN_START_TIME
+                        : undefined
+                    }
+                    max={
+                      key === 'expected_check_in_time'
+                        ? ADMIN_CHECK_IN_END_TIME
+                        : undefined
+                    }
                     value={draft[key]}
                     onChange={(event) =>
                       setDraft({ ...draft, [key]: event.target.value })

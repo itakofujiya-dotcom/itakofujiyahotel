@@ -389,6 +389,36 @@ test('validates one to ten nights and at most four rooms', () => {
     ],
   }
   assert.equal(validateAdminReservationInput(input), null)
+  assert.equal(
+    validateAdminReservationInput({
+      ...input,
+      reservation: {
+        ...input.reservation,
+        expected_check_in_time: '15:00',
+      },
+    }),
+    null,
+  )
+  assert.equal(
+    validateAdminReservationInput({
+      ...input,
+      reservation: {
+        ...input.reservation,
+        expected_check_in_time: '22:00',
+      },
+    }),
+    null,
+  )
+  assert.match(
+    validateAdminReservationInput({
+      ...input,
+      reservation: {
+        ...input.reservation,
+        expected_check_in_time: '14:59',
+      },
+    }) ?? '',
+    /15:00〜22:00/,
+  )
   assert.deepEqual(getStayDates('2026-08-22', '2026-08-24'), [
     '2026-08-22',
     '2026-08-23',

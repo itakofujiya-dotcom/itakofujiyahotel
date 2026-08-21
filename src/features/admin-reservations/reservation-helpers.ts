@@ -18,6 +18,14 @@ import type {
   RateRuleDate,
 } from '../admin-rates/types'
 
+export const ADMIN_CHECK_IN_START_TIME = '15:00'
+export const ADMIN_CHECK_IN_END_TIME = '22:00'
+export const ADMIN_CHECK_IN_TIME_RANGE_MESSAGE = `${ADMIN_CHECK_IN_START_TIME}〜${ADMIN_CHECK_IN_END_TIME}の間で選択してください。`
+
+export function isAdminExpectedCheckInTimeValid(value: string): boolean {
+  return value >= ADMIN_CHECK_IN_START_TIME && value <= ADMIN_CHECK_IN_END_TIME
+}
+
 export const reservationStatusLabels: Record<ReservationStatus, string> = {
   pending: '確認待ち',
   confirmed: '予約確定',
@@ -303,6 +311,11 @@ export function validateAdminReservationInput(
   if (!input.guest.telephone.trim()) return '電話番号を入力してください。'
   if (!input.guest.email.trim() || !/^\S+@\S+\.\S+$/.test(input.guest.email))
     return '有効なメールアドレスを入力してください。'
+  if (
+    input.reservation.expected_check_in_time &&
+    !isAdminExpectedCheckInTimeValid(input.reservation.expected_check_in_time)
+  )
+    return ADMIN_CHECK_IN_TIME_RANGE_MESSAGE
   const nights = getStayDates(
     input.reservation.check_in,
     input.reservation.check_out,

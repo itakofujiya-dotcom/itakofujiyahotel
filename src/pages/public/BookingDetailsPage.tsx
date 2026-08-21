@@ -4,6 +4,9 @@ import { BookingMissing } from '../../components/booking/BookingMissing'
 import { BookingSteps } from '../../components/booking/BookingSteps'
 import { BookingSummary } from '../../components/booking/BookingSummary'
 import {
+  CHECK_IN_END_TIME,
+  CHECK_IN_START_TIME,
+  CHECK_IN_TIME_OPTIONS,
   hasBookingGuestErrors,
   validateBookingGuest,
   type BookingGuestErrors,
@@ -20,11 +23,9 @@ const initialGuest: BookingGuestDraft = {
   nameKanaOrRoman: '',
   telephone: '',
   email: '',
-  expectedCheckInTime: '16:00',
+  expectedCheckInTime: CHECK_IN_START_TIME,
   guestNote: '',
 }
-
-const checkInTimes = ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00']
 
 export function BookingDetailsPage() {
   const navigate = useNavigate()
@@ -148,14 +149,15 @@ export function BookingDetailsPage() {
                     update('expectedCheckInTime', event.target.value)
                   }
                 >
-                  {checkInTimes.map((time) => (
+                  {CHECK_IN_TIME_OPTIONS.map((time) => (
                     <option key={time} value={time}>
                       {time}
                     </option>
                   ))}
                 </select>
                 <p className="mt-2 text-xs text-muted">
-                  フロント受付時間は16:00〜22:00です。
+                  フロント受付時間は{CHECK_IN_START_TIME}〜{CHECK_IN_END_TIME}
+                  です。
                 </p>
               </Field>
             </div>

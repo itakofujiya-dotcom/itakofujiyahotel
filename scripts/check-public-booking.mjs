@@ -64,7 +64,7 @@ const invalid = await client.rpc('create_public_reservation', {
   p_name_kana_or_roman: 'TEST PUBLIC BOOKING',
   p_telephone: '+81-00-0000-0000',
   p_email: 'test-public-booking@example.invalid',
-  p_expected_check_in_time: '16:00',
+  p_expected_check_in_time: '15:00',
   p_guest_note: '',
   p_expected_total_yen: room.estimated_total_yen,
 })
@@ -84,7 +84,7 @@ const priceChanged = await client.rpc('create_public_reservation', {
   p_name_kana_or_roman: 'TEST PUBLIC BOOKING',
   p_telephone: '+81-00-0000-0000',
   p_email: 'test-public-booking@example.invalid',
-  p_expected_check_in_time: '16:00',
+  p_expected_check_in_time: '15:00',
   p_guest_note: '',
   p_expected_total_yen: room.estimated_total_yen + 1,
 })

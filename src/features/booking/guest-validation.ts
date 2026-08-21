@@ -1,5 +1,23 @@
 import type { BookingGuestDraft } from './types'
 
+export const CHECK_IN_START_TIME = '15:00'
+export const CHECK_IN_END_TIME = '22:00'
+export const CHECK_IN_TIME_OPTIONS = [
+  '15:00',
+  '16:00',
+  '17:00',
+  '18:00',
+  '19:00',
+  '20:00',
+  '21:00',
+  '22:00',
+] as const
+export const CHECK_IN_TIME_RANGE_MESSAGE = `${CHECK_IN_START_TIME}〜${CHECK_IN_END_TIME}の間で選択してください。`
+
+export function isExpectedCheckInTimeValid(value: string): boolean {
+  return value >= CHECK_IN_START_TIME && value <= CHECK_IN_END_TIME
+}
+
 export type BookingGuestErrors = Partial<
   Record<keyof BookingGuestDraft, string>
 >
@@ -20,11 +38,8 @@ export function validateBookingGuest(
     errors.email = '正しいメールアドレスを入力してください。'
   if (!guest.expectedCheckInTime)
     errors.expectedCheckInTime = 'チェックイン予定時間を選択してください。'
-  else if (
-    guest.expectedCheckInTime < '16:00' ||
-    guest.expectedCheckInTime > '22:00'
-  )
-    errors.expectedCheckInTime = '16:00〜22:00の間で選択してください。'
+  else if (!isExpectedCheckInTimeValid(guest.expectedCheckInTime))
+    errors.expectedCheckInTime = CHECK_IN_TIME_RANGE_MESSAGE
   if (guest.guestNote.length > 1000)
     errors.guestNote = 'ご要望は1,000文字以内で入力してください。'
   return errors

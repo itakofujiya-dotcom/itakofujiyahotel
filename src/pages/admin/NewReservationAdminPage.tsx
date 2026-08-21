@@ -7,6 +7,8 @@ import { formatYen } from '../../features/admin-rates/rate-helpers'
 import { useRateRules } from '../../features/admin-rates/useRateRules'
 import { createAdminReservation } from '../../features/admin-reservations/admin-reservations-api'
 import {
+  ADMIN_CHECK_IN_END_TIME,
+  ADMIN_CHECK_IN_START_TIME,
   calculateReservationPricePreview,
   validateAdminReservationInput,
 } from '../../features/admin-reservations/reservation-helpers'
@@ -47,7 +49,7 @@ export function NewReservationAdminPage() {
       check_in: today,
       check_out: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
       booking_source: 'phone',
-      expected_check_in_time: '16:00',
+      expected_check_in_time: ADMIN_CHECK_IN_START_TIME,
       guest_note: '',
       admin_note: '',
     },
@@ -295,6 +297,8 @@ export function NewReservationAdminPage() {
               <TextField
                 label="チェックイン予定時間"
                 type="time"
+                min={ADMIN_CHECK_IN_START_TIME}
+                max={ADMIN_CHECK_IN_END_TIME}
                 value={input.reservation.expected_check_in_time}
                 onChange={(value) =>
                   setInput({
@@ -394,12 +398,16 @@ function TextField({
   onChange,
   type = 'text',
   required = false,
+  min,
+  max,
 }: {
   label: string
   value: string
   onChange: (value: string) => void
   type?: string
   required?: boolean
+  min?: string
+  max?: string
 }) {
   return (
     <label>
@@ -409,6 +417,8 @@ function TextField({
       <input
         type={type}
         required={required}
+        min={min}
+        max={max}
         className="admin-input"
         value={value}
         onChange={(event) => onChange(event.target.value)}

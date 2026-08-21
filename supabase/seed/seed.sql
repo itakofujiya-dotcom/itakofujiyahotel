@@ -40,10 +40,10 @@ set
 
   map_url = 'https://goo.gl/maps/GwPmVZCzfNbi5CRZ9',
 
-  check_in_time = '16:00',
+  check_in_time = '15:00',
   check_out_time = '10:00',
 
-  front_desk_open = '16:00',
+  front_desk_open = '15:00',
   front_desk_close = '22:00',
 
   max_booking_days = 40,
@@ -95,10 +95,10 @@ select
 
   'https://goo.gl/maps/GwPmVZCzfNbi5CRZ9',
 
-  '16:00',
+  '15:00',
   '10:00',
 
-  '16:00',
+  '15:00',
   '22:00',
 
   40,
