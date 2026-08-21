@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase/client'
+import { hotelSettings } from '../../data/hotel'
 import type {
   BookingDraft,
   BookingSubmissionDraft,
@@ -61,7 +62,7 @@ export async function getPublicBookingInformation(): Promise<{
     throw new Error('PUBLIC_BOOKING_INFORMATION_FAILED')
   return {
     hotel: {
-      telephone: settingsResult.data.telephone ?? '0299-62-2000',
+      telephone: settingsResult.data.telephone ?? hotelSettings.telephone,
       checkInTime: settingsResult.data.check_in_time,
       frontDeskOpen: settingsResult.data.front_desk_open,
       frontDeskClose: settingsResult.data.front_desk_close,

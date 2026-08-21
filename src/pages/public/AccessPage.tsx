@@ -1,6 +1,6 @@
 import { Car, ExternalLink, Phone, TrainFront } from 'lucide-react'
 import { PageHero } from '../../components/common/PageHero'
-import { accessInfo, hotelSettings } from '../../data/hotel'
+import { accessInfo, hotelSettings, hotelTelephoneHref } from '../../data/hotel'
 
 export function AccessPage() {
   return (
@@ -34,7 +34,7 @@ export function AccessPage() {
               {hotelSettings.addressJa}
             </address>
             <a
-              href={`tel:${hotelSettings.telephone}`}
+              href={hotelTelephoneHref}
               className="mt-4 inline-flex items-center gap-2 font-medium"
             >
               <Phone size={17} />

@@ -5,8 +5,8 @@ export const hotelSettings: HotelSettings = {
   hotelNameEn: 'ITAKO FUJIYA HOTEL',
   postalCode: '311-2424',
   addressJa: '茨城県潮来市潮来102',
-  telephone: '0299-62-2000',
-  fax: '0299-63-0801',
+  telephone: '0299-94-2662',
+  fax: '0299-94-2663',
   email: null,
   checkIn: '15:00',
   checkOut: '10:00',
@@ -14,6 +14,8 @@ export const hotelSettings: HotelSettings = {
   frontDeskClose: '22:00',
   mapUrl: 'https://goo.gl/maps/GwPmVZCzfNbi5CRZ9',
 }
+
+export const hotelTelephoneHref = `tel:${hotelSettings.telephone.replaceAll('-', '')}`
 
 export const accessInfo = {
   train: 'JR鹿島線「潮来駅」よりタクシーで約7分',

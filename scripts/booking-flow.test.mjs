@@ -7,6 +7,7 @@ import {
   hasBookingGuestErrors,
   validateBookingGuest,
 } from '../src/features/booking/guest-validation.ts'
+import { hotelSettings, hotelTelephoneHref } from '../src/data/hotel.ts'
 
 const validGuest = {
   name: '山田 太郎',
@@ -16,6 +17,12 @@ const validGuest = {
   expectedCheckInTime: '15:00',
   guestNote: '',
 }
+
+test('uses the current hotel telephone and fax from shared settings', () => {
+  assert.equal(hotelSettings.telephone, '0299-94-2662')
+  assert.equal(hotelSettings.fax, '0299-94-2663')
+  assert.equal(hotelTelephoneHref, 'tel:0299942662')
+})
 
 test('accepts the minimum public booking customer information', () => {
   assert.deepEqual(validateBookingGuest(validGuest), {})
@@ -125,4 +132,18 @@ test('operational-hours migration changes defaults and public RPC validation wit
   assert.match(sql, /front_desk_open = time '15:00'/)
   assert.match(sql, /p_expected_check_in_time < time ''15:00''/)
   assert.doesNotMatch(sql, /update public\.reservations/)
+})
+
+test('hotel contact migration updates settings without touching guest data', async () => {
+  const sql = await readFile(
+    new URL(
+      '../supabase/migrations/202608210005_update_hotel_contact.sql',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+  assert.match(sql, /telephone = '0299-94-2662'/)
+  assert.match(sql, /fax = '0299-94-2663'/)
+  assert.doesNotMatch(sql, /public\.guests/)
+  assert.doesNotMatch(sql, /public\.reservations/)
 })

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { hotelSettings } from '../../data/hotel'
+import { hotelSettings, hotelTelephoneHref } from '../../data/hotel'
 import { publicNavigation } from '../../data/navigation'
 
 export function Footer() {
@@ -18,10 +18,7 @@ export function Footer() {
             <br />
             {hotelSettings.addressJa}
             <br />
-            <a
-              href={`tel:${hotelSettings.telephone}`}
-              className="hover:text-white"
-            >
+            <a href={hotelTelephoneHref} className="hover:text-white">
               TEL {hotelSettings.telephone}
             </a>
             <span className="ml-4">FAX {hotelSettings.fax}</span>

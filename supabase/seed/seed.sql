@@ -34,8 +34,8 @@ set
   postal_code = '311-2424',
   address_ja = '茨城県潮来市潮来102',
 
-  telephone = '0299-62-2000',
-  fax = '0299-63-0801',
+  telephone = '0299-94-2662',
+  fax = '0299-94-2663',
   email = 'itakofujiya@gmail.com',
 
   map_url = 'https://goo.gl/maps/GwPmVZCzfNbi5CRZ9',
@@ -89,8 +89,8 @@ select
   '311-2424',
   '茨城県潮来市潮来102',
 
-  '0299-62-2000',
-  '0299-63-0801',
+  '0299-94-2662',
+  '0299-94-2663',
   'itakofujiya@gmail.com',
 
   'https://goo.gl/maps/GwPmVZCzfNbi5CRZ9',
