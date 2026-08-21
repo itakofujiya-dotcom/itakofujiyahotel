@@ -1,3 +1,5 @@
+import type { MealPlan } from '../booking/types'
+
 export type ReservationStatus =
   | 'pending'
   | 'confirmed'
@@ -39,13 +41,18 @@ export type ReservationListRoom = {
   id: string
   room_type_id: string
   paid_guest_count: number
+  adult_guest_count: number
+  paid_child_count: number
   free_preschool_count: number
+  meal_plan: MealPlan
+  meal_surcharge_yen: number
   room_type: ReservationRoomType
 }
 
 export type ReservationListItem = {
   id: string
   reservation_number: string
+  customer_id: string | null
   check_in: string
   check_out: string
   adults: number
@@ -127,8 +134,10 @@ export type CreateAdminReservationInput = {
   }
   rooms: {
     room_type_id: string
-    paid_guest_count: number
+    adult_guest_count: number
+    paid_child_count: number
     free_preschool_count: number
+    meal_plan: MealPlan
   }[]
 }
 

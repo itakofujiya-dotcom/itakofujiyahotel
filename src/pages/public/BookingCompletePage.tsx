@@ -8,6 +8,7 @@ import { formatBookingDate } from '../../features/booking/booking-format'
 import { readBookingCompletion } from '../../features/booking/storage'
 import type { PublicHotelInfo } from '../../features/booking/types'
 import { hotelSettings } from '../../data/hotel'
+import { mealPlanLabels } from '../../features/booking/meal-plan'
 
 export function BookingCompletePage() {
   const [completion] = useState(readBookingCompletion)
@@ -61,7 +62,6 @@ export function BookingCompletePage() {
             label="チェックアウト"
             value={formatBookingDate(completion.checkOut)}
           />
-          <CompleteRow label="客室タイプ" value={completion.roomTypeName} />
           <CompleteRow label="客室数" value={`${completion.roomCount}室`} />
           <CompleteRow
             label="宿泊人数"
@@ -79,6 +79,28 @@ export function BookingCompletePage() {
           />
           <CompleteRow label="ホテル電話番号" value={hotel.telephone} />
         </dl>
+        <div className="mx-auto mt-6 max-w-xl space-y-4 text-left">
+          {completion.rooms.map((room) => (
+            <div key={room.roomIndex} className="border border-line p-4">
+              <p className="font-semibold">
+                客室 {room.roomIndex + 1} · {room.roomTypeNameJa}
+              </p>
+              <p className="mt-2 text-sm text-muted">
+                大人 {room.adultGuestCount}名 · 子ども {room.paidChildCount}名 ·
+                添い寝 {room.freePreschoolCount}名
+              </p>
+              <p className="mt-1 text-sm">{mealPlanLabels[room.mealPlan]}</p>
+              {room.mealSurchargeYen > 0 && (
+                <p className="mt-1 text-sm text-muted">
+                  夕食追加料金 {formatYen(room.mealSurchargeYen)}
+                </p>
+              )}
+              <p className="mt-2 text-right font-semibold">
+                小計 {formatYen(room.subtotalYen)}
+              </p>
+            </div>
+          ))}
+        </div>
         <div className="mt-8 border-t border-line pt-6">
           <p className="font-semibold">
             お支払いはホテルにてお願いいたします。

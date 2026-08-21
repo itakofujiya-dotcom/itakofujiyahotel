@@ -64,16 +64,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isBookingDraft(value: unknown): value is BookingDraft {
-  if (!isRecord(value) || !isRecord(value.selectedRoomType)) return false
+  if (!isRecord(value) || !Array.isArray(value.rooms)) return false
   return (
     typeof value.checkIn === 'string' &&
     typeof value.checkOut === 'string' &&
     typeof value.roomCount === 'number' &&
     typeof value.totalAmountYen === 'number' &&
-    typeof value.selectedRoomType.id === 'string' &&
-    typeof value.selectedRoomType.nameJa === 'string' &&
-    Array.isArray(value.guestDistribution) &&
-    Array.isArray(value.nightlyPrices)
+    value.rooms.length === value.roomCount &&
+    value.rooms.every(isBookingRoom)
   )
 }
 
@@ -97,9 +95,27 @@ function isBookingCompletion(value: unknown): value is BookingCompletion {
     typeof value.reservationNumber === 'string' &&
     typeof value.checkIn === 'string' &&
     typeof value.checkOut === 'string' &&
-    typeof value.roomTypeName === 'string' &&
     typeof value.roomCount === 'number' &&
     typeof value.totalAmountYen === 'number' &&
+    Array.isArray(value.rooms) &&
+    value.rooms.every(isBookingRoom) &&
     value.status === 'confirmed'
+  )
+}
+
+function isBookingRoom(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.roomIndex === 'number' &&
+    typeof value.roomTypeId === 'string' &&
+    typeof value.roomTypeNameJa === 'string' &&
+    typeof value.adultGuestCount === 'number' &&
+    typeof value.paidChildCount === 'number' &&
+    typeof value.freePreschoolCount === 'number' &&
+    (value.mealPlan === 'breakfast' || value.mealPlan === 'breakfast_dinner') &&
+    typeof value.baseRoomTotalYen === 'number' &&
+    typeof value.mealSurchargeYen === 'number' &&
+    typeof value.subtotalYen === 'number' &&
+    Array.isArray(value.nightlyPrices)
   )
 }

@@ -2,8 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { differenceInCalendarDays, format } from 'date-fns'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader'
+import { fetchCustomerVisitStats } from '../../features/admin-customers/admin-customers-api'
+import { getCustomerVisitLabel } from '../../features/admin-customers/customer-helpers'
+import type { CustomerStats } from '../../features/admin-customers/types'
 import { getJapanToday } from '../../features/admin-dashboard/dashboard-helpers'
 import { formatYen } from '../../features/admin-rates/rate-helpers'
+import { mealPlanLabels } from '../../features/booking/meal-plan'
 import { RateConfirmDialog } from '../../features/admin-rates/RateConfirmDialog'
 import {
   assignRoom,
@@ -63,6 +67,7 @@ export function ReservationDetailPage() {
       ? location.state.reservationsReturnTo
       : '/admin/reservations'
   const [reservation, setReservation] = useState<ReservationDetail | null>(null)
+  const [customerStats, setCustomerStats] = useState<CustomerStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isMutating, setIsMutating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -91,6 +96,13 @@ export function ReservationDetailPage() {
     try {
       const detail = await fetchReservationDetail(id)
       setReservation(detail)
+      if (detail.customer_id) {
+        try {
+          setCustomerStats(await fetchCustomerVisitStats(detail.customer_id))
+        } catch {
+          setCustomerStats(null)
+        }
+      } else setCustomerStats(null)
       setDraft({
         name: detail.guest.name,
         name_kana_or_roman: detail.guest.name_kana_or_roman ?? '',
@@ -432,6 +444,21 @@ export function ReservationDetailPage() {
           />
           <Definition label="電話" value={reservation.guest.telephone} />
           <Definition label="メール" value={reservation.guest.email} />
+          {reservation.customer_id && (
+            <div className="mt-4 flex flex-wrap items-center gap-3 print:hidden">
+              <Link
+                to={`/admin/customers/${reservation.customer_id}`}
+                className="inline-flex min-h-10 items-center border border-line px-4 text-xs font-semibold"
+              >
+                顧客情報を見る
+              </Link>
+              {customerStats && (
+                <span className="rounded bg-accent/10 px-3 py-2 text-xs font-semibold text-accent">
+                  {getCustomerVisitLabel(customerStats.completedStays)}
+                </span>
+              )}
+            </div>
+          )}
         </DetailSection>
         <DetailSection title="宿泊">
           <Definition
@@ -510,8 +537,12 @@ export function ReservationDetailPage() {
                     客室 {index + 1}: {room.room_type.name_ja}
                   </h3>
                   <p className="mt-2 text-sm text-muted">
-                    有料 {room.paid_guest_count}名 / 無料未就学児{' '}
+                    大人 {room.adult_guest_count}名 / 子ども（有料）{' '}
+                    {room.paid_child_count}名 / 無料未就学児{' '}
                     {room.free_preschool_count}名
+                  </p>
+                  <p className="mt-2 text-sm font-medium">
+                    {mealPlanLabels[room.meal_plan]}
                   </p>
                   <p className="mt-1 text-sm">
                     実際の客室:{' '}
@@ -545,7 +576,16 @@ export function ReservationDetailPage() {
                   </p>
                 ))}
                 <p className="mt-3 text-right font-semibold">
-                  客室合計 {formatYen(room.quoted_room_total_yen ?? 0)}
+                  客室料金{' '}
+                  {formatYen(
+                    Math.max(
+                      0,
+                      (room.quoted_room_total_yen ?? 0) -
+                        room.meal_surcharge_yen,
+                    ),
+                  )}
+                  {' / '}夕食追加 {formatYen(room.meal_surcharge_yen)}
+                  {' / '}客室合計 {formatYen(room.quoted_room_total_yen ?? 0)}
                 </p>
               </div>
             </div>

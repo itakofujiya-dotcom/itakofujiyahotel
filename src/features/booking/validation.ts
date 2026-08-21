@@ -70,6 +70,8 @@ export function validateBookingSearch(
     values.freePreschoolChildren < 0
   )
     return '人数を確認してください。'
+  if (values.adults < values.roomCount)
+    return '各客室に大人1名以上となるように指定してください。'
   if (
     !distributePaidGuests(values.adults + values.paidChildren, values.roomCount)
   )

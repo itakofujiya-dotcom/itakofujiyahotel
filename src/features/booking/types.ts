@@ -9,6 +9,22 @@ export type BookingSearchParams = {
 
 export type GuestDistribution = number[]
 
+export type MealPlan = 'breakfast' | 'breakfast_dinner'
+
+export type BookingRoomInput = {
+  roomTypeId: string
+  adultGuestCount: number
+  paidChildCount: number
+  freePreschoolCount: number
+  mealPlan: MealPlan
+}
+
+export type PublicRoomType = {
+  id: string
+  code: 'japanese' | 'western'
+  nameJa: string
+}
+
 export type NightlyRoomPrice = {
   roomIndex: number
   guestCount: number
@@ -35,14 +51,29 @@ export type AvailableRoomTypeResult = {
   totalAmountYen: number
 }
 
+export type MixedBookingRoomQuote = BookingRoomInput & {
+  roomIndex: number
+  roomTypeCode: 'japanese' | 'western'
+  roomTypeNameJa: string
+  nightlyPrices: {
+    stayDate: string
+    guestCount: number
+    pricePerPersonYen: number
+    roomTotalYen: number
+    isSpecialRate: boolean
+  }[]
+  baseRoomTotalYen: number
+  mealSurchargeYen: number
+  subtotalYen: number
+}
+
+export type MixedBookingQuote = {
+  rooms: MixedBookingRoomQuote[]
+  totalAmountYen: number
+}
+
 export type BookingDraft = BookingSearchParams & {
-  selectedRoomType: {
-    id: string
-    code: 'japanese' | 'western'
-    nameJa: string
-  }
-  guestDistribution: GuestDistribution
-  nightlyPrices: NightlyPrice[]
+  rooms: MixedBookingRoomQuote[]
   totalAmountYen: number
   searchedAt: string
 }
@@ -65,12 +96,12 @@ export type BookingCompletion = {
   reservationNumber: string
   checkIn: string
   checkOut: string
-  roomTypeName: string
   roomCount: number
   adults: number
   paidChildren: number
   freePreschoolChildren: number
   totalAmountYen: number
+  rooms: MixedBookingRoomQuote[]
   status: 'confirmed'
 }
 
@@ -86,7 +117,7 @@ export type PublicBookingResult =
       code: 'PRICE_CHANGED'
       previousTotalAmountYen: number
       newTotalAmountYen: number
-      nightlyPrices: NightlyPrice[]
+      rooms: MixedBookingRoomQuote[]
     }
   | { ok: false; code: 'INVALID_BOOKING' | 'BOOKING_FAILED' }
 

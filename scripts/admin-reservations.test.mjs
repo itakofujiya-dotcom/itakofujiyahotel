@@ -26,6 +26,7 @@ import {
 const reservation = {
   id: 'reservation-1',
   reservation_number: 'IFH-20260820-001',
+  customer_id: 'customer-1',
   check_in: '2026-08-22',
   check_out: '2026-08-24',
   adults: 2,
@@ -385,7 +386,13 @@ test('validates one to ten nights and at most four rooms', () => {
       admin_note: '',
     },
     rooms: [
-      { room_type_id: 'ja', paid_guest_count: 2, free_preschool_count: 0 },
+      {
+        room_type_id: 'ja',
+        adult_guest_count: 2,
+        paid_child_count: 0,
+        free_preschool_count: 0,
+        meal_plan: 'breakfast',
+      },
     ],
   }
   assert.equal(validateAdminReservationInput(input), null)
@@ -452,7 +459,13 @@ test('price preview snapshots each night using override then rule then base prio
       admin_note: '',
     },
     rooms: [
-      { room_type_id: 'ja', paid_guest_count: 2, free_preschool_count: 0 },
+      {
+        room_type_id: 'ja',
+        adult_guest_count: 2,
+        paid_child_count: 0,
+        free_preschool_count: 0,
+        meal_plan: 'breakfast_dinner',
+      },
     ],
   }
   const roomType = {
@@ -517,5 +530,7 @@ test('price preview snapshots each night using override then rule then base prio
     preview.rooms[0].nights.map((night) => night.pricePerPerson),
     [8500, 9500, 12000],
   )
-  assert.equal(preview.total, 60000)
+  assert.equal(preview.rooms[0].baseTotal, 60000)
+  assert.equal(preview.rooms[0].mealSurcharge, 12000)
+  assert.equal(preview.total, 72000)
 })

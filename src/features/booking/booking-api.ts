@@ -4,32 +4,32 @@ import type {
   BookingDraft,
   BookingSubmissionDraft,
   CancellationPolicy,
-  NightlyPrice,
   PublicBookingResult,
   PublicHotelInfo,
 } from './types'
+import type { Json } from '../../types/database'
+import { parseMixedBookingRooms, toRoomRpcInput } from './booking-search-api'
 
 export async function createPublicReservation(
   booking: BookingDraft,
   guest: BookingSubmissionDraft,
 ): Promise<PublicBookingResult> {
-  const { data, error } = await supabase.rpc('create_public_reservation', {
-    p_booking_request_id: guest.bookingRequestId,
-    p_check_in: booking.checkIn,
-    p_check_out: booking.checkOut,
-    p_adults: booking.adults,
-    p_paid_children: booking.paidChildren,
-    p_free_preschool_children: booking.freePreschoolChildren,
-    p_room_count: booking.roomCount,
-    p_room_type_id: booking.selectedRoomType.id,
-    p_name: guest.name.trim(),
-    p_name_kana_or_roman: guest.nameKanaOrRoman.trim(),
-    p_telephone: guest.telephone.trim(),
-    p_email: guest.email.trim(),
-    p_expected_check_in_time: guest.expectedCheckInTime,
-    p_guest_note: guest.guestNote.trim(),
-    p_expected_total_yen: booking.totalAmountYen,
-  })
+  const { data, error } = await supabase.rpc(
+    'create_public_mixed_reservation',
+    {
+      p_booking_request_id: guest.bookingRequestId,
+      p_check_in: booking.checkIn,
+      p_check_out: booking.checkOut,
+      p_rooms: booking.rooms.map(toRoomRpcInput) as unknown as Json,
+      p_name: guest.name.trim(),
+      p_name_kana_or_roman: guest.nameKanaOrRoman.trim(),
+      p_telephone: guest.telephone.trim(),
+      p_email: guest.email.trim(),
+      p_expected_check_in_time: guest.expectedCheckInTime,
+      p_guest_note: guest.guestNote.trim(),
+      p_expected_total_yen: booking.totalAmountYen,
+    },
+  )
   if (error) {
     console.error('[Public booking] Reservation request failed.', {
       code: error.code,
@@ -92,12 +92,12 @@ function parsePublicBookingResult(value: unknown): PublicBookingResult {
       reservationNumber: requireString(value.reservationNumber),
       checkIn: requireString(value.checkIn),
       checkOut: requireString(value.checkOut),
-      roomTypeName: requireString(value.roomTypeName),
       roomCount: requireNumber(value.roomCount),
       adults: requireNumber(value.adults),
       paidChildren: requireNumber(value.paidChildren),
       freePreschoolChildren: requireNumber(value.freePreschoolChildren),
       totalAmountYen: requireNumber(value.totalAmountYen),
+      rooms: parseMixedBookingRooms(value.rooms),
       status: 'confirmed',
     }
   }
@@ -107,7 +107,7 @@ function parsePublicBookingResult(value: unknown): PublicBookingResult {
       code: 'PRICE_CHANGED',
       previousTotalAmountYen: requireNumber(value.previousTotalAmountYen),
       newTotalAmountYen: requireNumber(value.newTotalAmountYen),
-      nightlyPrices: parseNightlyPrices(value.nightlyPrices),
+      rooms: parseMixedBookingRooms(value.rooms),
     }
   }
   if (
@@ -118,28 +118,6 @@ function parsePublicBookingResult(value: unknown): PublicBookingResult {
   )
     return { ok: false, code: value.code }
   return { ok: false, code: 'BOOKING_FAILED' }
-}
-
-function parseNightlyPrices(value: unknown): NightlyPrice[] {
-  if (!Array.isArray(value)) throw new Error('INVALID_NIGHTLY_PRICES')
-  return value.map((night) => {
-    if (!isRecord(night) || !Array.isArray(night.rooms))
-      throw new Error('INVALID_NIGHTLY_PRICE')
-    return {
-      stayDate: requireString(night.stayDate),
-      nightTotalYen: requireNumber(night.nightTotalYen),
-      rooms: night.rooms.map((room) => {
-        if (!isRecord(room)) throw new Error('INVALID_ROOM_PRICE')
-        return {
-          roomIndex: requireNumber(room.roomIndex),
-          guestCount: requireNumber(room.guestCount),
-          pricePerPersonYen: requireNumber(room.pricePerPersonYen),
-          roomTotalYen: requireNumber(room.roomTotalYen),
-          isSpecialRate: room.isSpecialRate === true,
-        }
-      }),
-    }
-  })
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

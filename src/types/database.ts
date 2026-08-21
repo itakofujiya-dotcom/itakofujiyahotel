@@ -237,11 +237,42 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['guests']['Insert']>
         Relationships: []
       }
+      customers: {
+        Row: {
+          id: string
+          name: string
+          normalized_name: string
+          phone: string
+          normalized_phone: string
+          email: string | null
+          memo: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          phone: string
+          email?: string | null
+          memo?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          phone?: string
+          email?: string | null
+          memo?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reservations: {
         Row: {
           id: string
           reservation_number: string
           primary_guest_id: string
+          customer_id: string | null
           check_in: string
           check_out: string
           adults: number
@@ -271,6 +302,7 @@ export type Database = {
           id?: string
           reservation_number: string
           primary_guest_id: string
+          customer_id?: string
           check_in: string
           check_out: string
           adults: number
@@ -299,6 +331,13 @@ export type Database = {
             referencedRelation: 'guests'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'reservations_customer_id_fkey'
+            columns: ['customer_id']
+            isOneToOne: false
+            referencedRelation: 'customers'
+            referencedColumns: ['id']
+          },
         ]
       }
       reservation_rooms: {
@@ -308,7 +347,11 @@ export type Database = {
           room_type_id: string
           room_id: string | null
           paid_guest_count: number
+          adult_guest_count: number
+          paid_child_count: number
           free_preschool_count: number
+          meal_plan: string
+          meal_surcharge_yen: number
           quoted_price_per_person_yen: number | null
           quoted_room_total_yen: number | null
           created_at: string
@@ -320,7 +363,11 @@ export type Database = {
           room_type_id: string
           room_id?: string | null
           paid_guest_count: number
+          adult_guest_count?: number
+          paid_child_count?: number
           free_preschool_count?: number
+          meal_plan?: string
+          meal_surcharge_yen?: number
           quoted_price_per_person_yen?: number | null
           quoted_room_total_yen?: number | null
           created_at?: string
@@ -646,6 +693,30 @@ export type Database = {
           paid_at: string | null
         }[]
       }
+      normalize_customer_name: { Args: { p_name: string }; Returns: string }
+      normalize_customer_phone: { Args: { p_phone: string }; Returns: string }
+      get_admin_customers: {
+        Args: {
+          p_search?: string
+          p_sort?: string
+          p_page?: number
+          p_page_size?: number
+        }
+        Returns: {
+          id: string
+          name: string
+          phone: string
+          email: string | null
+          memo: string | null
+          total_reservations: number
+          completed_stays: number
+          first_visit: string | null
+          recent_visit: string | null
+          total_nights: number
+          average_visit_interval_days: number | null
+          total_count: number
+        }[]
+      }
       search_available_room_types: {
         Args: {
           p_check_in: string
@@ -677,6 +748,30 @@ export type Database = {
           p_free_preschool_children: number
           p_room_count: number
           p_room_type_id: string
+          p_name: string
+          p_name_kana_or_roman: string
+          p_telephone: string
+          p_email: string
+          p_expected_check_in_time: string
+          p_guest_note: string
+          p_expected_total_yen: number
+        }
+        Returns: Json
+      }
+      search_public_mixed_booking: {
+        Args: {
+          p_check_in: string
+          p_check_out: string
+          p_rooms: Json
+        }
+        Returns: Json
+      }
+      create_public_mixed_reservation: {
+        Args: {
+          p_booking_request_id: string
+          p_check_in: string
+          p_check_out: string
+          p_rooms: Json
           p_name: string
           p_name_kana_or_roman: string
           p_telephone: string

@@ -9,6 +9,7 @@ export const publicNavigation = [
 export const adminNavigation = [
   { label: 'ダッシュボード', to: '/admin' },
   { label: '予約管理', to: '/admin/reservations' },
+  { label: '顧客管理', to: '/admin/customers' },
   { label: '客室管理', to: '/admin/rooms' },
   { label: '在庫管理', to: '/admin/inventory' },
   { label: '料金管理', to: '/admin/rates' },

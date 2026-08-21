@@ -4,6 +4,7 @@ import {
   getStayNights,
 } from '../../features/booking/booking-format'
 import type { BookingDraft } from '../../features/booking/types'
+import { mealPlanLabels } from '../../features/booking/meal-plan'
 
 export function BookingSummary({ booking }: { booking: BookingDraft }) {
   const paidGuests = booking.adults + booking.paidChildren
@@ -24,16 +25,25 @@ export function BookingSummary({ booking }: { booking: BookingDraft }) {
           label="宿泊数"
           value={`${getStayNights(booking.checkIn, booking.checkOut)}泊`}
         />
-        <SummaryRow
-          label="客室タイプ"
-          value={booking.selectedRoomType.nameJa}
-        />
         <SummaryRow label="客室数" value={`${booking.roomCount}室`} />
         <SummaryRow
           label="宿泊人数"
           value={`有料 ${paidGuests}名${booking.freePreschoolChildren ? ` · 添い寝 ${booking.freePreschoolChildren}名` : ''}`}
         />
       </dl>
+      <div className="mt-5 space-y-3 border-t border-line pt-4 text-sm">
+        {booking.rooms.map((room) => (
+          <div key={room.roomIndex}>
+            <p className="font-semibold">
+              客室 {room.roomIndex + 1} · {room.roomTypeNameJa}
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              大人 {room.adultGuestCount}名 · 子ども {room.paidChildCount}名 ·{' '}
+              {mealPlanLabels[room.mealPlan]}
+            </p>
+          </div>
+        ))}
+      </div>
       <div className="mt-6 border-t border-line pt-5">
         <p className="text-xs text-muted">予定料金</p>
         <p className="mt-1 text-2xl font-semibold">

@@ -24,6 +24,7 @@ import type {
   BookingDraft,
   CancellationPolicy,
 } from '../../features/booking/types'
+import { mealPlanLabels } from '../../features/booking/meal-plan'
 
 const fallbackPolicies = [
   ['7日前まで', '無料'],
@@ -79,7 +80,7 @@ export function BookingConfirmPage() {
         const updated = {
           ...booking,
           totalAmountYen: result.newTotalAmountYen,
-          nightlyPrices: result.nightlyPrices,
+          rooms: result.rooms,
           searchedAt: new Date().toISOString(),
         }
         writeBookingDraft(updated)
@@ -161,22 +162,28 @@ export function BookingConfirmPage() {
                   '宿泊数',
                   `${getStayNights(booking.checkIn, booking.checkOut)}泊`,
                 ],
-                ['客室タイプ', booking.selectedRoomType.nameJa],
                 ['客室数', `${booking.roomCount}室`],
                 ['大人', `${booking.adults}名`],
                 ['子ども', `${booking.paidChildren}名`],
                 ['添い寝', `${booking.freePreschoolChildren}名`],
               ]}
             />
-            {booking.roomCount > 1 && (
-              <div className="mt-5 border-t border-line pt-4 text-sm text-muted">
-                {booking.guestDistribution.map((count, index) => (
-                  <p key={index} className="mt-1">
-                    {index + 1}室目 {count}名
+            <div className="mt-5 space-y-4 border-t border-line pt-4">
+              {booking.rooms.map((room) => (
+                <div key={room.roomIndex} className="text-sm">
+                  <p className="font-semibold">
+                    客室 {room.roomIndex + 1} · {room.roomTypeNameJa}
                   </p>
-                ))}
-              </div>
-            )}
+                  <p className="mt-1 text-muted">
+                    大人 {room.adultGuestCount}名 · 子ども {room.paidChildCount}
+                    名 · 添い寝 {room.freePreschoolCount}名
+                  </p>
+                  <p className="mt-1 text-muted">
+                    {mealPlanLabels[room.mealPlan]}
+                  </p>
+                </div>
+              ))}
+            </div>
           </ConfirmSection>
 
           <ConfirmSection title="お客様情報">
@@ -200,23 +207,28 @@ export function BookingConfirmPage() {
 
           <ConfirmSection title="料金詳細">
             <div className="divide-y divide-line">
-              {booking.nightlyPrices.map((night) => (
-                <div key={night.stayDate} className="py-4 first:pt-0">
+              {booking.rooms.map((room) => (
+                <div key={room.roomIndex} className="py-4 first:pt-0">
                   <p className="font-semibold">
-                    {formatShortBookingDate(night.stayDate)}
+                    客室 {room.roomIndex + 1} · {room.roomTypeNameJa}
                   </p>
-                  {night.rooms.map((room) => (
-                    <p key={room.roomIndex} className="mt-2 text-sm text-muted">
-                      {room.roomIndex + 1}室目 ·{' '}
-                      {formatYen(room.pricePerPersonYen)} × {room.guestCount}名
-                      {room.isSpecialRate && (
+                  {room.nightlyPrices.map((night) => (
+                    <p key={night.stayDate} className="mt-2 text-sm text-muted">
+                      {formatShortBookingDate(night.stayDate)} ·{' '}
+                      {formatYen(night.pricePerPersonYen)} × {night.guestCount}
+                      名
+                      {night.isSpecialRate && (
                         <span className="ml-2 text-accent">特別料金</span>
                       )}
                     </p>
                   ))}
-                  <p className="mt-2 text-right font-medium">
-                    {formatYen(night.nightTotalYen)}
-                  </p>
+                  <div className="mt-3 grid gap-1 text-sm sm:grid-cols-3">
+                    <p>客室料金 {formatYen(room.baseRoomTotalYen)}</p>
+                    <p>夕食追加 {formatYen(room.mealSurchargeYen)}</p>
+                    <p className="font-semibold sm:text-right">
+                      小計 {formatYen(room.subtotalYen)}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

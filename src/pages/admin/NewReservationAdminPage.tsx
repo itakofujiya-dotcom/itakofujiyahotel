@@ -13,12 +13,16 @@ import {
   validateAdminReservationInput,
 } from '../../features/admin-reservations/reservation-helpers'
 import type { CreateAdminReservationInput } from '../../features/admin-reservations/types'
+import { mealPlanLabels } from '../../features/booking/meal-plan'
+import type { MealPlan } from '../../features/booking/types'
 
 const today = format(new Date(), 'yyyy-MM-dd')
 const emptyRoom = {
   room_type_id: '',
-  paid_guest_count: 2,
+  adult_guest_count: 2,
+  paid_child_count: 0,
   free_preschool_count: 0,
+  meal_plan: 'breakfast' as MealPlan,
 }
 
 export function NewReservationAdminPage() {
@@ -201,7 +205,7 @@ export function NewReservationAdminPage() {
               {input.rooms.map((room, index) => (
                 <div
                   key={index}
-                  className="grid gap-4 border border-line bg-background p-4 md:grid-cols-[1fr_150px_150px_auto]"
+                  className="grid gap-4 border border-line bg-background p-4 md:grid-cols-2 xl:grid-cols-[1fr_120px_120px_140px_1fr_auto]"
                 >
                   <label>
                     <span className="mb-2 block text-xs font-semibold text-muted">
@@ -230,16 +234,32 @@ export function NewReservationAdminPage() {
                     </select>
                   </label>
                   <NumberField
-                    label="人数"
+                    label="大人"
                     min={1}
                     max={4}
-                    value={room.paid_guest_count}
+                    value={room.adult_guest_count}
                     onChange={(value) =>
                       setInput({
                         ...input,
                         rooms: input.rooms.map((item, roomIndex) =>
                           roomIndex === index
-                            ? { ...item, paid_guest_count: value }
+                            ? { ...item, adult_guest_count: value }
+                            : item,
+                        ),
+                      })
+                    }
+                  />
+                  <NumberField
+                    label="子ども（有料）"
+                    min={0}
+                    max={3}
+                    value={room.paid_child_count}
+                    onChange={(value) =>
+                      setInput({
+                        ...input,
+                        rooms: input.rooms.map((item, roomIndex) =>
+                          roomIndex === index
+                            ? { ...item, paid_child_count: value }
                             : item,
                         ),
                       })
@@ -260,6 +280,34 @@ export function NewReservationAdminPage() {
                       })
                     }
                   />
+                  <label>
+                    <span className="mb-2 block text-xs font-semibold text-muted">
+                      食事プラン
+                    </span>
+                    <select
+                      className="admin-input"
+                      value={room.meal_plan}
+                      onChange={(event) =>
+                        setInput({
+                          ...input,
+                          rooms: input.rooms.map((item, roomIndex) =>
+                            roomIndex === index
+                              ? {
+                                  ...item,
+                                  meal_plan: event.target.value as MealPlan,
+                                }
+                              : item,
+                          ),
+                        })
+                      }
+                    >
+                      {Object.entries(mealPlanLabels).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <button
                     type="button"
                     disabled={input.rooms.length === 1}
@@ -352,6 +400,13 @@ export function NewReservationAdminPage() {
                         {formatYen(night.roomTotal)}
                       </p>
                     ))}
+                    <p className="mt-2 text-sm text-muted">
+                      客室料金 {formatYen(room.baseTotal)} / 夕食追加{' '}
+                      {formatYen(room.mealSurcharge)}
+                    </p>
+                    <p className="mt-1 text-right font-semibold">
+                      小計 {formatYen(room.total)}
+                    </p>
                   </div>
                 ))}
                 <p className="text-right text-xl font-semibold">

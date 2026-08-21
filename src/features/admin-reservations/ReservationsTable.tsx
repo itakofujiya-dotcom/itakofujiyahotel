@@ -9,6 +9,7 @@ import type { ReservationListItem } from './types'
 import { NewReservationBadge } from './NewReservationBadge'
 import { PaymentStatusBadge } from './PaymentStatusBadge'
 import { ReservationStatusBadge } from './ReservationStatusBadge'
+import { mealPlanLabels } from '../booking/meal-plan'
 
 export function ReservationsTable({
   reservations,
@@ -71,10 +72,16 @@ export function ReservationsTable({
                 {reservation.check_out.replaceAll('-', '/')}
               </td>
               <td className="px-4 py-4">
-                {reservation.rooms
-                  .map((room) => room.room_type.name_ja)
-                  .join('・')}{' '}
-                × {reservation.rooms.length}
+                <div className="space-y-1">
+                  {reservation.rooms.map((room) => (
+                    <p key={room.id}>
+                      {room.room_type.name_ja} ·{' '}
+                      <span className="text-xs text-muted">
+                        {mealPlanLabels[room.meal_plan]}
+                      </span>
+                    </p>
+                  ))}
+                </div>
               </td>
               <td className="px-4 py-4">
                 {reservation.adults + reservation.paid_children}名

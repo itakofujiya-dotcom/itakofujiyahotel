@@ -10,15 +10,17 @@ import type {
   ReservationStatus,
   PaymentStatus,
 } from './types'
+import type { MealPlan } from '../booking/types'
 
 const listSelect = `
-  id, reservation_number, check_in, check_out, adults, paid_children,
+  id, reservation_number, customer_id, check_in, check_out, adults, paid_children,
   free_preschool_children, status, booking_source, total_amount_yen,
   admin_seen_at, created_at,
   payments (id, method, status, amount_yen, paid_at, external_reference),
   guest:guests (id, name, name_kana_or_roman, email, telephone),
   rooms:reservation_rooms (
-    id, room_type_id, paid_guest_count, free_preschool_count,
+    id, room_type_id, paid_guest_count, adult_guest_count, paid_child_count,
+    free_preschool_count, meal_plan, meal_surcharge_yen,
     room_type:room_types (id, code, name_ja)
   )
 `
@@ -51,13 +53,14 @@ export async function fetchReservationDetail(
     .from('reservations')
     .select(
       `
-      id, reservation_number, check_in, check_out, adults, paid_children,
+      id, reservation_number, customer_id, check_in, check_out, adults, paid_children,
       free_preschool_children, status, booking_source, total_amount_yen,
       admin_seen_at, created_at, expected_check_in_time, guest_note, admin_note,
       cancelled_at, cancellation_fee_rate, cancellation_fee_yen,
       guest:guests (id, name, name_kana_or_roman, email, telephone),
       rooms:reservation_rooms (
-        id, room_type_id, room_id, paid_guest_count, free_preschool_count,
+        id, room_type_id, room_id, paid_guest_count, adult_guest_count,
+        paid_child_count, free_preschool_count, meal_plan, meal_surcharge_yen,
         quoted_price_per_person_yen, quoted_room_total_yen,
         room_type:room_types (id, code, name_ja),
         assigned_room:rooms (id, room_number, sales_status),
@@ -84,7 +87,11 @@ export async function fetchReservationDetail(
       id: room.id,
       room_type_id: room.room_type_id,
       paid_guest_count: room.paid_guest_count,
+      adult_guest_count: room.adult_guest_count,
+      paid_child_count: room.paid_child_count,
       free_preschool_count: room.free_preschool_count,
+      meal_plan: parseMealPlan(room.meal_plan),
+      meal_surcharge_yen: room.meal_surcharge_yen,
       room_type: room.room_type,
       room_id: room.room_id,
       quoted_price_per_person_yen: room.quoted_price_per_person_yen,
@@ -266,6 +273,7 @@ export async function updateAdminPaymentStatus({
 function mapReservationListItem(data: {
   id: string
   reservation_number: string
+  customer_id: string | null
   check_in: string
   check_out: string
   adults: number
@@ -282,7 +290,11 @@ function mapReservationListItem(data: {
     id: string
     room_type_id: string
     paid_guest_count: number
+    adult_guest_count: number
+    paid_child_count: number
     free_preschool_count: number
+    meal_plan: string
+    meal_surcharge_yen: number
     room_type: ReservationRoomType
   }[]
 }): ReservationListItem {
@@ -296,6 +308,7 @@ function mapReservationListItem(data: {
   return {
     id: data.id,
     reservation_number: data.reservation_number,
+    customer_id: data.customer_id,
     check_in: data.check_in,
     check_out: data.check_out,
     adults: data.adults,
@@ -314,8 +327,16 @@ function mapReservationListItem(data: {
     ),
     created_at: data.created_at,
     guest: data.guest,
-    rooms: data.rooms.map((room) => ({ ...room, room_type: room.room_type })),
+    rooms: data.rooms.map((room) => ({
+      ...room,
+      meal_plan: parseMealPlan(room.meal_plan),
+      room_type: room.room_type,
+    })),
   }
+}
+
+function parseMealPlan(value: string): MealPlan {
+  return value === 'breakfast_dinner' ? 'breakfast_dinner' : 'breakfast'
 }
 
 function throwReservationError(

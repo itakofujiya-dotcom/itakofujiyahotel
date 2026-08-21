@@ -328,11 +328,15 @@ export function validateAdminReservationInput(
   for (const room of input.rooms) {
     if (!room.room_type_id) return 'すべての客室タイプを選択してください。'
     if (
-      !Number.isInteger(room.paid_guest_count) ||
-      room.paid_guest_count < 1 ||
-      room.paid_guest_count > 4
+      !Number.isInteger(room.adult_guest_count) ||
+      room.adult_guest_count < 1 ||
+      !Number.isInteger(room.paid_child_count) ||
+      room.paid_child_count < 0 ||
+      room.adult_guest_count + room.paid_child_count > 4
     )
       return '各客室の人数は1〜4名で指定してください。'
+    if (!['breakfast', 'breakfast_dinner'].includes(room.meal_plan))
+      return '食事プランを確認してください。'
     if (
       !Number.isInteger(room.free_preschool_count) ||
       room.free_preschool_count < 0
@@ -359,17 +363,18 @@ export function calculateReservationPricePreview({
   )
   if (stayDates.length === 0) return null
   const rooms = input.rooms.map((room, roomIndex) => {
+    const paidGuestCount = room.adult_guest_count + room.paid_child_count
     const nights = stayDates.map((stayDate) => {
       const override = overrides.find(
         (rate) =>
           rate.room_type_id === room.room_type_id &&
-          rate.guest_count === room.paid_guest_count &&
+          rate.guest_count === paidGuestCount &&
           rate.stay_date === stayDate,
       )
       const baseRate = baseRates.find(
         (rate) =>
           rate.room_type_id === room.room_type_id &&
-          rate.guest_count === room.paid_guest_count &&
+          rate.guest_count === paidGuestCount &&
           rate.valid_from <= stayDate &&
           stayDate <= rate.valid_to,
       )
@@ -388,15 +393,25 @@ export function calculateReservationPricePreview({
       return {
         stayDate,
         pricePerPerson,
-        roomTotal: pricePerPerson * room.paid_guest_count,
+        roomTotal: pricePerPerson * paidGuestCount,
       }
     })
     if (nights.some((night) => night === null)) return null
     const completeNights = nights.filter((night) => night !== null)
+    const baseTotal = completeNights.reduce(
+      (sum, night) => sum + night.roomTotal,
+      0,
+    )
+    const mealSurcharge =
+      room.meal_plan === 'breakfast_dinner'
+        ? room.adult_guest_count * stayDates.length * 2_000
+        : 0
     return {
       roomIndex,
       nights: completeNights,
-      total: completeNights.reduce((sum, night) => sum + night.roomTotal, 0),
+      baseTotal,
+      mealSurcharge,
+      total: baseTotal + mealSurcharge,
     }
   })
   if (rooms.some((room) => room === null)) return null

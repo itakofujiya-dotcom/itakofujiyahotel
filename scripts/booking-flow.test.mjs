@@ -8,6 +8,7 @@ import {
   validateBookingGuest,
 } from '../src/features/booking/guest-validation.ts'
 import { hotelSettings, hotelTelephoneHref } from '../src/data/hotel.ts'
+import { calculateMealSurcharge } from '../src/features/booking/meal-plan.ts'
 
 const validGuest = {
   name: '山田 太郎',
@@ -97,6 +98,71 @@ test('requires both consents and blocks duplicate submit while loading', () => {
     }),
     false,
   )
+})
+
+test('charges dinner only for adults and snapshots the configured stay length', () => {
+  assert.equal(
+    calculateMealSurcharge({
+      mealPlan: 'breakfast',
+      adultGuestCount: 3,
+      nights: 3,
+    }),
+    0,
+  )
+  assert.equal(
+    calculateMealSurcharge({
+      mealPlan: 'breakfast_dinner',
+      adultGuestCount: 1,
+      nights: 1,
+    }),
+    2000,
+  )
+  assert.equal(
+    calculateMealSurcharge({
+      mealPlan: 'breakfast_dinner',
+      adultGuestCount: 2,
+      nights: 2,
+    }),
+    8000,
+  )
+  assert.equal(
+    calculateMealSurcharge({
+      mealPlan: 'breakfast_dinner',
+      adultGuestCount: 3,
+      nights: 3,
+    }),
+    18000,
+  )
+})
+
+test('mixed-room migration keeps old RPCs and adds atomic server-side meal pricing', async () => {
+  const sql = await readFile(
+    new URL(
+      '../supabase/migrations/202608210007_mixed_room_meal_plans.sql',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+  assert.match(sql, /add column meal_plan text not null default 'breakfast'/)
+  assert.match(sql, /add column meal_surcharge_yen integer not null default 0/)
+  assert.match(
+    sql,
+    /create or replace function public\.search_public_mixed_booking/,
+  )
+  assert.match(
+    sql,
+    /create or replace function public\.create_public_mixed_reservation/,
+  )
+  assert.match(sql, /v_adults \* \(p_check_out - p_check_in\) \* 2000/)
+  assert.match(
+    sql,
+    /select distinct \(item\.value->>'room_type_id'\)::uuid[\s\S]+order by 1/,
+  )
+  assert.match(sql, /pg_advisory_xact_lock/)
+  assert.match(sql, /p_expected_total_yen/)
+  assert.match(sql, /PRICE_CHANGED/)
+  assert.match(sql, /to anon, authenticated/)
+  assert.doesNotMatch(sql, /drop function public\.create_public_reservation/)
 })
 
 test('public booking migration enforces idempotency and anonymous RPC-only writes', async () => {

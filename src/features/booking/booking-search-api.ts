@@ -1,10 +1,14 @@
 import { supabase } from '../../lib/supabase/client'
 import type {
   AvailableRoomTypeResult,
+  BookingRoomInput,
   BookingSearchParams,
+  MixedBookingQuote,
+  MixedBookingRoomQuote,
   NightlyPrice,
   NightlyRoomPrice,
 } from './types'
+import type { Json } from '../../types/database'
 
 export async function searchAvailableRoomTypes(
   params: BookingSearchParams,
@@ -36,6 +40,84 @@ export async function searchAvailableRoomTypes(
     minPricePerPersonYen: row.min_price_per_person_yen,
     totalAmountYen: row.estimated_total_yen,
   }))
+}
+
+export async function searchMixedRoomBooking({
+  checkIn,
+  checkOut,
+  rooms,
+}: {
+  checkIn: string
+  checkOut: string
+  rooms: BookingRoomInput[]
+}): Promise<MixedBookingQuote> {
+  const { data, error } = await supabase.rpc('search_public_mixed_booking', {
+    p_check_in: checkIn,
+    p_check_out: checkOut,
+    p_rooms: rooms.map(toRoomRpcInput) as unknown as Json,
+  })
+  if (error) {
+    console.error('[Booking search] Mixed-room quote failed.', {
+      code: error.code,
+      message: error.message,
+    })
+    throw new Error('BOOKING_SEARCH_FAILED')
+  }
+  if (!isRecord(data) || data.ok !== true) {
+    const code = isRecord(data) ? data.code : undefined
+    if (code === 'BOOKING_NO_LONGER_AVAILABLE')
+      throw new Error('BOOKING_NO_LONGER_AVAILABLE')
+    if (code === 'INVALID_BOOKING') throw new Error('INVALID_BOOKING')
+    throw new Error('BOOKING_SEARCH_FAILED')
+  }
+  return {
+    rooms: parseMixedBookingRooms(data.rooms),
+    totalAmountYen: requireNumber(data.totalAmountYen),
+  }
+}
+
+export function toRoomRpcInput(room: BookingRoomInput) {
+  return {
+    room_type_id: room.roomTypeId,
+    adult_guest_count: room.adultGuestCount,
+    paid_child_count: room.paidChildCount,
+    free_preschool_count: room.freePreschoolCount,
+    meal_plan: room.mealPlan,
+  }
+}
+
+export function parseMixedBookingRooms(
+  value: unknown,
+): MixedBookingRoomQuote[] {
+  if (!Array.isArray(value)) throw new Error('BOOKING_SEARCH_INVALID_ROOMS')
+  return value.map((room) => {
+    if (!isRecord(room) || !Array.isArray(room.nightlyPrices))
+      throw new Error('BOOKING_SEARCH_INVALID_ROOM')
+    return {
+      roomIndex: requireNumber(room.roomIndex),
+      roomTypeId: requireString(room.roomTypeId),
+      roomTypeCode: parseRoomTypeCode(requireString(room.roomTypeCode)),
+      roomTypeNameJa: requireString(room.roomTypeNameJa),
+      adultGuestCount: requireNumber(room.adultGuestCount),
+      paidChildCount: requireNumber(room.paidChildCount),
+      freePreschoolCount: requireNumber(room.freePreschoolCount),
+      mealPlan:
+        room.mealPlan === 'breakfast_dinner' ? 'breakfast_dinner' : 'breakfast',
+      nightlyPrices: room.nightlyPrices.map((night) => {
+        if (!isRecord(night)) throw new Error('BOOKING_SEARCH_INVALID_NIGHT')
+        return {
+          stayDate: requireString(night.stayDate),
+          guestCount: requireNumber(night.guestCount),
+          pricePerPersonYen: requireNumber(night.pricePerPersonYen),
+          roomTotalYen: requireNumber(night.roomTotalYen),
+          isSpecialRate: night.isSpecialRate === true,
+        }
+      }),
+      baseRoomTotalYen: requireNumber(room.baseRoomTotalYen),
+      mealSurchargeYen: requireNumber(room.mealSurchargeYen),
+      subtotalYen: requireNumber(room.subtotalYen),
+    }
+  })
 }
 
 function parseRoomTypeCode(value: string): 'japanese' | 'western' {

@@ -21,6 +21,8 @@ import { RoomsAdminPage } from '../pages/admin/RoomsAdminPage'
 import { RatesAdminPage } from '../pages/admin/RatesAdminPage'
 import { InventoryAdminPage } from '../pages/admin/InventoryAdminPage'
 import { SettingsAdminPage } from '../pages/admin/SettingsAdminPage'
+import { CustomersAdminPage } from '../pages/admin/CustomersAdminPage'
+import { CustomerDetailPage } from '../pages/admin/CustomerDetailPage'
 import { AdminAuthProvider } from '../features/auth/AdminAuthProvider'
 import { AdminProtectedRoute } from '../features/auth/AdminProtectedRoute'
 
@@ -55,6 +57,8 @@ const router = createBrowserRouter([
           { path: 'reservations', element: <ReservationsAdminPage /> },
           { path: 'reservations/new', element: <NewReservationAdminPage /> },
           { path: 'reservations/:id', element: <ReservationDetailPage /> },
+          { path: 'customers', element: <CustomersAdminPage /> },
+          { path: 'customers/:id', element: <CustomerDetailPage /> },
           { path: 'rooms', element: <RoomsAdminPage /> },
           { path: 'inventory', element: <InventoryAdminPage /> },
           { path: 'rates', element: <RatesAdminPage /> },
