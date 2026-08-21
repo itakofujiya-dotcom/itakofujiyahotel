@@ -100,10 +100,10 @@ test('formats paid_at in Asia/Tokyo', () => {
   )
 })
 
-test('admin payment RPC locks rows and enforces concurrent safe transitions', () => {
+test('corrective admin payment RPC locks rows and keeps safe transitions', () => {
   const migration = readFileSync(
     new URL(
-      '../supabase/migrations/202608210001_admin_payment_status.sql',
+      '../supabase/migrations/202608210002_fix_admin_payment_paid_at_ambiguity.sql',
       import.meta.url,
     ),
     'utf8',
@@ -119,6 +119,11 @@ test('admin payment RPC locks rows and enforces concurrent safe transitions', ()
     migration,
     /when p_status in \('pending', 'awaiting_payment'\) then null/,
   )
+  assert.match(migration, /update public\.payments as p/)
+  assert.match(migration, /else p\.paid_at/)
+  assert.match(migration, /select p\.id, p\.status, p\.paid_at/)
+  assert.doesNotMatch(migration, /else paid_at/)
+  assert.doesNotMatch(migration, /amount_yen/)
   assert.doesNotMatch(migration, /update public\.reservations/)
 })
 
