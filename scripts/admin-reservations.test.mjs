@@ -305,6 +305,34 @@ test('existing status RPC locks the reservation and keeps no-show release logic'
   )
 })
 
+test('corrective status RPC blocks terminal payments and unassigned rooms at check-in', () => {
+  const migration = readFileSync(
+    new URL(
+      '../supabase/migrations/202608210003_block_terminal_payment_check_in.sql',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+  assert.match(migration, /if not public\.is_admin\(\)/)
+  assert.match(migration, /from public\.reservations as r[\s\S]*for update/)
+  assert.match(
+    migration,
+    /from public\.payments as p[\s\S]*order by p\.id[\s\S]*for update/,
+  )
+  assert.match(migration, /p\.status in \('refunded', 'cancelled'\)/)
+  assert.match(migration, /PAYMENT_STATUS_BLOCKS_CHECK_IN/)
+  assert.match(migration, /ROOM_ASSIGNMENT_REQUIRED/)
+  assert.match(
+    migration,
+    /v_current = 'confirmed' and p_status in \('checked_in', 'cancelled', 'no_show'\)/,
+  )
+  assert.match(migration, /cancellation_fee_rate = 100/)
+  assert.match(
+    migration,
+    /update public\.inventory_blocks as ib[\s\S]*set status = 'released'/,
+  )
+})
+
 test('requires every reserved room to be assigned before check-in', () => {
   assert.deepEqual(
     getRoomAssignmentSummary([{ room_id: '201' }, { room_id: '202' }]),

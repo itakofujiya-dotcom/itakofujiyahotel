@@ -18,6 +18,7 @@ import {
 import {
   formatJapanDateTime,
   getAllowedPaymentActions,
+  getCheckInPaymentBlockMessage,
   getPaymentActionTarget,
   getPaymentWarning,
   paymentMethodLabels,
@@ -194,7 +195,26 @@ export function ReservationDetailPage() {
     setStatusUpdateFailed(false)
     try {
       if (action.type === 'cancel') await cancelReservation(reservation.id)
-      else await changeReservationStatus(reservation.id, action.status)
+      else {
+        if (action.status === 'checked_in') {
+          const latest = await fetchReservationDetail(reservation.id)
+          setReservation(latest)
+          const paymentBlockMessage = getCheckInPaymentBlockMessage(
+            latest.payment,
+          )
+          if (paymentBlockMessage) {
+            setAction(null)
+            setFeedback(paymentBlockMessage)
+            return
+          }
+          if (!getRoomAssignmentSummary(latest.rooms).complete) {
+            setAction(null)
+            setFeedback('客室を割り当ててからチェックインしてください。')
+            return
+          }
+        }
+        await changeReservationStatus(reservation.id, action.status)
+      }
       setAction(null)
       await load()
       setFeedback('予約状態を更新しました。')
@@ -797,7 +817,10 @@ function ReservationStatusActions({
     )
 
   const checkInBlocked =
-    reservation.status === 'confirmed' && !assignment.complete
+    reservation.status === 'confirmed' &&
+    (!assignment.complete ||
+      Boolean(getCheckInPaymentBlockMessage(reservation.payment)))
+  const paymentBlockMessage = getCheckInPaymentBlockMessage(reservation.payment)
 
   return (
     <div className="mt-5 border-t border-line pt-5 print:hidden">
@@ -835,9 +858,15 @@ function ReservationStatusActions({
       </div>
       {checkInBlocked && (
         <p className="mt-4 text-sm font-medium text-red-700" role="alert">
-          {assignment.total}室中 {assignment.unassigned}室が未割当です。
-          <br />
-          客室を割り当ててからチェックインしてください。
+          {!assignment.complete && (
+            <>
+              {assignment.total}室中 {assignment.unassigned}室が未割当です。
+              <br />
+              客室を割り当ててからチェックインしてください。
+            </>
+          )}
+          {!assignment.complete && paymentBlockMessage && <br />}
+          {paymentBlockMessage}
         </p>
       )}
     </div>

@@ -5,6 +5,7 @@ import { URL } from 'node:url'
 import {
   formatJapanDateTime,
   getAllowedPaymentActions,
+  getCheckInPaymentBlockMessage,
   getPaymentActionTarget,
   getPaymentWarning,
   getRestorePaymentStatus,
@@ -90,6 +91,31 @@ test('warns for checked-in unpaid and cancelled paid reservations', () => {
     '返金対応が必要です',
   )
   assert.equal(getPaymentWarning('no_show', payAtHotel), null)
+})
+
+test('blocks check-in only for refunded and cancelled payments', () => {
+  assert.equal(
+    getCheckInPaymentBlockMessage({ status: 'refunded' }),
+    '返金済みのためチェックインできません。',
+  )
+  assert.equal(
+    getCheckInPaymentBlockMessage({ status: 'cancelled' }),
+    '支払い取消のためチェックインできません。',
+  )
+  for (const status of ['pending', 'awaiting_payment', 'paid'])
+    assert.equal(getCheckInPaymentBlockMessage({ status }), null)
+})
+
+test('warns but allows confirmed unpaid and awaiting-payment reservations', () => {
+  assert.deepEqual(getPaymentWarning('confirmed', { status: 'pending' }), {
+    title: '未払いです',
+    description: '支払い状況を確認してください。チェックイン操作は可能です。',
+  })
+  assert.equal(
+    getPaymentWarning('confirmed', { status: 'awaiting_payment' })?.title,
+    '入金待ちです',
+  )
+  assert.equal(getPaymentWarning('confirmed', { status: 'paid' }), null)
 })
 
 test('formats paid_at in Asia/Tokyo', () => {

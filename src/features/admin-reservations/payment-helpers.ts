@@ -58,6 +58,16 @@ export function isPaymentOutstanding(
   )
 }
 
+export function getCheckInPaymentBlockMessage(
+  payment: Pick<ReservationPayment, 'status'> | null,
+): string | null {
+  if (payment?.status === 'refunded')
+    return '返金済みのためチェックインできません。'
+  if (payment?.status === 'cancelled')
+    return '支払い取消のためチェックインできません。'
+  return null
+}
+
 export function getPaymentWarning(
   reservationStatus: ReservationStatus,
   payment: Pick<ReservationPayment, 'status'> | null,
@@ -68,9 +78,16 @@ export function getPaymentWarning(
       description:
         '支払い済みの予約がキャンセルされています。返金対応後に返金済みとして記録してください。',
     }
+  if (reservationStatus === 'confirmed' && isPaymentOutstanding(payment))
+    return {
+      title:
+        payment?.status === 'awaiting_payment' ? '入金待ちです' : '未払いです',
+      description: '支払い状況を確認してください。チェックイン操作は可能です。',
+    }
   if (reservationStatus === 'checked_in' && isPaymentOutstanding(payment))
     return {
-      title: '未払いです',
+      title:
+        payment?.status === 'awaiting_payment' ? '入金待ちです' : '未払いです',
       description: 'チェックアウト前に支払い状況を確認してください。',
     }
   return null
