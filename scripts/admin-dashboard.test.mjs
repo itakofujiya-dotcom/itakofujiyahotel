@@ -44,6 +44,11 @@ test('counts operational dashboard metrics with cancelled and no-show exclusions
     {
       ...base,
       checkIn: '2026-08-21',
+      payments: [{ method: 'bank_transfer', status: 'awaiting_payment' }],
+    },
+    {
+      ...base,
+      checkIn: '2026-08-21',
       payments: [{ method: 'pay_at_hotel', status: 'pending' }],
     },
     { ...base, status: 'cancelled' },
@@ -56,8 +61,28 @@ test('counts operational dashboard metrics with cancelled and no-show exclusions
     staying: 1,
     newReservations: 1,
     pendingReservations: 1,
-    pendingPayments: 1,
+    pendingPayments: 2,
   })
+})
+
+test('removes a bank transfer from pending count after payment confirmation', () => {
+  const awaiting = {
+    ...base,
+    payments: [{ method: 'bank_transfer', status: 'awaiting_payment' }],
+  }
+  assert.equal(calculateDashboardMetrics([awaiting], today).pendingPayments, 1)
+  assert.equal(
+    calculateDashboardMetrics(
+      [
+        {
+          ...awaiting,
+          payments: [{ method: 'bank_transfer', status: 'paid' }],
+        },
+      ],
+      today,
+    ).pendingPayments,
+    0,
+  )
 })
 
 test('links every metric to a persistent reservation query', () => {

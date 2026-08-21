@@ -36,6 +36,15 @@ const reservation = {
   total_amount_yen: 38000,
   admin_seen_at: null,
   has_pending_bank_transfer: false,
+  payment: {
+    id: 'payment-1',
+    method: 'pay_at_hotel',
+    status: 'pending',
+    amount_yen: 38000,
+    paid_at: null,
+    external_reference: null,
+  },
+  payment_issue: null,
   created_at: '2026-08-20T01:30:00Z',
   guest: {
     id: 'guest-1',
@@ -132,6 +141,48 @@ test('restores dashboard reservation filters from the URL', () => {
   assert.equal(
     buildReservationFilterSearchParams(filters).toString(),
     'status=checked_in&stayDate=2026-08-20&payment=bank_transfer_pending',
+  )
+})
+
+test('filters payment status and preserves it in the URL', () => {
+  const filters = parseReservationFilters(new URLSearchParams('payment=paid'))
+  assert.equal(filters.payment, 'paid')
+  assert.equal(
+    buildReservationFilterSearchParams(filters).toString(),
+    'payment=paid',
+  )
+  assert.equal(filterReservations([reservation], filters).length, 0)
+  assert.equal(
+    filterReservations(
+      [
+        {
+          ...reservation,
+          payment: { ...reservation.payment, status: 'paid' },
+        },
+      ],
+      filters,
+    ).length,
+    1,
+  )
+
+  const bankPending = parseReservationFilters(
+    new URLSearchParams('payment=bank_transfer_pending'),
+  )
+  assert.equal(
+    filterReservations(
+      [
+        {
+          ...reservation,
+          payment: {
+            ...reservation.payment,
+            method: 'bank_transfer',
+            status: 'awaiting_payment',
+          },
+        },
+      ],
+      bankPending,
+    ).length,
+    1,
   )
 })
 
@@ -243,9 +294,15 @@ test('existing status RPC locks the reservation and keeps no-show release logic'
     migration,
     /v_current = 'confirmed' and p_status in \('checked_in', 'cancelled', 'no_show'\)/,
   )
-  assert.match(migration, /v_current = 'checked_in' and p_status = 'checked_out'/)
+  assert.match(
+    migration,
+    /v_current = 'checked_in' and p_status = 'checked_out'/,
+  )
   assert.match(migration, /cancellation_fee_rate = 100/)
-  assert.match(migration, /update public\.inventory_blocks set status = 'released'/)
+  assert.match(
+    migration,
+    /update public\.inventory_blocks set status = 'released'/,
+  )
 })
 
 test('requires every reserved room to be assigned before check-in', () => {
@@ -261,10 +318,9 @@ test('requires every reserved room to be assigned before check-in', () => {
 })
 
 test('uses hotel-local dates for today operation badges', () => {
-  assert.deepEqual(
-    getTodayOperationLabels(reservation, '2026-08-22'),
-    ['本日チェックイン'],
-  )
+  assert.deepEqual(getTodayOperationLabels(reservation, '2026-08-22'), [
+    '本日チェックイン',
+  ])
   assert.deepEqual(
     getTodayOperationLabels(
       { ...reservation, status: 'checked_in' },

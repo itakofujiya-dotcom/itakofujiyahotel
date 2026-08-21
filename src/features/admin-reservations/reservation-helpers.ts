@@ -7,6 +7,7 @@ import {
 import type {
   BookingSource,
   CreateAdminReservationInput,
+  PaymentStatus,
   ReservationFilters,
   ReservationListItem,
   ReservationStatus,
@@ -80,6 +81,7 @@ export function parseReservationFilters(
   const defaults = createDefaultReservationFilters()
   const status = params.get('status')
   const source = params.get('source')
+  const payment = params.get('payment')
   return {
     status: isReservationStatus(status) ? status : defaults.status,
     source: isBookingSource(source) ? source : defaults.source,
@@ -89,8 +91,8 @@ export function parseReservationFilters(
     search: params.get('search') ?? '',
     newOnly: params.get('view') === 'new',
     payment:
-      params.get('payment') === 'bank_transfer_pending'
-        ? 'bank_transfer_pending'
+      payment === 'bank_transfer_pending' || isPaymentStatus(payment)
+        ? payment
         : defaults.payment,
     operation:
       params.get('operation') === 'today_check_in' ||
@@ -170,9 +172,16 @@ export function filterReservations(
       ['cancelled', 'no_show'].includes(reservation.status)
     )
       return false
-    if (
-      filters.payment === 'bank_transfer_pending' &&
-      !isReservationAwaitingPayment(reservation)
+    if (filters.payment === 'bank_transfer_pending') {
+      if (
+        reservation.payment?.method !== 'bank_transfer' ||
+        !['pending', 'awaiting_payment'].includes(reservation.payment.status)
+      )
+        return false
+    } else if (
+      filters.payment &&
+      filters.payment !== 'all' &&
+      reservation.payment?.status !== filters.payment
     )
       return false
     if (!query) return true
@@ -196,6 +205,15 @@ function isBookingSource(value: string | null): value is BookingSource {
   return Boolean(value && value in bookingSourceLabels)
 }
 
+function isPaymentStatus(value: string | null): value is PaymentStatus {
+  return Boolean(
+    value &&
+    ['pending', 'awaiting_payment', 'paid', 'refunded', 'cancelled'].includes(
+      value,
+    ),
+  )
+}
+
 export function getReservationCalendarCounts(
   reservations: ReservationListItem[],
   day: string,
@@ -213,7 +231,8 @@ export function getReservationCalendarCounts(
     staying: active.filter(
       (reservation) =>
         reservation.status === 'checked_in' &&
-        reservation.check_in <= day && day < reservation.check_out,
+        reservation.check_in <= day &&
+        day < reservation.check_out,
     ),
   }
 }
@@ -241,9 +260,12 @@ export function getAllowedNextStatuses(
   return []
 }
 
-export function getRoomAssignmentSummary(
-  rooms: { room_id: string | null }[],
-): { total: number; assigned: number; unassigned: number; complete: boolean } {
+export function getRoomAssignmentSummary(rooms: { room_id: string | null }[]): {
+  total: number
+  assigned: number
+  unassigned: number
+  complete: boolean
+} {
   const assigned = rooms.filter((room) => Boolean(room.room_id)).length
   const total = rooms.length
   return {
@@ -255,10 +277,7 @@ export function getRoomAssignmentSummary(
 }
 
 export function getTodayOperationLabels(
-  reservation: Pick<
-    ReservationListItem,
-    'check_in' | 'check_out' | 'status'
-  >,
+  reservation: Pick<ReservationListItem, 'check_in' | 'check_out' | 'status'>,
   today: string,
 ): string[] {
   if (['cancelled', 'no_show'].includes(reservation.status)) return []

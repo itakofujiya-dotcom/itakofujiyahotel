@@ -8,6 +8,19 @@ export type ReservationStatus =
 
 export type BookingSource = 'online' | 'phone' | 'walk_in' | 'admin'
 
+export type PaymentMethod = 'pay_at_hotel' | 'bank_transfer' | 'card'
+export type PaymentStatus =
+  'pending' | 'awaiting_payment' | 'paid' | 'refunded' | 'cancelled'
+
+export type ReservationPayment = {
+  id: string
+  method: PaymentMethod
+  status: PaymentStatus
+  amount_yen: number
+  paid_at: string | null
+  external_reference: string | null
+}
+
 export type ReservationGuest = {
   id: string
   name: string
@@ -43,6 +56,8 @@ export type ReservationListItem = {
   total_amount_yen: number | null
   admin_seen_at: string | null
   has_pending_bank_transfer: boolean
+  payment: ReservationPayment | null
+  payment_issue: 'missing' | 'multiple' | null
   created_at: string
   guest: ReservationGuest
   rooms: ReservationListRoom[]
@@ -78,12 +93,6 @@ export type ReservationDetail = Omit<ReservationListItem, 'rooms'> & {
   cancellation_fee_rate: number | null
   cancellation_fee_yen: number | null
   rooms: ReservationDetailRoom[]
-  payment: {
-    id: string
-    method: 'pay_at_hotel' | 'bank_transfer' | 'card'
-    status: 'pending' | 'awaiting_payment' | 'paid' | 'refunded' | 'cancelled'
-    amount_yen: number
-  } | null
 }
 
 export type ReservationFilters = {
@@ -94,7 +103,7 @@ export type ReservationFilters = {
   stayDate: string
   search: string
   newOnly: boolean
-  payment: 'all' | 'bank_transfer_pending'
+  payment: 'all' | PaymentStatus | 'bank_transfer_pending'
   operation: 'all' | 'today_check_in' | 'today_check_out'
 }
 

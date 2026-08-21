@@ -65,7 +65,8 @@ export function calculateDashboardMetrics(
         ['pending', 'confirmed', 'checked_in'].includes(reservation.status) &&
         reservation.payments.some(
           (payment) =>
-            payment.method === 'bank_transfer' && payment.status === 'pending',
+            payment.method === 'bank_transfer' &&
+            ['pending', 'awaiting_payment'].includes(payment.status),
         ),
     ).length,
   }

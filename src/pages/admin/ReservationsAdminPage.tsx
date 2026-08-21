@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader'
 import { ReservationCalendar } from '../../features/admin-reservations/ReservationCalendar'
 import { ReservationsTable } from '../../features/admin-reservations/ReservationsTable'
+import { paymentStatusLabels } from '../../features/admin-reservations/payment-helpers'
 import {
   buildReservationFilterSearchParams,
   filterReservations,
@@ -199,7 +200,7 @@ function ReservationFiltersPanel({
       </label>
       <label>
         <span className="mb-2 block text-xs font-semibold text-muted">
-          入金状態
+          支払い状態
         </span>
         <select
           className="admin-input"
@@ -212,7 +213,12 @@ function ReservationFiltersPanel({
           }
         >
           <option value="all">すべて</option>
-          <option value="bank_transfer_pending">銀行振込・入金待ち</option>
+          {Object.entries(paymentStatusLabels).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+          <option value="bank_transfer_pending">銀行振込・未入金</option>
         </select>
       </label>
       <label>

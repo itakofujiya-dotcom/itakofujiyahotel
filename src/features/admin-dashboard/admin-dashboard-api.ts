@@ -47,7 +47,7 @@ export async function fetchDashboardMetrics(
       })
       .in('status', ['pending', 'confirmed', 'checked_in'])
       .eq('payments.method', 'bank_transfer')
-      .eq('payments.status', 'pending'),
+      .in('payments.status', ['pending', 'awaiting_payment']),
   ])
 
   return {

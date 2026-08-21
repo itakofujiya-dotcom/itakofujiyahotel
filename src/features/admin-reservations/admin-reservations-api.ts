@@ -5,15 +5,17 @@ import type {
   CreateAdminReservationInput,
   ReservationDetail,
   ReservationListItem,
+  ReservationPayment,
   ReservationRoomType,
   ReservationStatus,
+  PaymentStatus,
 } from './types'
 
 const listSelect = `
   id, reservation_number, check_in, check_out, adults, paid_children,
   free_preschool_children, status, booking_source, total_amount_yen,
   admin_seen_at, created_at,
-  payments (method, status),
+  payments (id, method, status, amount_yen, paid_at, external_reference),
   guest:guests (id, name, name_kana_or_roman, email, telephone),
   rooms:reservation_rooms (
     id, room_type_id, paid_guest_count, free_preschool_count,
@@ -63,7 +65,7 @@ export async function fetchReservationDetail(
           id, stay_date, price_per_person_yen, paid_guest_count, room_total_yen
         )
       ),
-      payments (id, method, status, amount_yen)
+      payments (id, method, status, amount_yen, paid_at, external_reference)
     `,
     )
     .eq('id', reservationId)
@@ -92,7 +94,6 @@ export async function fetchReservationDetail(
         a.stay_date.localeCompare(b.stay_date),
       ),
     })),
-    payment: data.payments[0] ?? null,
   }
 }
 
@@ -239,6 +240,29 @@ export async function cancelReservation(reservationId: string): Promise<void> {
   if (error) throwReservationError('cancel reservation', error)
 }
 
+export async function updateAdminPaymentStatus({
+  paymentId,
+  expectedStatus,
+  status,
+}: {
+  paymentId: string
+  expectedStatus: PaymentStatus
+  status: PaymentStatus
+}): Promise<{ id: string; status: PaymentStatus; paid_at: string | null }> {
+  const { data, error } = await supabase.rpc('update_admin_payment_status', {
+    p_payment_id: paymentId,
+    p_expected_status: expectedStatus,
+    p_status: status,
+  })
+  if (error) throwReservationError('update payment status', error)
+  if (data.length !== 1) throw new Error('PAYMENT_UPDATE_RESULT_INVALID')
+  return {
+    id: data[0].id,
+    status: data[0].status as PaymentStatus,
+    paid_at: data[0].paid_at,
+  }
+}
+
 function mapReservationListItem(data: {
   id: string
   reservation_number: string
@@ -251,10 +275,7 @@ function mapReservationListItem(data: {
   booking_source: ReservationListItem['booking_source']
   total_amount_yen: number | null
   admin_seen_at: string | null
-  payments: {
-    method: 'pay_at_hotel' | 'bank_transfer' | 'card'
-    status: 'pending' | 'awaiting_payment' | 'paid' | 'refunded' | 'cancelled'
-  }[]
+  payments: ReservationPayment[]
   created_at: string
   guest: ReservationListItem['guest']
   rooms: {
@@ -265,6 +286,13 @@ function mapReservationListItem(data: {
     room_type: ReservationRoomType
   }[]
 }): ReservationListItem {
+  const payment = data.payments.length === 1 ? data.payments[0] : null
+  const paymentIssue =
+    data.payments.length === 0
+      ? 'missing'
+      : data.payments.length > 1
+        ? 'multiple'
+        : null
   return {
     id: data.id,
     reservation_number: data.reservation_number,
@@ -277,9 +305,12 @@ function mapReservationListItem(data: {
     booking_source: data.booking_source,
     total_amount_yen: data.total_amount_yen,
     admin_seen_at: data.admin_seen_at,
+    payment,
+    payment_issue: paymentIssue,
     has_pending_bank_transfer: data.payments.some(
       (payment) =>
-        payment.method === 'bank_transfer' && payment.status === 'pending',
+        payment.method === 'bank_transfer' &&
+        ['pending', 'awaiting_payment'].includes(payment.status),
     ),
     created_at: data.created_at,
     guest: data.guest,

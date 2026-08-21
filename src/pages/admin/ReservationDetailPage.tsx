@@ -12,8 +12,19 @@ import {
   fetchAssignableRooms,
   fetchReservationDetail,
   markReservationSeen,
+  updateAdminPaymentStatus,
   updateReservationContact,
 } from '../../features/admin-reservations/admin-reservations-api'
+import {
+  formatJapanDateTime,
+  getAllowedPaymentActions,
+  getPaymentActionTarget,
+  getPaymentWarning,
+  paymentMethodLabels,
+  paymentStatusLabels,
+  type PaymentAction,
+} from '../../features/admin-reservations/payment-helpers'
+import { PaymentStatusBadge } from '../../features/admin-reservations/PaymentStatusBadge'
 import {
   bookingSourceLabels,
   getAllowedNextStatuses,
@@ -27,6 +38,7 @@ import type {
   AssignableRoom,
   ReservationDetail,
   ReservationDetailRoom,
+  ReservationPayment,
   ReservationStatus,
 } from '../../features/admin-reservations/types'
 
@@ -53,6 +65,7 @@ export function ReservationDetailPage() {
   const [statusUpdateFailed, setStatusUpdateFailed] = useState(false)
   const [editing, setEditing] = useState(false)
   const [action, setAction] = useState<ActionRequest>(null)
+  const [paymentAction, setPaymentAction] = useState<PaymentAction | null>(null)
   const [assignmentTarget, setAssignmentTarget] =
     useState<ReservationDetailRoom | null>(null)
   const [candidates, setCandidates] = useState<AssignableRoom[]>([])
@@ -197,6 +210,37 @@ export function ReservationDetailPage() {
     }
   }
 
+  async function confirmPaymentAction() {
+    if (!reservation?.payment || !paymentAction) return
+    const target = getPaymentActionTarget(reservation.payment, paymentAction)
+    if (!target) {
+      setPaymentAction(null)
+      setFeedback('この支払い状態は変更できません。')
+      return
+    }
+    setIsMutating(true)
+    setStatusUpdateFailed(false)
+    try {
+      await updateAdminPaymentStatus({
+        paymentId: reservation.payment.id,
+        expectedStatus: reservation.payment.status,
+        status: target,
+      })
+      setPaymentAction(null)
+      await load()
+      setFeedback('支払い状態を更新しました。')
+    } catch {
+      setPaymentAction(null)
+      await load()
+      setStatusUpdateFailed(true)
+      setFeedback(
+        '支払い状態を更新できませんでした。\n最新の状態を再読み込みしてください。',
+      )
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
   if (isLoading)
     return (
       <>
@@ -224,6 +268,10 @@ export function ReservationDetailPage() {
   const nextStatuses = getAllowedNextStatuses(reservation.status)
   const assignment = getRoomAssignmentSummary(reservation.rooms)
   const todayLabels = getTodayOperationLabels(reservation, getJapanToday())
+  const paymentWarning = getPaymentWarning(
+    reservation.status,
+    reservation.payment,
+  )
   const cancelFee = getCancellationFee(
     reservation.check_in,
     reservation.total_amount_yen ?? 0,
@@ -303,9 +351,7 @@ export function ReservationDetailPage() {
             </div>
           </div>
           <div className="min-w-36 border-l border-line pl-5">
-            <p className="text-xs font-semibold text-muted">
-              チェックイン予定
-            </p>
+            <p className="text-xs font-semibold text-muted">チェックイン予定</p>
             <p className="mt-1 text-2xl font-semibold">
               {reservation.expected_check_in_time?.slice(0, 5) ?? '未設定'}
             </p>
@@ -320,6 +366,18 @@ export function ReservationDetailPage() {
           onAction={setAction}
         />
       </section>
+
+      {paymentWarning && (
+        <div
+          className="mt-4 border border-amber-300 bg-amber-50 p-4 print:border-black print:bg-white"
+          role="alert"
+        >
+          <p className="font-semibold text-amber-900">{paymentWarning.title}</p>
+          <p className="mt-1 text-sm text-amber-900">
+            {paymentWarning.description}
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2 print:block">
         <DetailSection title="予約情報">
@@ -362,19 +420,48 @@ export function ReservationDetailPage() {
           />
         </DetailSection>
         <DetailSection title="お支払い">
-          <Definition
-            label="方法"
-            value={
-              reservation.payment?.method === 'pay_at_hotel'
-                ? '現地払い'
-                : (reservation.payment?.method ?? '—')
-            }
-          />
-          <Definition label="状態" value={reservation.payment?.status ?? '—'} />
-          <Definition
-            label="合計"
-            value={formatYen(reservation.total_amount_yen ?? 0)}
-          />
+          {reservation.payment ? (
+            <>
+              <Definition
+                label="支払い方法"
+                value={paymentMethodLabels[reservation.payment.method]}
+              />
+              <div className="grid grid-cols-[140px_1fr] border-b border-line py-2 text-sm">
+                <dt className="text-muted">支払い状態</dt>
+                <dd>
+                  <PaymentStatusBadge status={reservation.payment.status} />
+                </dd>
+              </div>
+              <Definition
+                label="金額"
+                value={formatYen(reservation.payment.amount_yen)}
+              />
+              <Definition
+                label="支払い確認日時"
+                value={formatJapanDateTime(reservation.payment.paid_at)}
+              />
+              {reservation.payment.external_reference && (
+                <Definition
+                  label="外部参照番号"
+                  value={reservation.payment.external_reference}
+                />
+              )}
+              <PaymentActions
+                payment={reservation.payment}
+                isMutating={isMutating}
+                onAction={setPaymentAction}
+              />
+            </>
+          ) : (
+            <div className="border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+              <p className="font-semibold">支払い情報を確認できません。</p>
+              <p className="mt-1">
+                {reservation.payment_issue === 'multiple'
+                  ? '支払い情報が複数あるため、状態変更を停止しています。'
+                  : '支払い情報が登録されていません。'}
+              </p>
+            </div>
+          )}
           {reservation.cancellation_fee_rate !== null && (
             <Definition
               label="キャンセル料"
@@ -409,7 +496,9 @@ export function ReservationDetailPage() {
                 <button
                   type="button"
                   onClick={() => void openAssignment(room)}
-                  disabled={!['pending', 'confirmed'].includes(reservation.status)}
+                  disabled={
+                    !['pending', 'confirmed'].includes(reservation.status)
+                  }
                   className="min-h-10 border border-line px-4 text-xs font-semibold disabled:opacity-40 print:hidden"
                 >
                   {room.room_id ? '割当を変更' : '客室を割り当てる'}
@@ -586,8 +675,91 @@ export function ReservationDetailPage() {
           onConfirm={() => void confirmAction()}
         />
       )}
+
+      {paymentAction && reservation.payment && (
+        <RateConfirmDialog
+          {...getPaymentDialogProperties(paymentAction, reservation.payment)}
+          isMutating={isMutating}
+          onCancel={() => setPaymentAction(null)}
+          onConfirm={() => void confirmPaymentAction()}
+        />
+      )}
     </div>
   )
+}
+
+function PaymentActions({
+  payment,
+  isMutating,
+  onAction,
+}: {
+  payment: ReservationPayment
+  isMutating: boolean
+  onAction: (action: PaymentAction) => void
+}) {
+  const actions = getAllowedPaymentActions(payment)
+  if (actions.length === 0) return null
+  return (
+    <div className="mt-5 flex flex-col gap-3 border-t border-line pt-5 print:hidden sm:flex-row sm:flex-wrap">
+      {actions.map((action) => (
+        <button
+          key={action}
+          type="button"
+          onClick={() => onAction(action)}
+          disabled={isMutating}
+          className={`min-h-11 w-full px-4 text-sm font-semibold disabled:opacity-40 sm:w-auto ${action === 'mark_refunded' ? 'border border-red-300 text-red-700' : action === 'restore_unpaid' ? 'border border-line' : 'bg-moss text-white'}`}
+        >
+          {getPaymentActionLabel(action, payment)}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function getPaymentActionLabel(
+  action: PaymentAction,
+  payment: ReservationPayment,
+): string {
+  if (action === 'mark_paid')
+    return payment.method === 'bank_transfer'
+      ? '入金を確認する'
+      : '支払い済みにする'
+  if (action === 'restore_unpaid') return '支払い状態を元に戻す'
+  return '返金済みにする'
+}
+
+function getPaymentDialogProperties(
+  action: PaymentAction,
+  payment: ReservationPayment,
+) {
+  const common = `支払い方法\n${paymentMethodLabels[payment.method]}\n\n金額\n${formatYen(payment.amount_yen)}`
+  if (action === 'mark_paid')
+    return {
+      title:
+        payment.method === 'bank_transfer'
+          ? '入金を確認しますか？'
+          : '支払い済みにしますか？',
+      description: common,
+      confirmLabel:
+        payment.method === 'bank_transfer'
+          ? '入金を確認する'
+          : '支払い済みにする',
+    }
+  if (action === 'restore_unpaid') {
+    const target = getPaymentActionTarget(payment, action)
+    return {
+      title: '支払い状態を元に戻しますか？',
+      description: `${common}\n\n変更後\n${target ? paymentStatusLabels[target] : '—'}\n\n支払い確認日時はクリアされます。`,
+      confirmLabel: '元に戻す',
+      destructive: true,
+    }
+  }
+  return {
+    title: '返金済みにしますか？',
+    description: `${common}\n\n実際の返金処理が完了していることを確認してください。\nこの操作は運用上の返金完了記録です。`,
+    confirmLabel: '返金済みにする',
+    destructive: true,
+  }
 }
 
 function ReservationStatusActions({
@@ -642,7 +814,9 @@ function ReservationStatusActions({
                   status: status as Exclude<ReservationStatus, 'cancelled'>,
                 })
               }
-              disabled={isMutating || (status === 'checked_in' && checkInBlocked)}
+              disabled={
+                isMutating || (status === 'checked_in' && checkInBlocked)
+              }
               className="min-h-12 w-full bg-moss px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
             >
               {getStatusActionLabel(status)}
@@ -682,7 +856,8 @@ function TerminalStatusMessage({
       <p>{text}</p>
       {reservation.cancelled_at && (
         <p className="mt-2">
-          処理日時: {format(new Date(reservation.cancelled_at), 'yyyy/MM/dd HH:mm')}
+          処理日時:{' '}
+          {format(new Date(reservation.cancelled_at), 'yyyy/MM/dd HH:mm')}
         </p>
       )}
       {reservation.cancellation_fee_rate !== null && (

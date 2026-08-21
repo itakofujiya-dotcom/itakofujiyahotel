@@ -16,6 +16,7 @@
     "test:rate-rules": "node --experimental-strip-types --test scripts/admin-rates.test.mjs",
     "test:inventory": "node --experimental-strip-types --test scripts/admin-inventory.test.mjs",
     "test:reservations": "node --experimental-strip-types --test scripts/admin-reservations.test.mjs",
+    "test:payments": "node --experimental-strip-types --test scripts/admin-payments.test.mjs",
     "test:dashboard": "node --experimental-strip-types --test scripts/admin-dashboard.test.mjs",
     "test:config": "node --experimental-strip-types --test scripts/supabase-config.test.mjs",
     "test:booking-search": "node --experimental-strip-types --test scripts/booking-search.test.mjs",

@@ -634,6 +634,18 @@ export type Database = {
         Args: { p_reservation_id: string; p_guest: Json; p_reservation: Json }
         Returns: undefined
       }
+      update_admin_payment_status: {
+        Args: {
+          p_payment_id: string
+          p_expected_status: string
+          p_status: string
+        }
+        Returns: {
+          id: string
+          status: string
+          paid_at: string | null
+        }[]
+      }
       search_available_room_types: {
         Args: {
           p_check_in: string

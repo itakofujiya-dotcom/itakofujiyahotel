@@ -7,6 +7,7 @@ import {
 } from './reservation-helpers'
 import type { ReservationListItem } from './types'
 import { NewReservationBadge } from './NewReservationBadge'
+import { PaymentStatusBadge } from './PaymentStatusBadge'
 import { ReservationStatusBadge } from './ReservationStatusBadge'
 
 export function ReservationsTable({
@@ -25,7 +26,7 @@ export function ReservationsTable({
     )
   return (
     <div className="overflow-x-auto border border-line bg-surface">
-      <table className="min-w-[1200px] w-full text-left text-sm">
+      <table className="min-w-[1280px] w-full text-left text-sm">
         <thead className="border-b border-line bg-background text-xs text-muted">
           <tr>
             {[
@@ -37,6 +38,7 @@ export function ReservationsTable({
               '人数',
               '予約経路',
               '予約状態',
+              '支払い',
               '合計金額',
               '作成日時',
               '操作',
@@ -82,6 +84,15 @@ export function ReservationsTable({
               </td>
               <td className="px-4 py-4">
                 <ReservationStatusBadge status={reservation.status} />
+              </td>
+              <td className="px-4 py-4">
+                {reservation.payment ? (
+                  <PaymentStatusBadge status={reservation.payment.status} />
+                ) : (
+                  <span className="text-xs font-semibold text-red-700">
+                    要確認
+                  </span>
+                )}
               </td>
               <td className="px-4 py-4">
                 {formatYen(reservation.total_amount_yen ?? 0)}
