@@ -12,26 +12,56 @@ export type Database = {
     Tables: {
       hotel_settings: {
         Row: {
+          id: string
+          hotel_name_ja: string
+          hotel_name_en: string | null
+          hotel_name_ko: string | null
+          postal_code: string | null
+          address_ja: string | null
+          address_en: string | null
+          address_ko: string | null
           max_booking_days: number
           telephone: string | null
+          fax: string | null
+          email: string | null
+          map_url: string | null
           check_in_time: string
+          check_out_time: string
           front_desk_open: string
           front_desk_close: string
+          max_stay_nights: number
+          same_day_booking_cutoff: string
+          pets_allowed: boolean
+          created_at: string
+          updated_at: string
         }
         Insert: {
+          id?: string
+          hotel_name_ja: string
+          hotel_name_en?: string | null
+          hotel_name_ko?: string | null
+          postal_code?: string | null
+          address_ja?: string | null
+          address_en?: string | null
+          address_ko?: string | null
           max_booking_days?: number
           telephone?: string | null
+          fax?: string | null
+          email?: string | null
+          map_url?: string | null
           check_in_time?: string
+          check_out_time?: string
           front_desk_open?: string
           front_desk_close?: string
+          max_stay_nights?: number
+          same_day_booking_cutoff?: string
+          pets_allowed?: boolean
+          created_at?: string
+          updated_at?: string
         }
-        Update: {
-          max_booking_days?: number
-          telephone?: string | null
-          check_in_time?: string
-          front_desk_open?: string
-          front_desk_close?: string
-        }
+        Update: Partial<
+          Database['public']['Tables']['hotel_settings']['Insert']
+        >
         Relationships: []
       }
       admin_profiles: {
@@ -715,6 +745,22 @@ export type Database = {
           total_nights: number
           average_visit_interval_days: number | null
           total_count: number
+        }[]
+      }
+      get_public_hotel_information: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          hotel_name_ja: string
+          hotel_name_en: string | null
+          postal_code: string | null
+          address_ja: string | null
+          telephone: string | null
+          fax: string | null
+          map_url: string | null
+          check_in_time: string
+          check_out_time: string
+          front_desk_open: string
+          front_desk_close: string
         }[]
       }
       search_available_room_types: {

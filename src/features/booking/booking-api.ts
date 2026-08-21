@@ -45,11 +45,7 @@ export async function getPublicBookingInformation(): Promise<{
   cancellationPolicies: CancellationPolicy[]
 }> {
   const [settingsResult, policiesResult] = await Promise.all([
-    supabase
-      .from('hotel_settings')
-      .select('telephone, check_in_time, front_desk_open, front_desk_close')
-      .limit(1)
-      .single(),
+    supabase.rpc('get_public_hotel_information'),
     supabase
       .from('cancellation_policies')
       .select(
@@ -58,14 +54,15 @@ export async function getPublicBookingInformation(): Promise<{
       .eq('is_active', true)
       .order('display_order'),
   ])
-  if (settingsResult.error || policiesResult.error)
+  if (settingsResult.error || !settingsResult.data?.[0] || policiesResult.error)
     throw new Error('PUBLIC_BOOKING_INFORMATION_FAILED')
+  const publicSettings = settingsResult.data[0]
   return {
     hotel: {
-      telephone: settingsResult.data.telephone ?? hotelSettings.telephone,
-      checkInTime: settingsResult.data.check_in_time,
-      frontDeskOpen: settingsResult.data.front_desk_open,
-      frontDeskClose: settingsResult.data.front_desk_close,
+      telephone: publicSettings.telephone ?? hotelSettings.telephone,
+      checkInTime: publicSettings.check_in_time,
+      frontDeskOpen: publicSettings.front_desk_open,
+      frontDeskClose: publicSettings.front_desk_close,
     },
     cancellationPolicies: policiesResult.data.map((policy) => ({
       id: policy.id,
