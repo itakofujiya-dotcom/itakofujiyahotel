@@ -1,11 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader'
 import { ReservationCalendar } from '../../features/admin-reservations/ReservationCalendar'
 import { ReservationsTable } from '../../features/admin-reservations/ReservationsTable'
 import {
+  buildReservationFilterSearchParams,
   filterReservations,
   bookingSourceLabels,
+  countNewOnlineReservations,
+  createDefaultReservationFilters,
+  parseReservationFilters,
   reservationStatusLabels,
 } from '../../features/admin-reservations/reservation-helpers'
 import type {
@@ -17,37 +21,44 @@ import { useAdminReservations } from '../../features/admin-reservations/useAdmin
 
 export function ReservationsAdminPage() {
   const [params, setParams] = useSearchParams()
-  const initialNewOnly = params.get('view') === 'new'
+  const paramsKey = params.toString()
+  const initialFilters = parseReservationFilters(params)
+  const hasInitialListFilter = hasListFilter(params)
   const [view, setView] = useState<'list' | 'calendar'>(
-    initialNewOnly ? 'list' : 'calendar',
+    hasInitialListFilter ? 'list' : 'calendar',
   )
-  const [filters, setFilters] = useState<ReservationFilters>({
-    status: 'all',
-    source: 'all',
-    checkIn: '',
-    search: '',
-    newOnly: initialNewOnly,
-  })
+  const [filters, setFilters] = useState<ReservationFilters>(initialFilters)
   const { reservations, isLoading, error, loadReservations } =
     useAdminReservations()
   const filtered = useMemo(
     () => filterReservations(reservations, filters),
     [reservations, filters],
   )
-  const newCount = reservations.filter(
-    (reservation) =>
-      reservation.booking_source === 'online' && !reservation.admin_seen_at,
-  ).length
+  const newCount = countNewOnlineReservations(reservations)
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(paramsKey)
+    setFilters(parseReservationFilters(nextParams))
+    if (hasListFilter(nextParams)) setView('list')
+  }, [paramsKey])
 
   function showNewOnly() {
-    setFilters((current) => ({ ...current, newOnly: true }))
+    const next = { ...createDefaultReservationFilters(), newOnly: true }
+    setFilters(next)
     setView('list')
-    setParams({ view: 'new' })
+    setParams(buildReservationFilterSearchParams(next))
   }
 
-  function clearNewOnly() {
-    setFilters((current) => ({ ...current, newOnly: false }))
+  function resetFilters(nextView: 'list' | 'calendar') {
+    setFilters(createDefaultReservationFilters())
     setParams({})
+    setView(nextView)
+  }
+
+  function changeFilters(next: ReservationFilters) {
+    setFilters(next)
+    setParams(buildReservationFilterSearchParams(next))
+    setView('list')
   }
 
   return (
@@ -60,8 +71,7 @@ export function ReservationsAdminPage() {
         <button
           type="button"
           onClick={() => {
-            clearNewOnly()
-            setView('calendar')
+            resetFilters('calendar')
           }}
           className={`min-h-11 px-5 text-sm font-semibold ${view === 'calendar' && !filters.newOnly ? 'bg-moss text-white' : 'border border-line bg-surface'}`}
         >
@@ -70,8 +80,7 @@ export function ReservationsAdminPage() {
         <button
           type="button"
           onClick={() => {
-            clearNewOnly()
-            setView('list')
+            resetFilters('list')
           }}
           className={`min-h-11 px-5 text-sm font-semibold ${view === 'list' && !filters.newOnly ? 'bg-moss text-white' : 'border border-line bg-surface'}`}
         >
@@ -104,7 +113,7 @@ export function ReservationsAdminPage() {
         <ReservationCalendar reservations={reservations} />
       ) : (
         <div className="space-y-5">
-          <ReservationFiltersPanel filters={filters} onChange={setFilters} />
+          <ReservationFiltersPanel filters={filters} onChange={changeFilters} />
           <ReservationsTable reservations={filtered} />
         </div>
       )}
@@ -120,7 +129,26 @@ function ReservationFiltersPanel({
   onChange: (filters: ReservationFilters) => void
 }) {
   return (
-    <div className="grid gap-3 border border-line bg-surface p-4 md:grid-cols-4">
+    <div className="grid gap-3 border border-line bg-surface p-4 md:grid-cols-2 xl:grid-cols-4">
+      <label>
+        <span className="mb-2 block text-xs font-semibold text-muted">
+          運営フィルター
+        </span>
+        <select
+          className="admin-input"
+          value={filters.operation}
+          onChange={(event) =>
+            onChange({
+              ...filters,
+              operation: event.target.value as ReservationFilters['operation'],
+            })
+          }
+        >
+          <option value="all">すべて</option>
+          <option value="today_check_in">有効なチェックイン</option>
+          <option value="today_check_out">有効なチェックアウト</option>
+        </select>
+      </label>
       <label>
         <span className="mb-2 block text-xs font-semibold text-muted">
           予約状態
@@ -141,6 +169,50 @@ function ReservationFiltersPanel({
               {label}
             </option>
           ))}
+        </select>
+      </label>
+      <label>
+        <span className="mb-2 block text-xs font-semibold text-muted">
+          チェックアウト日
+        </span>
+        <input
+          type="date"
+          className="admin-input"
+          value={filters.checkOut}
+          onChange={(event) =>
+            onChange({ ...filters, checkOut: event.target.value })
+          }
+        />
+      </label>
+      <label>
+        <span className="mb-2 block text-xs font-semibold text-muted">
+          宿泊日
+        </span>
+        <input
+          type="date"
+          className="admin-input"
+          value={filters.stayDate}
+          onChange={(event) =>
+            onChange({ ...filters, stayDate: event.target.value })
+          }
+        />
+      </label>
+      <label>
+        <span className="mb-2 block text-xs font-semibold text-muted">
+          入金状態
+        </span>
+        <select
+          className="admin-input"
+          value={filters.payment}
+          onChange={(event) =>
+            onChange({
+              ...filters,
+              payment: event.target.value as ReservationFilters['payment'],
+            })
+          }
+        >
+          <option value="all">すべて</option>
+          <option value="bank_transfer_pending">銀行振込・入金待ち</option>
         </select>
       </label>
       <label>
@@ -193,6 +265,20 @@ function ReservationFiltersPanel({
       </label>
     </div>
   )
+}
+
+function hasListFilter(params: URLSearchParams): boolean {
+  return [
+    'view',
+    'status',
+    'source',
+    'checkIn',
+    'checkOut',
+    'stayDate',
+    'payment',
+    'operation',
+    'search',
+  ].some((key) => params.has(key))
 }
 
 function StatePanel({

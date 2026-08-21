@@ -1,15 +1,39 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { LogOut } from 'lucide-react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { adminNavigation } from '../data/navigation'
 import { hotelSettings } from '../data/hotel'
 import { adminRoleLabels } from '../features/auth/authorization'
 import { useAdminAuth } from '../features/auth/use-admin-auth'
+import {
+  adminReservationSeenEvent,
+  fetchNewOnlineReservationCount,
+} from '../features/admin-reservations/admin-reservations-api'
 
 export function AdminLayout() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { adminProfile, logout } = useAdminAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [newReservationCount, setNewReservationCount] = useState(0)
+
+  const loadNewReservationCount = useCallback(async () => {
+    try {
+      setNewReservationCount(await fetchNewOnlineReservationCount())
+    } catch {
+      setNewReservationCount(0)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadNewReservationCount()
+  }, [loadNewReservationCount, location.pathname, location.search])
+
+  useEffect(() => {
+    const refresh = () => void loadNewReservationCount()
+    window.addEventListener(adminReservationSeenEvent, refresh)
+    return () => window.removeEventListener(adminReservationSeenEvent, refresh)
+  }, [loadNewReservationCount])
 
   async function handleLogout() {
     if (isLoggingOut) return
@@ -53,7 +77,11 @@ export function AdminLayout() {
                   `block px-4 py-3 text-sm transition ${isActive ? 'bg-white/12 text-white' : 'text-white/65 hover:text-white'}`
                 }
               >
-                {item.label}
+                <AdminNavigationLabel
+                  label={item.label}
+                  showCount={item.to === '/admin/reservations'}
+                  count={newReservationCount}
+                />
               </NavLink>
             ))}
           </nav>
@@ -86,7 +114,11 @@ export function AdminLayout() {
                   `shrink-0 px-3 py-2 text-xs ${isActive ? 'bg-moss text-white' : 'text-muted'}`
                 }
               >
-                {item.label}
+                <AdminNavigationLabel
+                  label={item.label}
+                  showCount={item.to === '/admin/reservations'}
+                  count={newReservationCount}
+                />
               </NavLink>
             ))}
           </nav>
@@ -96,5 +128,29 @@ export function AdminLayout() {
         </div>
       </div>
     </div>
+  )
+}
+
+function AdminNavigationLabel({
+  label,
+  showCount,
+  count,
+}: {
+  label: string
+  showCount: boolean
+  count: number
+}) {
+  return (
+    <span className="flex items-center justify-between gap-2">
+      <span>{label}</span>
+      {showCount && count > 0 && (
+        <span
+          className="inline-flex min-w-6 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white"
+          aria-label={`新規予約 ${count}件`}
+        >
+          {count}
+        </span>
+      )}
+    </span>
   )
 }

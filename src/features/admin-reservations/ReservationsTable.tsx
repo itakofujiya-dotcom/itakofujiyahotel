@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom'
 import { formatYen } from '../admin-rates/rate-helpers'
 import {
   bookingSourceLabels,
-  reservationStatusLabels,
+  isNewOnlineReservation,
 } from './reservation-helpers'
 import type { ReservationListItem } from './types'
+import { NewReservationBadge } from './NewReservationBadge'
+import { ReservationStatusBadge } from './ReservationStatusBadge'
 
 export function ReservationsTable({
   reservations,
@@ -52,13 +54,12 @@ export function ReservationsTable({
               className="border-b border-line last:border-b-0"
             >
               <td className="px-4 py-4 font-medium">
-                {reservation.reservation_number}
-                {reservation.booking_source === 'online' &&
-                  !reservation.admin_seen_at && (
-                    <span className="ml-2 rounded bg-red-100 px-2 py-0.5 text-[10px] text-red-700">
-                      NEW
-                    </span>
+                <span className="flex items-center gap-2">
+                  {isNewOnlineReservation(reservation) && (
+                    <NewReservationBadge />
                   )}
+                  <span>{reservation.reservation_number}</span>
+                </span>
               </td>
               <td className="px-4 py-4">{reservation.guest.name}</td>
               <td className="px-4 py-4">
@@ -80,9 +81,7 @@ export function ReservationsTable({
                 {bookingSourceLabels[reservation.booking_source]}
               </td>
               <td className="px-4 py-4">
-                <span className="rounded bg-stone-100 px-2 py-1 text-xs">
-                  {reservationStatusLabels[reservation.status]}
-                </span>
+                <ReservationStatusBadge status={reservation.status} />
               </td>
               <td className="px-4 py-4">
                 {formatYen(reservation.total_amount_yen ?? 0)}

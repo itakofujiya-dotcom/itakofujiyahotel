@@ -1,15 +1,24 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { URL, URLSearchParams } from 'node:url'
 import {
   bookingSourceLabels,
+  buildReservationFilterSearchParams,
   calculateReservationPricePreview,
+  countNewOnlineReservations,
   filterReservations,
   getAllowedNextStatuses,
   getCancellationFee,
   getReservationCalendarCounts,
   getReservationCalendarCardInfo,
   getReservationDetailPath,
+  getRoomAssignmentSummary,
   getStayDates,
+  getTodayOperationLabels,
+  isNewOnlineReservation,
+  isReservationAwaitingPayment,
+  parseReservationFilters,
   reservationStatusLabels,
   validateAdminReservationInput,
 } from '../src/features/admin-reservations/reservation-helpers.ts'
@@ -26,6 +35,7 @@ const reservation = {
   booking_source: 'online',
   total_amount_yen: 38000,
   admin_seen_at: null,
+  has_pending_bank_transfer: false,
   created_at: '2026-08-20T01:30:00Z',
   guest: {
     id: 'guest-1',
@@ -48,6 +58,7 @@ const reservation = {
 test('maps reservation status and booking source labels to Japanese', () => {
   assert.equal(reservationStatusLabels.confirmed, '予約確定')
   assert.equal(reservationStatusLabels.no_show, '無連絡不泊')
+  assert.equal(reservationStatusLabels.cancelled, 'キャンセル済み')
   assert.equal(bookingSourceLabels.phone, '電話')
 })
 
@@ -80,13 +91,89 @@ test('filters by new online reservation and searchable guest fields', () => {
   )
 })
 
-test('calendar counts checkout exclusively and omits cancelled bookings', () => {
+test('marks only unseen online reservations as new and decreases the count after viewing', () => {
+  const phoneReservation = { ...reservation, booking_source: 'phone' }
+  const seenOnlineReservation = {
+    ...reservation,
+    id: 'reservation-2',
+    admin_seen_at: '2026-08-20T02:00:00Z',
+  }
+
+  assert.equal(isNewOnlineReservation(reservation), true)
+  assert.equal(isNewOnlineReservation(phoneReservation), false)
+  assert.equal(isNewOnlineReservation(seenOnlineReservation), false)
+  assert.equal(
+    countNewOnlineReservations([
+      reservation,
+      phoneReservation,
+      seenOnlineReservation,
+    ]),
+    1,
+  )
+  assert.equal(
+    countNewOnlineReservations([
+      { ...reservation, admin_seen_at: '2026-08-20T03:00:00Z' },
+      phoneReservation,
+      seenOnlineReservation,
+    ]),
+    0,
+  )
+})
+
+test('restores dashboard reservation filters from the URL', () => {
+  const filters = parseReservationFilters(
+    new URLSearchParams(
+      'status=checked_in&stayDate=2026-08-20&payment=bank_transfer_pending',
+    ),
+  )
+  assert.equal(filters.status, 'checked_in')
+  assert.equal(filters.stayDate, '2026-08-20')
+  assert.equal(filters.payment, 'bank_transfer_pending')
+  assert.equal(
+    buildReservationFilterSearchParams(filters).toString(),
+    'status=checked_in&stayDate=2026-08-20&payment=bank_transfer_pending',
+  )
+})
+
+test('treats only valid bank-transfer pending reservations as awaiting payment', () => {
+  assert.equal(
+    isReservationAwaitingPayment({
+      ...reservation,
+      has_pending_bank_transfer: true,
+    }),
+    true,
+  )
+  assert.equal(
+    isReservationAwaitingPayment({
+      ...reservation,
+      status: 'cancelled',
+      has_pending_bank_transfer: true,
+    }),
+    false,
+  )
+  assert.equal(
+    isReservationAwaitingPayment({
+      ...reservation,
+      has_pending_bank_transfer: false,
+    }),
+    false,
+  )
+})
+
+test('calendar separates arrivals, staying guests, and completed departures', () => {
   assert.equal(
     getReservationCalendarCounts([reservation], '2026-08-22').checkIns.length,
     1,
   )
   assert.equal(
     getReservationCalendarCounts([reservation], '2026-08-23').staying.length,
+    0,
+  )
+  assert.equal(
+    getReservationCalendarCounts(
+      [{ ...reservation, status: 'checked_in' }],
+      '2026-08-23',
+    ).staying.length,
     1,
   )
   assert.equal(
@@ -104,6 +191,13 @@ test('calendar counts checkout exclusively and omits cancelled bookings', () => 
     ).checkIns.length,
     0,
   )
+  assert.equal(
+    getReservationCalendarCounts(
+      [{ ...reservation, status: 'checked_out' }],
+      '2026-08-24',
+    ).checkOuts.length,
+    1,
+  )
 })
 
 test('calculates the confirmed cancellation policy', () => {
@@ -117,6 +211,10 @@ test('calculates the confirmed cancellation policy', () => {
 })
 
 test('allows only safe forward reservation status transitions', () => {
+  assert.deepEqual(getAllowedNextStatuses('pending'), [
+    'confirmed',
+    'cancelled',
+  ])
   assert.deepEqual(getAllowedNextStatuses('confirmed'), [
     'checked_in',
     'cancelled',
@@ -124,6 +222,63 @@ test('allows only safe forward reservation status transitions', () => {
   ])
   assert.deepEqual(getAllowedNextStatuses('checked_in'), ['checked_out'])
   assert.deepEqual(getAllowedNextStatuses('checked_out'), [])
+  assert.deepEqual(getAllowedNextStatuses('cancelled'), [])
+  assert.deepEqual(getAllowedNextStatuses('no_show'), [])
+})
+
+test('existing status RPC locks the reservation and keeps no-show release logic', () => {
+  const migration = readFileSync(
+    new URL(
+      '../supabase/migrations/202608200003_reservation_no_show_and_new_index.sql',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+  assert.match(migration, /where id = p_reservation_id for update/)
+  assert.match(
+    migration,
+    /v_current = 'pending' and p_status in \('confirmed', 'cancelled'\)/,
+  )
+  assert.match(
+    migration,
+    /v_current = 'confirmed' and p_status in \('checked_in', 'cancelled', 'no_show'\)/,
+  )
+  assert.match(migration, /v_current = 'checked_in' and p_status = 'checked_out'/)
+  assert.match(migration, /cancellation_fee_rate = 100/)
+  assert.match(migration, /update public\.inventory_blocks set status = 'released'/)
+})
+
+test('requires every reserved room to be assigned before check-in', () => {
+  assert.deepEqual(
+    getRoomAssignmentSummary([{ room_id: '201' }, { room_id: '202' }]),
+    { total: 2, assigned: 2, unassigned: 0, complete: true },
+  )
+  assert.deepEqual(
+    getRoomAssignmentSummary([{ room_id: '201' }, { room_id: null }]),
+    { total: 2, assigned: 1, unassigned: 1, complete: false },
+  )
+  assert.equal(getRoomAssignmentSummary([{ room_id: null }]).complete, false)
+})
+
+test('uses hotel-local dates for today operation badges', () => {
+  assert.deepEqual(
+    getTodayOperationLabels(reservation, '2026-08-22'),
+    ['本日チェックイン'],
+  )
+  assert.deepEqual(
+    getTodayOperationLabels(
+      { ...reservation, status: 'checked_in' },
+      '2026-08-24',
+    ),
+    ['本日チェックアウト'],
+  )
+  assert.deepEqual(
+    getTodayOperationLabels(
+      { ...reservation, status: 'cancelled' },
+      '2026-08-22',
+    ),
+    [],
+  )
 })
 
 test('validates one to ten nights and at most four rooms', () => {

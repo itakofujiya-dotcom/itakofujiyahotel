@@ -20,7 +20,7 @@ import type {
 export const reservationStatusLabels: Record<ReservationStatus, string> = {
   pending: '確認待ち',
   confirmed: '予約確定',
-  cancelled: 'キャンセル',
+  cancelled: 'キャンセル済み',
   checked_in: 'チェックイン済み',
   checked_out: 'チェックアウト済み',
   no_show: '無連絡不泊',
@@ -31,6 +31,89 @@ export const bookingSourceLabels: Record<BookingSource, string> = {
   phone: '電話',
   walk_in: '当日受付',
   admin: '管理者登録',
+}
+
+export function isNewOnlineReservation(
+  reservation: Pick<ReservationListItem, 'booking_source' | 'admin_seen_at'>,
+): boolean {
+  return (
+    reservation.booking_source === 'online' &&
+    reservation.admin_seen_at === null
+  )
+}
+
+export function countNewOnlineReservations(
+  reservations: Pick<ReservationListItem, 'booking_source' | 'admin_seen_at'>[],
+): number {
+  return reservations.filter(isNewOnlineReservation).length
+}
+
+export function isReservationAwaitingPayment(
+  reservation: Pick<
+    ReservationListItem,
+    'status' | 'has_pending_bank_transfer'
+  >,
+): boolean {
+  return (
+    reservation.has_pending_bank_transfer &&
+    ['pending', 'confirmed', 'checked_in'].includes(reservation.status)
+  )
+}
+
+export function createDefaultReservationFilters(): ReservationFilters {
+  return {
+    status: 'all',
+    source: 'all',
+    checkIn: '',
+    checkOut: '',
+    stayDate: '',
+    search: '',
+    newOnly: false,
+    payment: 'all',
+    operation: 'all',
+  }
+}
+
+export function parseReservationFilters(
+  params: URLSearchParams,
+): ReservationFilters {
+  const defaults = createDefaultReservationFilters()
+  const status = params.get('status')
+  const source = params.get('source')
+  return {
+    status: isReservationStatus(status) ? status : defaults.status,
+    source: isBookingSource(source) ? source : defaults.source,
+    checkIn: parseDateParameter(params.get('checkIn')),
+    checkOut: parseDateParameter(params.get('checkOut')),
+    stayDate: parseDateParameter(params.get('stayDate')),
+    search: params.get('search') ?? '',
+    newOnly: params.get('view') === 'new',
+    payment:
+      params.get('payment') === 'bank_transfer_pending'
+        ? 'bank_transfer_pending'
+        : defaults.payment,
+    operation:
+      params.get('operation') === 'today_check_in' ||
+      params.get('operation') === 'today_check_out'
+        ? (params.get('operation') as ReservationFilters['operation'])
+        : defaults.operation,
+  }
+}
+
+export function buildReservationFilterSearchParams(
+  filters: ReservationFilters,
+): URLSearchParams {
+  const params = new URLSearchParams()
+  if (filters.status !== 'all') params.set('status', filters.status)
+  if (filters.source !== 'all') params.set('source', filters.source)
+  if (filters.checkIn) params.set('checkIn', filters.checkIn)
+  if (filters.checkOut) params.set('checkOut', filters.checkOut)
+  if (filters.stayDate) params.set('stayDate', filters.stayDate)
+  if (filters.search.trim()) params.set('search', filters.search.trim())
+  if (filters.newOnly) params.set('view', 'new')
+  if (filters.payment !== 'all') params.set('payment', filters.payment)
+  if (filters.operation !== 'all') params.set('operation', filters.operation)
+  return params
 }
 
 export function getReservationDetailPath(reservationId: string): string {
@@ -66,9 +149,30 @@ export function filterReservations(
       return false
     if (filters.checkIn && reservation.check_in !== filters.checkIn)
       return false
+    if (filters.checkOut && reservation.check_out !== filters.checkOut)
+      return false
     if (
-      filters.newOnly &&
-      (reservation.booking_source !== 'online' || reservation.admin_seen_at)
+      filters.stayDate &&
+      !(
+        reservation.check_in <= filters.stayDate &&
+        filters.stayDate < reservation.check_out
+      )
+    )
+      return false
+    if (filters.newOnly && !isNewOnlineReservation(reservation)) return false
+    if (
+      filters.operation === 'today_check_in' &&
+      ['cancelled', 'no_show', 'checked_out'].includes(reservation.status)
+    )
+      return false
+    if (
+      filters.operation === 'today_check_out' &&
+      ['cancelled', 'no_show'].includes(reservation.status)
+    )
+      return false
+    if (
+      filters.payment === 'bank_transfer_pending' &&
+      !isReservationAwaitingPayment(reservation)
     )
       return false
     if (!query) return true
@@ -80,6 +184,18 @@ export function filterReservations(
   })
 }
 
+function parseDateParameter(value: string | null): string {
+  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : ''
+}
+
+function isReservationStatus(value: string | null): value is ReservationStatus {
+  return Boolean(value && value in reservationStatusLabels)
+}
+
+function isBookingSource(value: string | null): value is BookingSource {
+  return Boolean(value && value in bookingSourceLabels)
+}
+
 export function getReservationCalendarCounts(
   reservations: ReservationListItem[],
   day: string,
@@ -88,10 +204,15 @@ export function getReservationCalendarCounts(
     (reservation) => !['cancelled', 'no_show'].includes(reservation.status),
   )
   return {
-    checkIns: active.filter((reservation) => reservation.check_in === day),
+    checkIns: active.filter(
+      (reservation) =>
+        reservation.check_in === day &&
+        ['pending', 'confirmed'].includes(reservation.status),
+    ),
     checkOuts: active.filter((reservation) => reservation.check_out === day),
     staying: active.filter(
       (reservation) =>
+        reservation.status === 'checked_in' &&
         reservation.check_in <= day && day < reservation.check_out,
     ),
   }
@@ -118,6 +239,33 @@ export function getAllowedNextStatuses(
   if (status === 'confirmed') return ['checked_in', 'cancelled', 'no_show']
   if (status === 'checked_in') return ['checked_out']
   return []
+}
+
+export function getRoomAssignmentSummary(
+  rooms: { room_id: string | null }[],
+): { total: number; assigned: number; unassigned: number; complete: boolean } {
+  const assigned = rooms.filter((room) => Boolean(room.room_id)).length
+  const total = rooms.length
+  return {
+    total,
+    assigned,
+    unassigned: total - assigned,
+    complete: total > 0 && assigned === total,
+  }
+}
+
+export function getTodayOperationLabels(
+  reservation: Pick<
+    ReservationListItem,
+    'check_in' | 'check_out' | 'status'
+  >,
+  today: string,
+): string[] {
+  if (['cancelled', 'no_show'].includes(reservation.status)) return []
+  const labels: string[] = []
+  if (reservation.check_in === today) labels.push('本日チェックイン')
+  if (reservation.check_out === today) labels.push('本日チェックアウト')
+  return labels
 }
 
 export function getStayDates(checkIn: string, checkOut: string): string[] {

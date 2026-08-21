@@ -8,6 +8,9 @@ import { AccessPage } from '../pages/public/AccessPage'
 import { SightseeingPage } from '../pages/public/SightseeingPage'
 import { FaqPage } from '../pages/public/FaqPage'
 import { BookingPage } from '../pages/public/BookingPage'
+import { BookingDetailsPage } from '../pages/public/BookingDetailsPage'
+import { BookingConfirmPage } from '../pages/public/BookingConfirmPage'
+import { BookingCompletePage } from '../pages/public/BookingCompletePage'
 import { InfoPage } from '../pages/public/InfoPage'
 import { LoginPage } from '../pages/admin/LoginPage'
 import { DashboardPage } from '../pages/admin/DashboardPage'
@@ -32,7 +35,9 @@ const router = createBrowserRouter([
       { path: '/sightseeing', element: <SightseeingPage /> },
       { path: '/faq', element: <FaqPage /> },
       { path: '/booking', element: <BookingPage /> },
-      { path: '/booking/confirm', element: <InfoPage kind="confirm" /> },
+      { path: '/booking/details', element: <BookingDetailsPage /> },
+      { path: '/booking/confirm', element: <BookingConfirmPage /> },
+      { path: '/booking/complete', element: <BookingCompletePage /> },
       { path: '/reservation', element: <InfoPage kind="reservation" /> },
       { path: '/policies', element: <InfoPage kind="policies" /> },
       { path: '*', element: <InfoPage kind="policies" /> },

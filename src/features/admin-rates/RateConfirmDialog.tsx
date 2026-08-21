@@ -5,6 +5,7 @@ export function RateConfirmDialog({
   description,
   children,
   confirmLabel = '変更する',
+  cancelLabel = 'キャンセル',
   isMutating,
   destructive = false,
   onCancel,
@@ -14,6 +15,7 @@ export function RateConfirmDialog({
   description: string
   children?: ReactNode
   confirmLabel?: string
+  cancelLabel?: string
   isMutating: boolean
   destructive?: boolean
   onCancel: () => void
@@ -53,7 +55,7 @@ export function RateConfirmDialog({
             disabled={isMutating}
             className="min-h-11 border border-line px-5 text-sm font-semibold disabled:opacity-50"
           >
-            キャンセル
+            {cancelLabel}
           </button>
           <button
             type="button"

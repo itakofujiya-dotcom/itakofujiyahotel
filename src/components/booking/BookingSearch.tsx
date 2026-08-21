@@ -1,41 +1,47 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { format } from 'date-fns'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
-import { validateBookingSearch } from '../../features/booking/validation'
+import {
+  getJapanDateTime,
+  parseBookingSearchParams,
+  validateBookingSearch,
+} from '../../features/booking/validation'
+import type { BookingSearchParams } from '../../features/booking/types'
 
-type Props = { compact?: boolean }
+type Props = { compact?: boolean; isLoading?: boolean }
 
-export function BookingSearch({ compact = false }: Props) {
+export function BookingSearch({ compact = false, isLoading = false }: Props) {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const initial = parseBookingSearchParams(searchParams)
   const [error, setError] = useState<string | null>(null)
-  const [form, setForm] = useState({
-    checkIn: '',
-    checkOut: '',
-    adults: 2,
-    children: 0,
-    rooms: 1,
-  })
-  const today = format(new Date(), 'yyyy-MM-dd')
+  const [form, setForm] = useState<BookingSearchParams>(
+    initial ?? {
+      checkIn: '',
+      checkOut: '',
+      adults: 2,
+      paidChildren: 0,
+      freePreschoolChildren: 0,
+      roomCount: 1,
+    },
+  )
+  const japanToday = getJapanDateTime().date
 
   function submit(event: FormEvent) {
     event.preventDefault()
-    const params = {
-      ...form,
-      checkIn: form.checkIn ? new Date(`${form.checkIn}T00:00:00`) : null,
-      checkOut: form.checkOut ? new Date(`${form.checkOut}T00:00:00`) : null,
-    }
-    const message = validateBookingSearch(params)
+    const message = validateBookingSearch(form)
     if (message) {
       setError(message)
       return
     }
+    setError(null)
     const query = new URLSearchParams({
       checkIn: form.checkIn,
       checkOut: form.checkOut,
       adults: String(form.adults),
-      children: String(form.children),
-      rooms: String(form.rooms),
+      paidChildren: String(form.paidChildren),
+      freePreschoolChildren: String(form.freePreschoolChildren),
+      roomCount: String(form.roomCount),
     })
     navigate(`/booking?${query.toString()}`)
   }
@@ -46,23 +52,27 @@ export function BookingSearch({ compact = false }: Props) {
       className={`bg-surface shadow-soft ${compact ? 'p-5' : 'p-5 sm:p-7 lg:p-8'}`}
       noValidate
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_.8fr_.8fr_.8fr_auto] lg:items-end">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[1.2fr_1.2fr_.7fr_.8fr_.9fr_.7fr_auto] xl:items-end">
         <Field label="チェックイン">
           <input
             className="admin-input"
             type="date"
-            min={today}
+            min={japanToday}
             value={form.checkIn}
-            onChange={(e) => setForm({ ...form, checkIn: e.target.value })}
+            onChange={(event) =>
+              setForm({ ...form, checkIn: event.target.value })
+            }
           />
         </Field>
         <Field label="チェックアウト">
           <input
             className="admin-input"
             type="date"
-            min={form.checkIn || today}
+            min={form.checkIn || japanToday}
             value={form.checkOut}
-            onChange={(e) => setForm({ ...form, checkOut: e.target.value })}
+            onChange={(event) =>
+              setForm({ ...form, checkOut: event.target.value })
+            }
           />
         </Field>
         <Field label="大人">
@@ -70,31 +80,42 @@ export function BookingSearch({ compact = false }: Props) {
             value={form.adults}
             onChange={(value) => setForm({ ...form, adults: value })}
             min={1}
-            max={4}
+            max={16}
           />
         </Field>
-        <Field label="子ども">
+        <Field label="子ども（有料）">
           <Select
-            value={form.children}
-            onChange={(value) => setForm({ ...form, children: value })}
+            value={form.paidChildren}
+            onChange={(value) => setForm({ ...form, paidChildren: value })}
             min={0}
-            max={4}
+            max={12}
+          />
+        </Field>
+        <Field label="未就学児（添い寝）">
+          <Select
+            value={form.freePreschoolChildren}
+            onChange={(value) =>
+              setForm({ ...form, freePreschoolChildren: value })
+            }
+            min={0}
+            max={8}
           />
         </Field>
         <Field label="客室数">
           <Select
-            value={form.rooms}
-            onChange={(value) => setForm({ ...form, rooms: value })}
+            value={form.roomCount}
+            onChange={(value) => setForm({ ...form, roomCount: value })}
             min={1}
             max={4}
           />
         </Field>
         <button
-          className="flex min-h-11 items-center justify-center gap-2 bg-accent px-6 text-sm font-semibold text-white hover:bg-accent-hover"
+          className="flex min-h-11 items-center justify-center gap-2 bg-accent px-6 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
           type="submit"
+          disabled={isLoading}
         >
           <Search size={17} />
-          空室を検索
+          {isLoading ? '確認中…' : '空室を検索'}
         </button>
       </div>
       {error && (
@@ -122,6 +143,7 @@ function Field({
     </label>
   )
 }
+
 function Select({
   value,
   onChange,
@@ -137,13 +159,15 @@ function Select({
     <select
       className="admin-input"
       value={value}
-      onChange={(e) => onChange(Number(e.target.value))}
+      onChange={(event) => onChange(Number(event.target.value))}
     >
-      {Array.from({ length: max - min + 1 }, (_, i) => i + min).map((item) => (
-        <option key={item} value={item}>
-          {item}
-        </option>
-      ))}
+      {Array.from({ length: max - min + 1 }, (_, index) => index + min).map(
+        (item) => (
+          <option key={item} value={item}>
+            {item}
+          </option>
+        ),
+      )}
     </select>
   )
 }

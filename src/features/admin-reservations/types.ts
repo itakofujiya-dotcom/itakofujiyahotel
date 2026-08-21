@@ -42,6 +42,7 @@ export type ReservationListItem = {
   booking_source: BookingSource
   total_amount_yen: number | null
   admin_seen_at: string | null
+  has_pending_bank_transfer: boolean
   created_at: string
   guest: ReservationGuest
   rooms: ReservationListRoom[]
@@ -89,8 +90,12 @@ export type ReservationFilters = {
   status: ReservationStatus | 'all'
   source: BookingSource | 'all'
   checkIn: string
+  checkOut: string
+  stayDate: string
   search: string
   newOnly: boolean
+  payment: 'all' | 'bank_transfer_pending'
+  operation: 'all' | 'today_check_in' | 'today_check_out'
 }
 
 export type CreateAdminReservationInput = {

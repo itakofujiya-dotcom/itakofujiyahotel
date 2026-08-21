@@ -13,9 +13,11 @@ import {
   getReservationCalendarCardInfo,
   getReservationCalendarCounts,
   getReservationDetailPath,
-  reservationStatusLabels,
+  isNewOnlineReservation,
 } from './reservation-helpers'
 import type { ReservationListItem } from './types'
+import { NewReservationBadge } from './NewReservationBadge'
+import { ReservationStatusBadge } from './ReservationStatusBadge'
 
 export function ReservationCalendar({
   reservations,
@@ -168,15 +170,25 @@ function ReservationDayGroup({
                 }}
                 className="block cursor-pointer border border-line p-3 text-sm transition hover:border-accent hover:bg-background focus-visible:bg-background"
               >
-                <span className="font-semibold">{reservation.guest.name}</span>
-                <span className="mt-1 block text-xs text-muted">
+                <span className="flex items-start justify-between gap-2">
+                  <span className="font-semibold">
+                    {reservation.guest.name}
+                  </span>
+                  {isNewOnlineReservation(reservation) && (
+                    <NewReservationBadge compact />
+                  )}
+                </span>
+                <span className="mt-1 block text-xs font-medium text-muted">
                   {reservation.reservation_number}
                 </span>
                 <span className="mt-2 block text-xs text-muted">
                   {info.roomTypes || '客室タイプ未設定'} · {info.paidGuests}名
                 </span>
-                <span className="mt-1 inline-block rounded bg-stone-100 px-2 py-1 text-[10px]">
-                  {reservationStatusLabels[reservation.status]}
+                <span className="mt-1 block">
+                  <ReservationStatusBadge
+                    status={reservation.status}
+                    compact
+                  />
                 </span>
               </Link>
             )

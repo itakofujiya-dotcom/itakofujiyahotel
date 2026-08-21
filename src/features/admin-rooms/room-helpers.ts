@@ -42,3 +42,70 @@ export function summarizeAdminRooms(rooms: AdminRoom[]) {
     western: rooms.filter((room) => room.room_style === 'western').length,
   }
 }
+
+export function isBulkEditableRoom(room: AdminRoom): boolean {
+  return room.sales_status === 'active' || room.sales_status === 'inactive'
+}
+
+export function getBulkRoomStatusPlan(
+  rooms: AdminRoom[],
+  selectedRoomIds: ReadonlySet<string>,
+) {
+  const selectedRooms = rooms.filter((room) => selectedRoomIds.has(room.id))
+  return {
+    selectedRooms,
+    editableRooms: selectedRooms.filter(isBulkEditableRoom),
+    protectedRooms: selectedRooms.filter((room) => !isBulkEditableRoom(room)),
+  }
+}
+
+export function applyRoomStatusToSelection(
+  rooms: AdminRoom[],
+  selectedRoomIds: ReadonlySet<string>,
+  nextStatus: Extract<RoomSalesStatus, 'active' | 'inactive'>,
+): AdminRoom[] {
+  return rooms.map((room) =>
+    selectedRoomIds.has(room.id) && isBulkEditableRoom(room)
+      ? { ...room, sales_status: nextStatus }
+      : room,
+  )
+}
+
+export function toggleRoomSelection(
+  selectedRoomIds: ReadonlySet<string>,
+  roomId: string,
+): Set<string> {
+  const next = new Set(selectedRoomIds)
+  if (next.has(roomId)) next.delete(roomId)
+  else next.add(roomId)
+  return next
+}
+
+export function toggleVisibleRoomSelection(
+  selectedRoomIds: ReadonlySet<string>,
+  visibleRoomIds: string[],
+): Set<string> {
+  const next = new Set(selectedRoomIds)
+  const allVisibleSelected =
+    visibleRoomIds.length > 0 &&
+    visibleRoomIds.every((roomId) => next.has(roomId))
+  if (allVisibleSelected)
+    visibleRoomIds.forEach((roomId) => next.delete(roomId))
+  else visibleRoomIds.forEach((roomId) => next.add(roomId))
+  return next
+}
+
+export function getVisibleRoomSelectionState(
+  visibleRoomIds: string[],
+  selectedRoomIds: ReadonlySet<string>,
+) {
+  const selectedCount = visibleRoomIds.filter((roomId) =>
+    selectedRoomIds.has(roomId),
+  ).length
+  return {
+    selectedCount,
+    checked:
+      visibleRoomIds.length > 0 && selectedCount === visibleRoomIds.length,
+    indeterminate: selectedCount > 0 && selectedCount < visibleRoomIds.length,
+  }
+}

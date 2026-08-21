@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { differenceInCalendarDays, format } from 'date-fns'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader'
+import { getJapanToday } from '../../features/admin-dashboard/dashboard-helpers'
 import { formatYen } from '../../features/admin-rates/rate-helpers'
 import { RateConfirmDialog } from '../../features/admin-rates/RateConfirmDialog'
 import {
@@ -17,8 +18,11 @@ import {
   bookingSourceLabels,
   getAllowedNextStatuses,
   getCancellationFee,
+  getRoomAssignmentSummary,
+  getTodayOperationLabels,
   reservationStatusLabels,
 } from '../../features/admin-reservations/reservation-helpers'
+import { ReservationStatusBadge } from '../../features/admin-reservations/ReservationStatusBadge'
 import type {
   AssignableRoom,
   ReservationDetail,
@@ -46,6 +50,7 @@ export function ReservationDetailPage() {
   const [isMutating, setIsMutating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [statusUpdateFailed, setStatusUpdateFailed] = useState(false)
   const [editing, setEditing] = useState(false)
   const [action, setAction] = useState<ActionRequest>(null)
   const [assignmentTarget, setAssignmentTarget] =
@@ -78,8 +83,19 @@ export function ReservationDetailPage() {
         guest_note: detail.guest_note ?? '',
         admin_note: detail.admin_note ?? '',
       })
-      if (detail.booking_source === 'online' && !detail.admin_seen_at)
-        await markReservationSeen(id)
+      if (detail.booking_source === 'online' && !detail.admin_seen_at) {
+        try {
+          const marked = await markReservationSeen(id)
+          if (marked)
+            setReservation((current) =>
+              current
+                ? { ...current, admin_seen_at: new Date().toISOString() }
+                : current,
+            )
+        } catch {
+          setFeedback('新規予約の確認状態を更新できませんでした。')
+        }
+      }
     } catch {
       setError('予約情報の取得に失敗しました。')
     } finally {
@@ -162,6 +178,7 @@ export function ReservationDetailPage() {
   async function confirmAction() {
     if (!reservation || !action) return
     setIsMutating(true)
+    setStatusUpdateFailed(false)
     try {
       if (action.type === 'cancel') await cancelReservation(reservation.id)
       else await changeReservationStatus(reservation.id, action.status)
@@ -169,7 +186,12 @@ export function ReservationDetailPage() {
       await load()
       setFeedback('予約状態を更新しました。')
     } catch {
-      setFeedback('予約状態を更新できませんでした。')
+      setAction(null)
+      await load()
+      setStatusUpdateFailed(true)
+      setFeedback(
+        '予約状態を更新できませんでした。\n最新の状態を再読み込みしてください。',
+      )
     } finally {
       setIsMutating(false)
     }
@@ -200,6 +222,8 @@ export function ReservationDetailPage() {
     new Date(`${reservation.check_in}T00:00:00`),
   )
   const nextStatuses = getAllowedNextStatuses(reservation.status)
+  const assignment = getRoomAssignmentSummary(reservation.rooms)
+  const todayLabels = getTodayOperationLabels(reservation, getJapanToday())
   const cancelFee = getCancellationFee(
     reservation.check_in,
     reservation.total_amount_yen ?? 0,
@@ -232,22 +256,70 @@ export function ReservationDetailPage() {
         >
           印刷
         </button>
-        <button
-          type="button"
-          onClick={() => setEditing((value) => !value)}
-          className="min-h-11 border border-line bg-surface px-5 text-sm font-semibold"
-        >
-          予約情報を編集
-        </button>
+        {!['checked_out', 'cancelled', 'no_show'].includes(
+          reservation.status,
+        ) && (
+          <button
+            type="button"
+            onClick={() => setEditing((value) => !value)}
+            className="min-h-11 border border-line bg-surface px-5 text-sm font-semibold"
+          >
+            予約情報を編集
+          </button>
+        )}
       </div>
       {feedback && (
-        <p
-          className="mb-6 border border-line bg-surface p-4 text-sm print:hidden"
+        <div
+          className="mb-6 flex flex-wrap items-center justify-between gap-3 border border-line bg-surface p-4 text-sm print:hidden"
           role="status"
         >
-          {feedback}
-        </p>
+          <p className="whitespace-pre-line">{feedback}</p>
+          {statusUpdateFailed && (
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="min-h-10 border border-line px-4 font-semibold"
+            >
+              再読み込み
+            </button>
+          )}
+        </div>
       )}
+
+      <section className="border border-line bg-surface p-5 sm:p-6 print:border-black">
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div>
+            <p className="text-xs font-semibold text-muted">予約状態</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <ReservationStatusBadge status={reservation.status} />
+              {todayLabels.map((label) => (
+                <span
+                  key={label}
+                  className="inline-flex rounded border border-accent px-3 py-1 text-xs font-semibold text-accent"
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="min-w-36 border-l border-line pl-5">
+            <p className="text-xs font-semibold text-muted">
+              チェックイン予定
+            </p>
+            <p className="mt-1 text-2xl font-semibold">
+              {reservation.expected_check_in_time?.slice(0, 5) ?? '未設定'}
+            </p>
+          </div>
+        </div>
+
+        <ReservationStatusActions
+          reservation={reservation}
+          assignment={assignment}
+          nextStatuses={nextStatuses}
+          isMutating={isMutating}
+          onAction={setAction}
+        />
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-2 print:block">
         <DetailSection title="予約情報">
@@ -337,11 +409,7 @@ export function ReservationDetailPage() {
                 <button
                   type="button"
                   onClick={() => void openAssignment(room)}
-                  disabled={
-                    !['pending', 'confirmed', 'checked_in'].includes(
-                      reservation.status,
-                    )
-                  }
+                  disabled={!['pending', 'confirmed'].includes(reservation.status)}
                   className="min-h-10 border border-line px-4 text-xs font-semibold disabled:opacity-40 print:hidden"
                 >
                   {room.room_id ? '割当を変更' : '客室を割り当てる'}
@@ -374,44 +442,6 @@ export function ReservationDetailPage() {
         />
         <Definition label="管理者メモ" value={reservation.admin_note ?? '—'} />
       </DetailSection>
-
-      <section className="mt-6 border border-line bg-surface p-6 print:hidden">
-        <h2 className="font-serif text-xl">予約状態を変更</h2>
-        <div className="mt-5 flex flex-wrap gap-3">
-          {nextStatuses
-            .filter((status) => status !== 'cancelled')
-            .map((status) => (
-              <button
-                key={status}
-                type="button"
-                onClick={() =>
-                  setAction({
-                    type: 'status',
-                    status: status as Exclude<ReservationStatus, 'cancelled'>,
-                  })
-                }
-                className="min-h-11 bg-moss px-5 text-sm font-semibold text-white"
-              >
-                {status === 'checked_in'
-                  ? 'チェックインする'
-                  : status === 'checked_out'
-                    ? 'チェックアウトする'
-                    : status === 'no_show'
-                      ? '無連絡不泊にする'
-                      : '予約を確定する'}
-              </button>
-            ))}
-          {nextStatuses.includes('cancelled') && (
-            <button
-              type="button"
-              onClick={() => setAction({ type: 'cancel' })}
-              className="min-h-11 border border-red-300 px-5 text-sm font-semibold text-red-700"
-            >
-              キャンセルする
-            </button>
-          )}
-        </div>
-      </section>
 
       {editing && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 p-4 print:hidden">
@@ -550,20 +580,7 @@ export function ReservationDetailPage() {
 
       {action && (
         <RateConfirmDialog
-          title={
-            action.type === 'cancel'
-              ? '予約をキャンセルしますか？'
-              : `${reservationStatusLabels[action.status]}に変更しますか？`
-          }
-          description={
-            action.type === 'cancel'
-              ? `宿泊日の${cancelFee.daysBefore}日前\nキャンセル料: ${cancelFee.rate}%\n\n予約金額: ${formatYen(reservation.total_amount_yen ?? 0)}\nキャンセル料: ${formatYen(cancelFee.amount)}\n\n現地払いのため返金処理は行いません。割り当て済み客室は解放されます。`
-              : '予約状態を変更します。元に戻せない状態があります。'
-          }
-          confirmLabel={
-            action.type === 'cancel' ? 'キャンセル確定' : '変更する'
-          }
-          destructive={action.type === 'cancel'}
+          {...getActionDialogProperties(action, reservation, cancelFee)}
           isMutating={isMutating}
           onCancel={() => setAction(null)}
           onConfirm={() => void confirmAction()}
@@ -571,6 +588,166 @@ export function ReservationDetailPage() {
       )}
     </div>
   )
+}
+
+function ReservationStatusActions({
+  reservation,
+  assignment,
+  nextStatuses,
+  isMutating,
+  onAction,
+}: {
+  reservation: ReservationDetail
+  assignment: ReturnType<typeof getRoomAssignmentSummary>
+  nextStatuses: ReservationStatus[]
+  isMutating: boolean
+  onAction: (action: ActionRequest) => void
+}) {
+  if (reservation.status === 'checked_out')
+    return (
+      <p className="mt-5 border-t border-line pt-5 text-sm text-muted">
+        予約は完了しています。予約情報の確認と印刷のみ行えます。
+      </p>
+    )
+  if (reservation.status === 'cancelled')
+    return (
+      <TerminalStatusMessage
+        text="この予約はキャンセル済みです。"
+        reservation={reservation}
+      />
+    )
+  if (reservation.status === 'no_show')
+    return (
+      <TerminalStatusMessage
+        text="この予約は無連絡不泊として終了しています。"
+        reservation={reservation}
+      />
+    )
+
+  const checkInBlocked =
+    reservation.status === 'confirmed' && !assignment.complete
+
+  return (
+    <div className="mt-5 border-t border-line pt-5 print:hidden">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        {nextStatuses
+          .filter((status) => status !== 'cancelled')
+          .map((status) => (
+            <button
+              key={status}
+              type="button"
+              onClick={() =>
+                onAction({
+                  type: 'status',
+                  status: status as Exclude<ReservationStatus, 'cancelled'>,
+                })
+              }
+              disabled={isMutating || (status === 'checked_in' && checkInBlocked)}
+              className="min-h-12 w-full bg-moss px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+            >
+              {getStatusActionLabel(status)}
+            </button>
+          ))}
+        {nextStatuses.includes('cancelled') && (
+          <button
+            type="button"
+            onClick={() => onAction({ type: 'cancel' })}
+            disabled={isMutating}
+            className="min-h-12 w-full border border-red-300 px-5 text-sm font-semibold text-red-700 disabled:opacity-40 sm:w-auto"
+          >
+            キャンセルする
+          </button>
+        )}
+      </div>
+      {checkInBlocked && (
+        <p className="mt-4 text-sm font-medium text-red-700" role="alert">
+          {assignment.total}室中 {assignment.unassigned}室が未割当です。
+          <br />
+          客室を割り当ててからチェックインしてください。
+        </p>
+      )}
+    </div>
+  )
+}
+
+function TerminalStatusMessage({
+  text,
+  reservation,
+}: {
+  text: string
+  reservation: ReservationDetail
+}) {
+  return (
+    <div className="mt-5 border-t border-line pt-5 text-sm text-muted">
+      <p>{text}</p>
+      {reservation.cancelled_at && (
+        <p className="mt-2">
+          処理日時: {format(new Date(reservation.cancelled_at), 'yyyy/MM/dd HH:mm')}
+        </p>
+      )}
+      {reservation.cancellation_fee_rate !== null && (
+        <p className="mt-1">
+          キャンセル料: {reservation.cancellation_fee_rate}%（
+          {formatYen(reservation.cancellation_fee_yen ?? 0)}）
+        </p>
+      )}
+    </div>
+  )
+}
+
+function getStatusActionLabel(status: ReservationStatus): string {
+  if (status === 'checked_in') return 'チェックインする'
+  if (status === 'checked_out') return 'チェックアウトする'
+  if (status === 'no_show') return '無連絡不泊にする'
+  return '予約を確定する'
+}
+
+function getActionDialogProperties(
+  action: Exclude<ActionRequest, null>,
+  reservation: ReservationDetail,
+  cancelFee: ReturnType<typeof getCancellationFee>,
+) {
+  const rooms = reservation.rooms
+    .map((room) =>
+      room.assigned_room
+        ? `${room.assigned_room.room_number}号室`
+        : `${room.room_type.name_ja}（未割当）`,
+    )
+    .join('・')
+  const common = `予約番号\n${reservation.reservation_number}\n\nお客様\n${reservation.guest.name}\n\n客室\n${rooms}`
+
+  if (action.type === 'cancel')
+    return {
+      title: '予約をキャンセルしますか？',
+      description: `${common}\n\n宿泊日の${cancelFee.daysBefore}日前\nキャンセル料: ${cancelFee.rate}%\n\n予約金額: ${formatYen(reservation.total_amount_yen ?? 0)}\nキャンセル料: ${formatYen(cancelFee.amount)}\n\n現地払いのため返金処理は行いません。割り当て済み客室は解放されます。`,
+      confirmLabel: 'キャンセル確定',
+      destructive: true,
+    }
+  if (action.status === 'checked_in')
+    return {
+      title: 'チェックインしますか？',
+      description: common,
+      confirmLabel: 'チェックインする',
+    }
+  if (action.status === 'checked_out')
+    return {
+      title: 'チェックアウトしますか？',
+      description: `${common}\n\nチェックアウト後、この予約は完了状態になります。`,
+      confirmLabel: 'チェックアウトする',
+    }
+  if (action.status === 'no_show')
+    return {
+      title: '無連絡不泊として処理しますか？',
+      description: `${common}\n\nこの操作を行うと予約は終了し、\nキャンセル料100%として記録されます。`,
+      confirmLabel: '無連絡不泊にする',
+      cancelLabel: '戻る',
+      destructive: true,
+    }
+  return {
+    title: '予約を確定しますか？',
+    description: common,
+    confirmLabel: '予約を確定する',
+  }
 }
 
 function DetailSection({

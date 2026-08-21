@@ -63,3 +63,37 @@ export async function updateAdminRoomSalesStatus(
     throw new Error('ROOM_STATUS_UPDATE_FAILED')
   }
 }
+
+export async function updateAdminRoomsSalesStatus(
+  roomIds: string[],
+  salesStatus: Extract<RoomSalesStatus, 'active' | 'inactive'>,
+): Promise<string[]> {
+  if (roomIds.length === 0) return []
+
+  const { data, error } = await supabase
+    .from('rooms')
+    .update({ sales_status: salesStatus })
+    .in('id', roomIds)
+    .in('sales_status', ['active', 'inactive'])
+    .select('id, sales_status')
+
+  if (error) {
+    console.error('[Admin rooms] Failed to bulk update room sales status.', {
+      code: error.code,
+      message: error.message,
+    })
+    throw new Error('ROOMS_BULK_STATUS_UPDATE_FAILED')
+  }
+
+  const returnedIds = new Set(data.map((room) => room.id))
+  if (
+    data.length !== roomIds.length ||
+    data.some(
+      (room) => room.sales_status !== salesStatus || !roomIds.includes(room.id),
+    ) ||
+    roomIds.some((roomId) => !returnedIds.has(roomId))
+  ) {
+    throw new Error('ROOMS_BULK_STATUS_UPDATE_MISMATCH')
+  }
+  return data.map((room) => room.id)
+}

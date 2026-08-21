@@ -13,12 +13,24 @@ export type Database = {
       hotel_settings: {
         Row: {
           max_booking_days: number
+          telephone: string | null
+          check_in_time: string
+          front_desk_open: string
+          front_desk_close: string
         }
         Insert: {
           max_booking_days?: number
+          telephone?: string | null
+          check_in_time?: string
+          front_desk_open?: string
+          front_desk_close?: string
         }
         Update: {
           max_booking_days?: number
+          telephone?: string | null
+          check_in_time?: string
+          front_desk_open?: string
+          front_desk_close?: string
         }
         Relationships: []
       }
@@ -251,6 +263,7 @@ export type Database = {
           cancelled_at: string | null
           cancellation_fee_rate: number | null
           cancellation_fee_yen: number | null
+          booking_request_id: string | null
           created_at: string
           updated_at: string
         }
@@ -273,6 +286,7 @@ export type Database = {
           cancelled_at?: string | null
           cancellation_fee_rate?: number | null
           cancellation_fee_yen?: number | null
+          booking_request_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -556,6 +570,42 @@ export type Database = {
           },
         ]
       }
+      cancellation_policies: {
+        Row: {
+          id: string
+          code: string
+          min_days_before: number | null
+          max_days_before: number | null
+          fee_percent: number
+          is_no_show: boolean
+          description_ja: string | null
+          description_en: string | null
+          description_ko: string | null
+          display_order: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          min_days_before?: number | null
+          max_days_before?: number | null
+          fee_percent: number
+          is_no_show?: boolean
+          description_ja?: string | null
+          description_en?: string | null
+          description_ko?: string | null
+          display_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<
+          Database['public']['Tables']['cancellation_policies']['Insert']
+        >
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {
@@ -583,6 +633,47 @@ export type Database = {
       update_admin_reservation_contact: {
         Args: { p_reservation_id: string; p_guest: Json; p_reservation: Json }
         Returns: undefined
+      }
+      search_available_room_types: {
+        Args: {
+          p_check_in: string
+          p_check_out: string
+          p_adults: number
+          p_paid_children: number
+          p_free_preschool_children: number
+          p_room_count: number
+        }
+        Returns: {
+          room_type_id: string
+          room_type_code: string
+          room_type_name_ja: string
+          available_quantity: number
+          is_available: boolean
+          guest_distribution: Json
+          nightly_prices: Json
+          min_price_per_person_yen: number
+          estimated_total_yen: number
+        }[]
+      }
+      create_public_reservation: {
+        Args: {
+          p_booking_request_id: string
+          p_check_in: string
+          p_check_out: string
+          p_adults: number
+          p_paid_children: number
+          p_free_preschool_children: number
+          p_room_count: number
+          p_room_type_id: string
+          p_name: string
+          p_name_kana_or_roman: string
+          p_telephone: string
+          p_email: string
+          p_expected_check_in_time: string
+          p_guest_note: string
+          p_expected_total_yen: number
+        }
+        Returns: Json
       }
     }
     Enums: Record<string, never>

@@ -13,12 +13,15 @@ const listSelect = `
   id, reservation_number, check_in, check_out, adults, paid_children,
   free_preschool_children, status, booking_source, total_amount_yen,
   admin_seen_at, created_at,
+  payments (method, status),
   guest:guests (id, name, name_kana_or_roman, email, telephone),
   rooms:reservation_rooms (
     id, room_type_id, paid_guest_count, free_preschool_count,
     room_type:room_types (id, code, name_ja)
   )
 `
+
+export const adminReservationSeenEvent = 'admin-reservation-seen'
 
 export async function fetchReservations(): Promise<ReservationListItem[]> {
   const { data, error } = await supabase
@@ -27,6 +30,16 @@ export async function fetchReservations(): Promise<ReservationListItem[]> {
     .order('created_at', { ascending: false })
   if (error) throwReservationError('load reservations', error)
   return data.map(mapReservationListItem)
+}
+
+export async function fetchNewOnlineReservationCount(): Promise<number> {
+  const { count, error } = await supabase
+    .from('reservations')
+    .select('id', { count: 'exact', head: true })
+    .eq('booking_source', 'online')
+    .is('admin_seen_at', null)
+  if (error) throwReservationError('load new reservation count', error)
+  return count ?? 0
 }
 
 export async function fetchReservationDetail(
@@ -110,15 +123,30 @@ export async function createAdminReservation(
 
 export async function markReservationSeen(
   reservationId: string,
-): Promise<void> {
+): Promise<boolean> {
   const { data, error } = await supabase
     .from('reservations')
     .update({ admin_seen_at: new Date().toISOString() })
     .eq('id', reservationId)
+    .eq('booking_source', 'online')
     .is('admin_seen_at', null)
     .select('id')
   if (error) throwReservationError('mark reservation seen', error)
   if (data.length > 1) throw new Error('RESERVATION_SEEN_INVALID')
+  if (data.length === 1) {
+    window.dispatchEvent(new Event(adminReservationSeenEvent))
+    return true
+  }
+
+  const { data: current, error: verifyError } = await supabase
+    .from('reservations')
+    .select('booking_source, admin_seen_at')
+    .eq('id', reservationId)
+    .single()
+  if (verifyError) throwReservationError('verify reservation seen', verifyError)
+  if (current.booking_source === 'online' && current.admin_seen_at === null)
+    throw new Error('RESERVATION_SEEN_NOT_UPDATED')
+  return false
 }
 
 export async function updateReservationContact(
@@ -223,6 +251,10 @@ function mapReservationListItem(data: {
   booking_source: ReservationListItem['booking_source']
   total_amount_yen: number | null
   admin_seen_at: string | null
+  payments: {
+    method: 'pay_at_hotel' | 'bank_transfer' | 'card'
+    status: 'pending' | 'awaiting_payment' | 'paid' | 'refunded' | 'cancelled'
+  }[]
   created_at: string
   guest: ReservationListItem['guest']
   rooms: {
@@ -245,6 +277,10 @@ function mapReservationListItem(data: {
     booking_source: data.booking_source,
     total_amount_yen: data.total_amount_yen,
     admin_seen_at: data.admin_seen_at,
+    has_pending_bank_transfer: data.payments.some(
+      (payment) =>
+        payment.method === 'bank_transfer' && payment.status === 'pending',
+    ),
     created_at: data.created_at,
     guest: data.guest,
     rooms: data.rooms.map((room) => ({ ...room, room_type: room.room_type })),
