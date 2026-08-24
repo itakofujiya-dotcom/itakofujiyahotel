@@ -39,6 +39,47 @@ test('translates required admin sections and cancellation messages', () => {
   assert.equal(translateAdminText('キャンセル料', 'ko'), '취소 수수료')
 })
 
+test('uses explicit keys for reservation tabs and managed booking action', () => {
+  assert.equal(adminTranslations.ja['reservations.tab.list'], '一覧')
+  assert.equal(adminTranslations.ko['reservations.tab.list'], '목록')
+  assert.equal(
+    adminTranslations.ja['reservations.action.createManaged'],
+    '電話・管理者予約を登録',
+  )
+  assert.equal(
+    adminTranslations.ko['reservations.action.createManaged'],
+    '전화·관리자 예약 등록',
+  )
+  const page = readFileSync(
+    new URL('../src/pages/admin/ReservationsAdminPage.tsx', import.meta.url),
+    'utf8',
+  )
+  assert.match(page, /t\('reservations\.tab\.list'\)/)
+  assert.match(page, /t\('reservations\.action\.createManaged'\)/)
+})
+
+test('removes reservation page Japanese remnants in Korean mode', () => {
+  const cases = {
+    一覧: '목록',
+    '電話・管理者予約を登録': '전화·관리자 예약 등록',
+    運営フィルター: '운영 필터',
+    有効なチェックイン: '유효한 체크인',
+    有効なチェックアウト: '유효한 체크아웃',
+    '銀行振込・未入金': '계좌이체·미입금',
+    チェックイン日: '체크인 날짜',
+    チェックアウト日: '체크아웃 날짜',
+    宿泊日: '숙박일',
+    食事プラン: '식사 플랜',
+    客室を追加: '객실 추가',
+    客室料金: '객실 요금',
+    夕食追加: '석식 추가',
+    客室合計: '객실 합계',
+    処理日時: '처리 일시',
+  }
+  for (const [japanese, korean] of Object.entries(cases))
+    assert.equal(translateAdminText(japanese, 'ko'), korean)
+})
+
 test('removes known Japanese and English remnants from Korean admin UI', () => {
   assert.equal(translateAdminText('カレンダー', 'ko'), '캘린더')
   assert.equal(translateAdminText('該当なし', 'ko'), '해당 없음')

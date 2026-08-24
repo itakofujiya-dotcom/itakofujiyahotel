@@ -19,8 +19,10 @@ import type {
   ReservationStatus,
 } from '../../features/admin-reservations/types'
 import { useAdminReservations } from '../../features/admin-reservations/useAdminReservations'
+import { useAdminTranslation } from '../../i18n/useAdminTranslation'
 
 export function ReservationsAdminPage() {
+  const { t } = useAdminTranslation()
   const [params, setParams] = useSearchParams()
   const paramsKey = params.toString()
   const initialFilters = parseReservationFilters(params)
@@ -76,7 +78,7 @@ export function ReservationsAdminPage() {
           }}
           className={`min-h-11 px-5 text-sm font-semibold ${view === 'calendar' && !filters.newOnly ? 'bg-moss text-white' : 'border border-line bg-surface'}`}
         >
-          カレンダー
+          {t('reservations.tab.calendar')}
         </button>
         <button
           type="button"
@@ -85,20 +87,20 @@ export function ReservationsAdminPage() {
           }}
           className={`min-h-11 px-5 text-sm font-semibold ${view === 'list' && !filters.newOnly ? 'bg-moss text-white' : 'border border-line bg-surface'}`}
         >
-          一覧
+          {t('reservations.tab.list')}
         </button>
         <button
           type="button"
           onClick={showNewOnly}
           className={`min-h-11 px-5 text-sm font-semibold ${filters.newOnly ? 'bg-moss text-white' : 'border border-line bg-surface'}`}
         >
-          新規予約 {newCount}件
+          {t('reservations.tab.new')} {newCount}件
         </button>
         <Link
           to="/admin/reservations/new"
           className="ml-auto inline-flex min-h-11 items-center bg-accent px-5 text-sm font-semibold text-white"
         >
-          電話・管理者予約を登録
+          {t('reservations.action.createManaged')}
         </Link>
       </div>
 
