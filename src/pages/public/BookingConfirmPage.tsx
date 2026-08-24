@@ -24,8 +24,12 @@ import type {
   BookingDraft,
   CancellationPolicy,
 } from '../../features/booking/types'
-import { mealPlanLabels } from '../../features/booking/meal-plan'
 import { useSiteTranslation } from '../../i18n/useSiteTranslation'
+import {
+  getLocalizedCancellationPolicyLabel,
+  getLocalizedMealPlanLabel,
+  getLocalizedRoomTypeName,
+} from '../../features/booking/public-labels'
 
 const fallbackPolicies = [
   ['7日前まで', '無料'],
@@ -174,14 +178,15 @@ export function BookingConfirmPage() {
               {booking.rooms.map((room) => (
                 <div key={room.roomIndex} className="text-sm">
                   <p className="font-semibold">
-                    客室 {room.roomIndex + 1} · {room.roomTypeNameJa}
+                    客室 {room.roomIndex + 1} ·{' '}
+                    {getLocalizedRoomTypeName(room.roomTypeNameJa, locale)}
                   </p>
                   <p className="mt-1 text-muted">
                     大人 {room.adultGuestCount}名 · 子ども {room.paidChildCount}
                     名 · 添い寝 {room.freePreschoolCount}名
                   </p>
                   <p className="mt-1 text-muted">
-                    {mealPlanLabels[room.mealPlan]}
+                    {getLocalizedMealPlanLabel(room.mealPlan, locale)}
                   </p>
                 </div>
               ))}
@@ -212,7 +217,8 @@ export function BookingConfirmPage() {
               {booking.rooms.map((room) => (
                 <div key={room.roomIndex} className="py-4 first:pt-0">
                   <p className="font-semibold">
-                    客室 {room.roomIndex + 1} · {room.roomTypeNameJa}
+                    客室 {room.roomIndex + 1} ·{' '}
+                    {getLocalizedRoomTypeName(room.roomTypeNameJa, locale)}
                   </p>
                   {room.nightlyPrices.map((night) => (
                     <p key={night.stayDate} className="mt-2 text-sm text-muted">
@@ -260,7 +266,9 @@ export function BookingConfirmPage() {
                       key={policy.id}
                       className="flex justify-between gap-4 py-3 first:pt-0"
                     >
-                      <span>{policy.descriptionJa ?? policy.code}</span>
+                      <span>
+                        {getLocalizedCancellationPolicyLabel(policy, locale)}
+                      </span>
                       <strong>
                         {policy.feePercent === 0
                           ? '無料'

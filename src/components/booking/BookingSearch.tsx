@@ -9,6 +9,7 @@ import {
 import type { BookingSearchParams } from '../../features/booking/types'
 import { getSiteLanguageTag } from '../../i18n/public-translations'
 import { useSiteTranslation } from '../../i18n/useSiteTranslation'
+import { LocalizedDateInput } from './LocalizedDateInput'
 
 type Props = { compact?: boolean; isLoading?: boolean }
 
@@ -58,13 +59,8 @@ export function BookingSearch({ compact = false, isLoading = false }: Props) {
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[1.2fr_1.2fr_.7fr_.8fr_.9fr_.7fr_auto] xl:items-end">
         <Field label={t('booking.checkIn')}>
-          <input
-            key={`check-in-${locale}`}
-            className="admin-input"
-            type="date"
-            lang={languageTag}
-            aria-label={`${t('booking.checkIn')} (${t('booking.dateInputFormat')})`}
-            title={t('booking.dateInputFormat')}
+          <LocalizedDateInput
+            label={t('booking.checkIn')}
             min={japanToday}
             value={form.checkIn}
             onChange={(event) =>
@@ -73,13 +69,8 @@ export function BookingSearch({ compact = false, isLoading = false }: Props) {
           />
         </Field>
         <Field label={t('booking.checkOut')}>
-          <input
-            key={`check-out-${locale}`}
-            className="admin-input"
-            type="date"
-            lang={languageTag}
-            aria-label={`${t('booking.checkOut')} (${t('booking.dateInputFormat')})`}
-            title={t('booking.dateInputFormat')}
+          <LocalizedDateInput
+            label={t('booking.checkOut')}
             min={form.checkIn || japanToday}
             value={form.checkOut}
             onChange={(event) =>

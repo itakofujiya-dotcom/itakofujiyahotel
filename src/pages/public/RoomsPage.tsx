@@ -16,7 +16,7 @@ export function RoomsPage() {
       <section className="page-shell py-16 lg:py-24">
         <div className="grid gap-8 md:grid-cols-2">
           {roomTypePreviews.map((room) => (
-            <RoomCard key={room.id} room={room} />
+            <RoomCard key={room.id} room={room} headingLevel={2} />
           ))}
         </div>
         <div className="mt-20">

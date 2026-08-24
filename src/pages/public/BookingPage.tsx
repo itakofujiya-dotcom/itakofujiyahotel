@@ -67,10 +67,16 @@ export function BookingPage() {
     void searchAvailableRoomTypes(params)
       .then((nextResults) => {
         if (!active) return
-        setResults(nextResults)
+        const availableResults = nextResults.filter(
+          (result) => result.availableQuantity > 0,
+        )
+        const initialRoomTypeIds = buildInitialRoomTypeIds(
+          availableResults,
+          params.roomCount,
+        )
+        setResults(initialRoomTypeIds ? availableResults : [])
         setSearchedParams(params)
-        const firstType = nextResults[0]
-        if (!firstType) return setRooms([])
+        if (!initialRoomTypeIds) return setRooms([])
         const adultDistribution = distribute(params.adults, params.roomCount, 1)
         const childDistribution = distribute(
           params.paidChildren,
@@ -82,7 +88,7 @@ export function BookingPage() {
         )
         setRooms(
           Array.from({ length: params.roomCount }, (_, index) => ({
-            roomTypeId: firstType.roomTypeId,
+            roomTypeId: initialRoomTypeIds[index],
             adultGuestCount: adultDistribution[index],
             paidChildCount: childDistribution[index],
             freePreschoolCount: freeDistribution[index],
@@ -190,6 +196,9 @@ export function BookingPage() {
             {error}
           </p>
         )}
+        {!isLoading && results && searchedParams && results.length === 0 && (
+          <NoAvailability />
+        )}
         {!isLoading && results && searchedParams && rooms.length > 0 && (
           <RoomConfigurator
             params={searchedParams}
@@ -223,7 +232,7 @@ function RoomConfigurator({
   onUpdate: (index: number, patch: Partial<BookingRoomInput>) => void
   onProceed: () => void
 }) {
-  const { locale } = useSiteTranslation()
+  const { locale, translate } = useSiteTranslation()
   const languageTag = getSiteLanguageTag(locale)
   const nights = differenceInCalendarDays(
     new Date(`${params.checkOut}T00:00:00`),
@@ -260,7 +269,7 @@ function RoomConfigurator({
                 >
                   {roomTypes.map((type) => (
                     <option key={type.roomTypeId} value={type.roomTypeId}>
-                      {type.nameJa}
+                      {translate(type.nameJa)}
                     </option>
                   ))}
                 </SelectField>
@@ -435,6 +444,36 @@ function LoadingPanel() {
       <p className="mt-4 text-sm text-muted">空室を確認しています...</p>
     </div>
   )
+}
+
+function NoAvailability() {
+  return (
+    <div
+      className="mt-8 border border-line bg-surface p-8 text-center shadow-soft"
+      role="status"
+    >
+      <h2 className="font-serif text-2xl">
+        選択された日程ではご予約可能な客室がありません。
+      </h2>
+      <p className="mt-3 text-sm leading-7 text-muted">
+        別の日程で再度検索してください。
+      </p>
+    </div>
+  )
+}
+
+function buildInitialRoomTypeIds(
+  roomTypes: AvailableRoomTypeResult[],
+  roomCount: number,
+): string[] | null {
+  const availableRoomTypeIds = roomTypes.flatMap((roomType) =>
+    Array.from(
+      { length: Math.max(0, roomType.availableQuantity) },
+      () => roomType.roomTypeId,
+    ),
+  )
+  if (availableRoomTypeIds.length < roomCount) return null
+  return availableRoomTypeIds.slice(0, roomCount)
 }
 
 function distribute(total: number, count: number, minimum = 0): number[] {

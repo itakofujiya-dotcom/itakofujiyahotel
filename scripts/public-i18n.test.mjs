@@ -34,6 +34,13 @@ const bookingSearch = readFileSync(
   new URL('../src/components/booking/BookingSearch.tsx', import.meta.url),
   'utf8',
 )
+const localizedDateInput = readFileSync(
+  new URL(
+    '../src/components/booking/LocalizedDateInput.tsx',
+    import.meta.url,
+  ),
+  'utf8',
+)
 const bookingFormat = readFileSync(
   new URL('../src/features/booking/booking-format.ts', import.meta.url),
   'utf8',
@@ -76,8 +83,8 @@ test('contains translations for navigation, booking, cancellation, and policy UI
 
 test('contains fixed-code display translations while preserving DB code strings', () => {
   for (const expected of [
-    "['和室', '화실']",
-    "['洋室', '양실']",
+    "['和室', '다다미방']",
+    "['洋室', '침대방']",
     "['朝食付き', '조식 포함']",
     "['朝食・夕食付き', '조식·석식 포함']",
     "['銀行振込', '계좌이체']",
@@ -97,9 +104,9 @@ test('contains fixed-code display translations while preserving DB code strings'
     assert.doesNotMatch(translations, new RegExp(`'${code}', '[가-힣]`))
 })
 
-test('keeps public room names independent from Korean admin room labels', () => {
-  assert.ok(translations.includes("['和室', '화실']"))
-  assert.ok(translations.includes("['洋室', '양실']"))
+test('uses the approved Korean room names in public and admin UI', () => {
+  assert.ok(translations.includes("['和室', '다다미방']"))
+  assert.ok(translations.includes("['洋室', '침대방']"))
   assert.ok(adminTranslations.includes("['和室', '다다미방']"))
   assert.ok(adminTranslations.includes("['洋室', '침대방']"))
 })
@@ -124,10 +131,11 @@ test('localizes native booking controls explicitly instead of relying on browser
   ])
     assert.ok(translations.includes(expected), `missing ${expected}`)
 
-  assert.match(bookingSearch, /lang=\{languageTag\}/)
-  assert.match(bookingSearch, /key=\{`check-in-\$\{locale\}`\}/)
-  assert.match(bookingSearch, /key=\{`check-out-\$\{locale\}`\}/)
-  assert.match(bookingSearch, /t\('booking\.dateInputFormat'\)/)
+  assert.match(bookingSearch, /<LocalizedDateInput/)
+  assert.match(localizedDateInput, /type="date"/)
+  assert.match(localizedDateInput, /lang=\{getSiteLanguageTag\(locale\)\}/)
+  assert.match(localizedDateInput, /localized-date-input--empty/)
+  assert.match(localizedDateInput, /t\('booking\.dateInputFormat'\)/)
 })
 
 test('formats public booking dates with the active locale in Japan time', () => {
@@ -156,7 +164,11 @@ test('does not hardcode Korean UI copy in Japanese-first public render files', (
   )
 
   for (const file of files) {
-    if (file.endsWith('PolicyPage.tsx')) continue
+    if (
+      file.endsWith('PolicyPage.tsx') ||
+      file.endsWith('public-labels.ts')
+    )
+      continue
     const source = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
     assert.doesNotMatch(source, /[가-힣]/, `unexpected Korean copy in ${file}`)
   }

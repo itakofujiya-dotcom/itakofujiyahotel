@@ -8,8 +8,12 @@ import { formatBookingDate } from '../../features/booking/booking-format'
 import { readBookingCompletion } from '../../features/booking/storage'
 import type { PublicHotelInfo } from '../../features/booking/types'
 import { hotelSettings } from '../../data/hotel'
-import { mealPlanLabels } from '../../features/booking/meal-plan'
 import { useSiteTranslation } from '../../i18n/useSiteTranslation'
+import {
+  getLocalizedArrivalContact,
+  getLocalizedMealPlanLabel,
+  getLocalizedRoomTypeName,
+} from '../../features/booking/public-labels'
 
 export function BookingCompletePage() {
   const { locale } = useSiteTranslation()
@@ -85,13 +89,16 @@ export function BookingCompletePage() {
           {completion.rooms.map((room) => (
             <div key={room.roomIndex} className="border border-line p-4">
               <p className="font-semibold">
-                客室 {room.roomIndex + 1} · {room.roomTypeNameJa}
+                客室 {room.roomIndex + 1} ·{' '}
+                {getLocalizedRoomTypeName(room.roomTypeNameJa, locale)}
               </p>
               <p className="mt-2 text-sm text-muted">
                 大人 {room.adultGuestCount}名 · 子ども {room.paidChildCount}名 ·
                 添い寝 {room.freePreschoolCount}名
               </p>
-              <p className="mt-1 text-sm">{mealPlanLabels[room.mealPlan]}</p>
+              <p className="mt-1 text-sm">
+                {getLocalizedMealPlanLabel(room.mealPlan, locale)}
+              </p>
               {room.mealSurchargeYen > 0 && (
                 <p className="mt-1 text-sm text-muted">
                   夕食追加料金 {formatYen(room.mealSurchargeYen)}
@@ -108,8 +115,7 @@ export function BookingCompletePage() {
             お支払いはホテルにてお願いいたします。
           </p>
           <p className="mt-3 text-sm leading-7 text-muted">
-            送迎や到着時間の変更は、ホテル（{hotel.telephone}
-            ）へお問い合わせください。
+            {getLocalizedArrivalContact(hotel.telephone, locale)}
           </p>
         </div>
         <ButtonLink to="/" className="mt-8">

@@ -19,6 +19,7 @@ import {
 import type { BookingGuestDraft } from '../../features/booking/types'
 import { getSiteLanguageTag } from '../../i18n/public-translations'
 import { useSiteTranslation } from '../../i18n/useSiteTranslation'
+import { getLocalizedFrontDeskHours } from '../../features/booking/public-labels'
 
 const initialGuest: BookingGuestDraft = {
   name: '',
@@ -165,8 +166,11 @@ export function BookingDetailsPage() {
                   ))}
                 </select>
                 <p className="mt-2 text-xs text-muted">
-                  フロント受付時間は{CHECK_IN_START_TIME}〜{CHECK_IN_END_TIME}
-                  です。
+                  {getLocalizedFrontDeskHours(
+                    CHECK_IN_START_TIME,
+                    CHECK_IN_END_TIME,
+                    locale,
+                  )}
                 </p>
               </Field>
             </div>

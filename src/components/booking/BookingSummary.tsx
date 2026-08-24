@@ -4,8 +4,11 @@ import {
   getStayNights,
 } from '../../features/booking/booking-format'
 import type { BookingDraft } from '../../features/booking/types'
-import { mealPlanLabels } from '../../features/booking/meal-plan'
 import { useSiteTranslation } from '../../i18n/useSiteTranslation'
+import {
+  getLocalizedMealPlanLabel,
+  getLocalizedRoomTypeName,
+} from '../../features/booking/public-labels'
 
 export function BookingSummary({ booking }: { booking: BookingDraft }) {
   const { locale } = useSiteTranslation()
@@ -37,11 +40,12 @@ export function BookingSummary({ booking }: { booking: BookingDraft }) {
         {booking.rooms.map((room) => (
           <div key={room.roomIndex}>
             <p className="font-semibold">
-              客室 {room.roomIndex + 1} · {room.roomTypeNameJa}
+              客室 {room.roomIndex + 1} ·{' '}
+              {getLocalizedRoomTypeName(room.roomTypeNameJa, locale)}
             </p>
             <p className="mt-1 text-xs text-muted">
               大人 {room.adultGuestCount}名 · 子ども {room.paidChildCount}名 ·{' '}
-              {mealPlanLabels[room.mealPlan]}
+              {getLocalizedMealPlanLabel(room.mealPlan, locale)}
             </p>
           </div>
         ))}

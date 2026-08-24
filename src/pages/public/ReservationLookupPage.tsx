@@ -2,7 +2,11 @@ import { useState, type FormEvent } from 'react'
 import { PageHero } from '../../components/common/PageHero'
 import { RateConfirmDialog } from '../../features/admin-rates/RateConfirmDialog'
 import { formatYen } from '../../features/admin-rates/rate-helpers'
-import { mealPlanLabels } from '../../features/booking/meal-plan'
+import {
+  getLocalizedCancellationQuoteLabel,
+  getLocalizedMealPlanLabel,
+  getLocalizedRoomTypeName,
+} from '../../features/booking/public-labels'
 import { formatBookingDate } from '../../features/booking/booking-format'
 import {
   cancelPublicReservation,
@@ -120,7 +124,7 @@ export function ReservationLookupPage() {
           className="mx-auto max-w-3xl border border-line bg-surface p-6 shadow-soft sm:p-8"
           noValidate
         >
-          <h1 className="font-serif text-2xl">ご予約を確認する</h1>
+          <h2 className="font-serif text-2xl">ご予約を確認する</h2>
           <p className="mt-3 text-sm leading-7 text-muted">
             予約番号だけでは照会できません。ご予約時のメールアドレスまたは電話番号も入力してください。
           </p>
@@ -258,13 +262,16 @@ function ReservationResult({
           {reservation.rooms.map((room) => (
             <div key={room.roomIndex} className="py-4 first:pt-0">
               <p className="font-semibold">
-                客室 {room.roomIndex + 1} · {room.roomTypeNameJa}
+                客室 {room.roomIndex + 1} ·{' '}
+                {getLocalizedRoomTypeName(room.roomTypeNameJa, locale)}
               </p>
               <p className="mt-2 text-sm text-muted">
                 大人 {room.adultGuestCount}名 · 子ども {room.paidChildCount}名 ·
                 添い寝 {room.freePreschoolCount}名
               </p>
-              <p className="mt-1 text-sm">{mealPlanLabels[room.mealPlan]}</p>
+              <p className="mt-1 text-sm">
+                {getLocalizedMealPlanLabel(room.mealPlan, locale)}
+              </p>
             </div>
           ))}
         </div>
@@ -273,7 +280,12 @@ function ReservationResult({
       <section className="border border-line bg-surface p-6 shadow-soft sm:p-8">
         <h2 className="font-serif text-xl">キャンセルについて</h2>
         <p className="mt-4 text-sm leading-7">
-          {reservation.policyDescriptionJa ?? reservation.policyCode}
+          {getLocalizedCancellationQuoteLabel(
+            reservation.policyCode,
+            reservation.policyDescriptionJa,
+            reservation.feePercent,
+            locale,
+          )}
         </p>
         <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-3">
           <ResultRow

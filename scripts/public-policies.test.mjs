@@ -119,8 +119,19 @@ test('uses a sticky desktop TOC and a compact mobile/tablet TOC', () => {
 })
 
 test('tracks the currently read policy section without hardcoded titles', () => {
-  assert.match(policyPage, /new IntersectionObserver/)
-  assert.match(policyPage, /rootMargin: '-120px 0px -60% 0px'/)
-  assert.match(policyPage, /sections\.map\(\(section\)/)
+  assert.match(policyPage, /const headerOffset = 128/)
+  assert.match(policyPage, /getBoundingClientRect\(\)\.top <= headerOffset/)
+  assert.match(policyPage, /window\.addEventListener\('scroll'/)
+  assert.match(policyPage, /window\.addEventListener\('hashchange'/)
+  assert.match(policyPage, /document\.documentElement\.scrollHeight - 2/)
   assert.doesNotMatch(policyPage, /第1条 宿泊契約の申込み/)
+})
+
+test('Japanese policy documents do not expose Korean drafting notes', () => {
+  for (const document of [
+    documents.termsJa,
+    documents.privacyJa,
+    documents.cancellationJa,
+  ])
+    assert.doesNotMatch(document, /[가-힣]/)
 })

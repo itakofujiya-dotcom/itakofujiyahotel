@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { PageHero } from '../../components/common/PageHero'
 import { getPolicyDocument, type PolicyKind } from '../../content/policies'
 import { useSiteTranslation } from '../../i18n/useSiteTranslation'
@@ -30,6 +30,7 @@ export function PolicyPage({ kind }: { kind: PolicyKind }) {
   const [activeSectionId, setActiveSectionId] = useState(
     content.sections[0]?.id ?? '',
   )
+  const navigationTargetRef = useRef<string | null>(null)
 
   useEffect(() => {
     const sectionIds = new Set(content.sections.map((section) => section.id))
@@ -37,6 +38,7 @@ export function PolicyPage({ kind }: { kind: PolicyKind }) {
     const initialSectionId = sectionIds.has(hashId)
       ? hashId
       : (content.sections[0]?.id ?? '')
+    navigationTargetRef.current = sectionIds.has(hashId) ? hashId : null
     setActiveSectionId(initialSectionId)
 
     if (!sectionIds.has(hashId)) return
@@ -52,28 +54,65 @@ export function PolicyPage({ kind }: { kind: PolicyKind }) {
       .filter((element): element is HTMLElement => element !== null)
     if (elements.length === 0) return
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort(
-            (left, right) =>
-              Math.abs(left.boundingClientRect.top) -
-              Math.abs(right.boundingClientRect.top),
-          )
-        if (visible[0]) setActiveSectionId(visible[0].target.id)
-      },
-      {
-        rootMargin: '-120px 0px -60% 0px',
-        threshold: [0, 0.1],
-      },
-    )
+    const headerOffset = 128
+    const updateActiveSection = () => {
+      const navigationTarget = navigationTargetRef.current
+      if (navigationTarget) {
+        const targetElement = elements.find(
+          (element) => element.id === navigationTarget,
+        )
+        if (
+          targetElement &&
+          Math.abs(targetElement.getBoundingClientRect().top - headerOffset) >
+            12 &&
+          window.innerHeight + window.scrollY <
+            document.documentElement.scrollHeight - 2
+        )
+          return
+        navigationTargetRef.current = null
+      }
 
-    elements.forEach((element) => observer.observe(element))
-    return () => observer.disconnect()
+      if (
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 2
+      ) {
+        setActiveSectionId(elements[elements.length - 1].id)
+        return
+      }
+
+      let activeElement = elements[0]
+      for (const element of elements) {
+        if (element.getBoundingClientRect().top <= headerOffset + 8)
+          activeElement = element
+        else break
+      }
+      setActiveSectionId(activeElement.id)
+    }
+    const updateFromHash = () => {
+      const hashId = decodeURIComponent(window.location.hash.slice(1))
+      if (elements.some((element) => element.id === hashId)) {
+        navigationTargetRef.current = hashId
+        setActiveSectionId(hashId)
+      }
+    }
+
+    updateFromHash()
+    window.requestAnimationFrame(updateActiveSection)
+    window.addEventListener('scroll', updateActiveSection, { passive: true })
+    window.addEventListener('resize', updateActiveSection)
+    window.addEventListener('hashchange', updateFromHash)
+    return () => {
+      window.removeEventListener('scroll', updateActiveSection)
+      window.removeEventListener('resize', updateActiveSection)
+      window.removeEventListener('hashchange', updateFromHash)
+    }
   }, [content.sections])
 
   const tocLabel = t('policy.tableOfContents')
+  const navigateToSection = (sectionId: string) => {
+    navigationTargetRef.current = sectionId
+    setActiveSectionId(sectionId)
+  }
 
   return (
     <div data-site-i18n-ignore>
@@ -94,7 +133,7 @@ export function PolicyPage({ kind }: { kind: PolicyKind }) {
                   sections={content.sections}
                   activeSectionId={activeSectionId}
                   label={tocLabel}
-                  onNavigate={setActiveSectionId}
+                  onNavigate={navigateToSection}
                 />
               </div>
             </details>
@@ -140,7 +179,7 @@ export function PolicyPage({ kind }: { kind: PolicyKind }) {
                 sections={content.sections}
                 activeSectionId={activeSectionId}
                 label={tocLabel}
-                onNavigate={setActiveSectionId}
+                onNavigate={navigateToSection}
               />
             </div>
           </aside>

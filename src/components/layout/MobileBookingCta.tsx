@@ -1,7 +1,10 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { CalendarDays } from 'lucide-react'
 
 export function MobileBookingCta() {
+  const { pathname } = useLocation()
+  if (pathname === '/booking' || pathname.startsWith('/booking/')) return null
+
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface p-3 sm:hidden">
       <Link

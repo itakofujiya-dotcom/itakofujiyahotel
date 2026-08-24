@@ -133,6 +133,14 @@ textarea {
   font-family: var(--font-ui);
 }
 
+.localized-date-input--empty::-webkit-datetime-edit {
+  color: transparent;
+}
+
+.localized-date-input--empty::-webkit-date-and-time-value {
+  color: transparent;
+}
+
 .sales-print-only {
   display: none;
 }

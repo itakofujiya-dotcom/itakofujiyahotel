@@ -134,6 +134,7 @@ export function HomePage() {
             eyebrow="ACCESS"
             title="潮来のまちへ、ようこそ"
             description="電車でもお車でもお越しいただけます。潮来駅へのお迎えについては、事前にホテルまでお問い合わせください。"
+            tone="dark"
           />
           <div className="grid gap-px bg-white/15 sm:grid-cols-2">
             <div className="bg-moss p-7">
