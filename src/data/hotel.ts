@@ -40,8 +40,6 @@ export const amenities: Amenity[] = [
   ['conditioner', 'コンディショナー', 'toiletry', true],
   ['body-soap', 'ボディソープ', 'toiletry', true],
   ['slippers', 'スリッパ', 'toiletry', true],
-  ['coffee', 'コーヒー', 'toiletry', false],
-  ['tea', 'お茶', 'toiletry', false],
 ].map(([id, labelJa, category, provided]) => ({
   id,
   labelJa,
