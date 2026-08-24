@@ -7,11 +7,15 @@ import {
   validateBookingSearch,
 } from '../../features/booking/validation'
 import type { BookingSearchParams } from '../../features/booking/types'
+import { getSiteLanguageTag } from '../../i18n/public-translations'
+import { useSiteTranslation } from '../../i18n/useSiteTranslation'
 
 type Props = { compact?: boolean; isLoading?: boolean }
 
 export function BookingSearch({ compact = false, isLoading = false }: Props) {
   const navigate = useNavigate()
+  const { locale, t } = useSiteTranslation()
+  const languageTag = getSiteLanguageTag(locale)
   const [searchParams] = useSearchParams()
   const initial = parseBookingSearchParams(searchParams)
   const [error, setError] = useState<string | null>(null)
@@ -53,10 +57,14 @@ export function BookingSearch({ compact = false, isLoading = false }: Props) {
       noValidate
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[1.2fr_1.2fr_.7fr_.8fr_.9fr_.7fr_auto] xl:items-end">
-        <Field label="チェックイン">
+        <Field label={t('booking.checkIn')}>
           <input
+            key={`check-in-${locale}`}
             className="admin-input"
             type="date"
+            lang={languageTag}
+            aria-label={`${t('booking.checkIn')} (${t('booking.dateInputFormat')})`}
+            title={t('booking.dateInputFormat')}
             min={japanToday}
             value={form.checkIn}
             onChange={(event) =>
@@ -64,10 +72,14 @@ export function BookingSearch({ compact = false, isLoading = false }: Props) {
             }
           />
         </Field>
-        <Field label="チェックアウト">
+        <Field label={t('booking.checkOut')}>
           <input
+            key={`check-out-${locale}`}
             className="admin-input"
             type="date"
+            lang={languageTag}
+            aria-label={`${t('booking.checkOut')} (${t('booking.dateInputFormat')})`}
+            title={t('booking.dateInputFormat')}
             min={form.checkIn || japanToday}
             value={form.checkOut}
             onChange={(event) =>
@@ -75,24 +87,27 @@ export function BookingSearch({ compact = false, isLoading = false }: Props) {
             }
           />
         </Field>
-        <Field label="大人">
+        <Field label={t('booking.adults')}>
           <Select
+            lang={languageTag}
             value={form.adults}
             onChange={(value) => setForm({ ...form, adults: value })}
             min={1}
             max={16}
           />
         </Field>
-        <Field label="子ども（有料）">
+        <Field label={t('booking.paidChildren')}>
           <Select
+            lang={languageTag}
             value={form.paidChildren}
             onChange={(value) => setForm({ ...form, paidChildren: value })}
             min={0}
             max={12}
           />
         </Field>
-        <Field label="未就学児（添い寝）">
+        <Field label={t('booking.preschoolChildren')}>
           <Select
+            lang={languageTag}
             value={form.freePreschoolChildren}
             onChange={(value) =>
               setForm({ ...form, freePreschoolChildren: value })
@@ -101,8 +116,9 @@ export function BookingSearch({ compact = false, isLoading = false }: Props) {
             max={8}
           />
         </Field>
-        <Field label="客室数">
+        <Field label={t('booking.roomCount')}>
           <Select
+            lang={languageTag}
             value={form.roomCount}
             onChange={(value) => setForm({ ...form, roomCount: value })}
             min={1}
@@ -115,7 +131,7 @@ export function BookingSearch({ compact = false, isLoading = false }: Props) {
           disabled={isLoading}
         >
           <Search size={17} />
-          {isLoading ? '確認中…' : '空室を検索'}
+          {isLoading ? t('booking.searching') : t('booking.search')}
         </button>
       </div>
       {error && (
@@ -149,15 +165,18 @@ function Select({
   onChange,
   min,
   max,
+  lang,
 }: {
   value: number
   onChange: (value: number) => void
   min: number
   max: number
+  lang: string
 }) {
   return (
     <select
       className="admin-input"
+      lang={lang}
       value={value}
       onChange={(event) => onChange(Number(event.target.value))}
     >

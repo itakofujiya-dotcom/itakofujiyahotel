@@ -10,6 +10,8 @@ import {
   PublicReservationError,
 } from '../../features/public-reservation/public-reservation-api'
 import type { PublicReservationLookup } from '../../features/public-reservation/types'
+import type { SiteLocale } from '../../i18n/public-translations'
+import { useSiteTranslation } from '../../i18n/useSiteTranslation'
 
 const reservationStatusLabels = {
   pending: '確認待ち',
@@ -35,6 +37,7 @@ const paymentStatusLabels = {
 } as const
 
 export function ReservationLookupPage() {
+  const { locale } = useSiteTranslation()
   const [reservationNumber, setReservationNumber] = useState('')
   const [contact, setContact] = useState('')
   const [reservation, setReservation] =
@@ -175,6 +178,7 @@ export function ReservationLookupPage() {
         {reservation && (
           <ReservationResult
             reservation={reservation}
+            locale={locale}
             onCancel={() => setShowCancelDialog(true)}
           />
         )}
@@ -183,7 +187,7 @@ export function ReservationLookupPage() {
       {showCancelDialog && reservation && (
         <RateConfirmDialog
           title="予約をキャンセルしますか？"
-          description={buildCancellationDescription(reservation)}
+          description={buildCancellationDescription(reservation, locale)}
           confirmLabel="キャンセルを確定"
           cancelLabel="戻る"
           destructive
@@ -198,9 +202,11 @@ export function ReservationLookupPage() {
 
 function ReservationResult({
   reservation,
+  locale,
   onCancel,
 }: {
   reservation: PublicReservationLookup
+  locale: SiteLocale
   onCancel: () => void
 }) {
   return (
@@ -221,7 +227,7 @@ function ReservationResult({
           <ResultRow label="予約者" value={reservation.guestName} />
           <ResultRow
             label="宿泊期間"
-            value={`${formatBookingDate(reservation.checkIn)}〜${formatBookingDate(reservation.checkOut)}`}
+            value={`${formatBookingDate(reservation.checkIn, locale)}〜${formatBookingDate(reservation.checkOut, locale)}`}
           />
           <ResultRow
             label="お支払い方法"
@@ -325,9 +331,10 @@ function ResultRow({ label, value }: { label: string; value: string }) {
 
 function buildCancellationDescription(
   reservation: PublicReservationLookup,
+  locale: SiteLocale,
 ): string {
   const rooms = reservation.rooms
     .map((room) => `客室${room.roomIndex + 1} ${room.roomTypeNameJa}`)
     .join('・')
-  return `予約番号\n${reservation.reservationNumber}\n\nチェックイン\n${formatBookingDate(reservation.checkIn)}\n\n客室\n${rooms}\n\n予約料金: ${formatYen(reservation.totalAmountYen)}\nキャンセル率: ${reservation.feePercent}%\nキャンセル料: ${formatYen(reservation.feeYen)}\n返金対象額: ${formatYen(reservation.refundTargetYen)}\n\nキャンセル後、客室は再び販売可能になります。\nこの操作は取り消せません。\n返金が必要な場合も自動返金は行われません。`
+  return `予約番号\n${reservation.reservationNumber}\n\nチェックイン\n${formatBookingDate(reservation.checkIn, locale)}\n\n客室\n${rooms}\n\n予約料金: ${formatYen(reservation.totalAmountYen)}\nキャンセル率: ${reservation.feePercent}%\nキャンセル料: ${formatYen(reservation.feeYen)}\n返金対象額: ${formatYen(reservation.refundTargetYen)}\n\nキャンセル後、客室は再び販売可能になります。\nこの操作は取り消せません。\n返金が必要な場合も自動返金は行われません。`
 }

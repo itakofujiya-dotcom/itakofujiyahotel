@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
 import test from 'node:test'
 import { URL } from 'node:url'
 
@@ -27,6 +28,14 @@ const layout = readFileSync(
 )
 const header = readFileSync(
   new URL('../src/components/layout/Header.tsx', import.meta.url),
+  'utf8',
+)
+const bookingSearch = readFileSync(
+  new URL('../src/components/booking/BookingSearch.tsx', import.meta.url),
+  'utf8',
+)
+const bookingFormat = readFileSync(
+  new URL('../src/features/booking/booking-format.ts', import.meta.url),
   'utf8',
 )
 
@@ -104,4 +113,51 @@ test('uses the common DOM localization foundation for admin and public UI', () =
   assert.match(adminProvider, /useLocalizedDom/)
   assert.match(commonDom, /'placeholder', 'title', 'aria-label'/)
   assert.match(commonDom, /MutationObserver/)
+})
+
+test('localizes native booking controls explicitly instead of relying on browser UI language', () => {
+  for (const expected of [
+    "'booking.checkIn': 'チェックイン'",
+    "'booking.checkIn': '체크인'",
+    "'booking.dateInputFormat': '年. 月. 日.'",
+    "'booking.dateInputFormat': '연도. 월. 일.'",
+  ])
+    assert.ok(translations.includes(expected), `missing ${expected}`)
+
+  assert.match(bookingSearch, /lang=\{languageTag\}/)
+  assert.match(bookingSearch, /key=\{`check-in-\$\{locale\}`\}/)
+  assert.match(bookingSearch, /key=\{`check-out-\$\{locale\}`\}/)
+  assert.match(bookingSearch, /t\('booking\.dateInputFormat'\)/)
+})
+
+test('formats public booking dates with the active locale in Japan time', () => {
+  assert.match(bookingFormat, /new Intl\.DateTimeFormat/)
+  assert.match(bookingFormat, /timeZone: 'Asia\/Tokyo'/)
+  assert.match(bookingFormat, /locale: SiteLocale = 'ja'/)
+  assert.doesNotMatch(bookingFormat, /yyyy年M月d日/)
+})
+
+test('does not hardcode Korean UI copy in Japanese-first public render files', () => {
+  const roots = [
+    'src/pages/public',
+    'src/components/booking',
+    'src/components/layout',
+    'src/components/rooms',
+    'src/features/booking',
+    'src/features/public-reservation',
+    'src/data',
+  ]
+  const files = roots.flatMap((root) =>
+    readdirSync(new URL(`../${root}/`, import.meta.url), {
+      recursive: true,
+    })
+      .filter((name) => /\.(ts|tsx)$/.test(name))
+      .map((name) => join(root, name)),
+  )
+
+  for (const file of files) {
+    if (file.endsWith('PolicyPage.tsx')) continue
+    const source = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
+    assert.doesNotMatch(source, /[가-힣]/, `unexpected Korean copy in ${file}`)
+  }
 })

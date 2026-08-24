@@ -9,8 +9,10 @@ import { readBookingCompletion } from '../../features/booking/storage'
 import type { PublicHotelInfo } from '../../features/booking/types'
 import { hotelSettings } from '../../data/hotel'
 import { mealPlanLabels } from '../../features/booking/meal-plan'
+import { useSiteTranslation } from '../../i18n/useSiteTranslation'
 
 export function BookingCompletePage() {
+  const { locale } = useSiteTranslation()
   const [completion] = useState(readBookingCompletion)
   const [hotel, setHotel] = useState<PublicHotelInfo>({
     telephone: hotelSettings.telephone,
@@ -56,11 +58,11 @@ export function BookingCompletePage() {
         <dl className="mx-auto mt-8 grid max-w-xl gap-5 text-left sm:grid-cols-2">
           <CompleteRow
             label="チェックイン"
-            value={formatBookingDate(completion.checkIn)}
+            value={formatBookingDate(completion.checkIn, locale)}
           />
           <CompleteRow
             label="チェックアウト"
-            value={formatBookingDate(completion.checkOut)}
+            value={formatBookingDate(completion.checkOut, locale)}
           />
           <CompleteRow label="客室数" value={`${completion.roomCount}室`} />
           <CompleteRow

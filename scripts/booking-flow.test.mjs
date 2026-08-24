@@ -9,6 +9,10 @@ import {
 } from '../src/features/booking/guest-validation.ts'
 import { hotelSettings, hotelTelephoneHref } from '../src/data/hotel.ts'
 import { calculateMealSurcharge } from '../src/features/booking/meal-plan.ts'
+import {
+  formatBookingDate,
+  formatShortBookingDate,
+} from '../src/features/booking/booking-format.ts'
 
 const validGuest = {
   name: '山田 太郎',
@@ -18,6 +22,13 @@ const validGuest = {
   expectedCheckInTime: '15:00',
   guestNote: '',
 }
+
+test('formats hotel dates for Japanese and Korean without timezone drift', () => {
+  assert.equal(formatBookingDate('2026-08-24', 'ja'), '2026年8月24日')
+  assert.equal(formatBookingDate('2026-08-24', 'ko'), '2026년 8월 24일')
+  assert.equal(formatShortBookingDate('2026-08-24', 'ja'), '8月24日')
+  assert.equal(formatShortBookingDate('2026-08-24', 'ko'), '8월 24일')
+})
 
 test('uses the current hotel telephone and fax from shared settings', () => {
   assert.equal(hotelSettings.telephone, '0299-94-2662')

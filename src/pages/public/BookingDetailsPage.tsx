@@ -17,6 +17,8 @@ import {
   writeBookingGuestDraft,
 } from '../../features/booking/storage'
 import type { BookingGuestDraft } from '../../features/booking/types'
+import { getSiteLanguageTag } from '../../i18n/public-translations'
+import { useSiteTranslation } from '../../i18n/useSiteTranslation'
 
 const initialGuest: BookingGuestDraft = {
   name: '',
@@ -29,6 +31,8 @@ const initialGuest: BookingGuestDraft = {
 
 export function BookingDetailsPage() {
   const navigate = useNavigate()
+  const { locale } = useSiteTranslation()
+  const languageTag = getSiteLanguageTag(locale)
   const [booking] = useState(readBookingDraft)
   const [storedGuest] = useState(readBookingGuestDraft)
   const [guest, setGuest] = useState<BookingGuestDraft>(
@@ -94,6 +98,7 @@ export function BookingDetailsPage() {
               <Field label="氏名" error={errors.name} required>
                 <input
                   className="admin-input"
+                  lang={languageTag}
                   autoComplete="name"
                   value={guest.name}
                   onChange={(event) => update('name', event.target.value)}
@@ -107,6 +112,7 @@ export function BookingDetailsPage() {
               >
                 <input
                   className="admin-input"
+                  lang={languageTag}
                   autoComplete="name"
                   value={guest.nameKanaOrRoman}
                   onChange={(event) =>
@@ -119,6 +125,7 @@ export function BookingDetailsPage() {
                 <input
                   className="admin-input"
                   type="tel"
+                  lang={languageTag}
                   inputMode="tel"
                   autoComplete="tel"
                   value={guest.telephone}
@@ -130,6 +137,7 @@ export function BookingDetailsPage() {
                 <input
                   className="admin-input"
                   type="email"
+                  lang={languageTag}
                   inputMode="email"
                   autoComplete="email"
                   value={guest.email}
@@ -144,6 +152,7 @@ export function BookingDetailsPage() {
               >
                 <select
                   className="admin-input"
+                  lang={languageTag}
                   value={guest.expectedCheckInTime}
                   onChange={(event) =>
                     update('expectedCheckInTime', event.target.value)
@@ -165,6 +174,7 @@ export function BookingDetailsPage() {
               <Field label="ご要望" error={errors.guestNote}>
                 <textarea
                   className="admin-input min-h-32 py-3"
+                  lang={languageTag}
                   value={guest.guestNote}
                   maxLength={1000}
                   onChange={(event) => update('guestNote', event.target.value)}

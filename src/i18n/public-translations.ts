@@ -9,16 +9,38 @@ export const siteTranslations = {
     'common.japanese': '日本語',
     'common.language': '表示言語',
     'policy.tableOfContents': '目次',
+    'booking.checkIn': 'チェックイン',
+    'booking.checkOut': 'チェックアウト',
+    'booking.adults': '大人',
+    'booking.paidChildren': '子ども（有料）',
+    'booking.preschoolChildren': '未就学児（添い寝）',
+    'booking.roomCount': '客室数',
+    'booking.search': '空室を検索',
+    'booking.searching': '確認中…',
+    'booking.dateInputFormat': '年. 月. 日.',
   },
   ko: {
     'common.korean': '한국어',
     'common.japanese': '日本語',
     'common.language': '표시 언어',
     'policy.tableOfContents': '목차',
+    'booking.checkIn': '체크인',
+    'booking.checkOut': '체크아웃',
+    'booking.adults': '성인',
+    'booking.paidChildren': '어린이(유료)',
+    'booking.preschoolChildren': '미취학 아동(동반 취침)',
+    'booking.roomCount': '객실 수',
+    'booking.search': '객실 검색',
+    'booking.searching': '확인 중…',
+    'booking.dateInputFormat': '연도. 월. 일.',
   },
 } as const
 
 export type SiteTranslationKey = keyof (typeof siteTranslations)['ja']
+
+export function getSiteLanguageTag(locale: SiteLocale): 'ja-JP' | 'ko-KR' {
+  return locale === 'ja' ? 'ja-JP' : 'ko-KR'
+}
 
 const publicPhrases: readonly [string, string][] = [
   ['和室', '화실'],

@@ -25,6 +25,7 @@ import type {
   CancellationPolicy,
 } from '../../features/booking/types'
 import { mealPlanLabels } from '../../features/booking/meal-plan'
+import { useSiteTranslation } from '../../i18n/useSiteTranslation'
 
 const fallbackPolicies = [
   ['7日前まで', '無料'],
@@ -36,6 +37,7 @@ const fallbackPolicies = [
 
 export function BookingConfirmPage() {
   const navigate = useNavigate()
+  const { locale } = useSiteTranslation()
   const [booking, setBooking] = useState<BookingDraft | null>(readBookingDraft)
   const [guest] = useState(readBookingGuestDraft)
   const [policies, setPolicies] = useState<CancellationPolicy[]>([])
@@ -156,8 +158,8 @@ export function BookingConfirmPage() {
           <ConfirmSection title="宿泊情報">
             <DefinitionGrid
               rows={[
-                ['チェックイン', formatBookingDate(booking.checkIn)],
-                ['チェックアウト', formatBookingDate(booking.checkOut)],
+                ['チェックイン', formatBookingDate(booking.checkIn, locale)],
+                ['チェックアウト', formatBookingDate(booking.checkOut, locale)],
                 [
                   '宿泊数',
                   `${getStayNights(booking.checkIn, booking.checkOut)}泊`,
@@ -214,7 +216,7 @@ export function BookingConfirmPage() {
                   </p>
                   {room.nightlyPrices.map((night) => (
                     <p key={night.stayDate} className="mt-2 text-sm text-muted">
-                      {formatShortBookingDate(night.stayDate)} ·{' '}
+                      {formatShortBookingDate(night.stayDate, locale)} ·{' '}
                       {formatYen(night.pricePerPersonYen)} × {night.guestCount}
                       名
                       {night.isSpecialRate && (

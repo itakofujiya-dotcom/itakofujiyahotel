@@ -18,6 +18,7 @@ import {
   bookingGuestStorageKey,
   writeBookingDraft,
 } from '../../features/booking/storage'
+import { formatBookingDate } from '../../features/booking/booking-format'
 import type {
   AvailableRoomTypeResult,
   BookingDraft,
@@ -29,6 +30,8 @@ import {
   parseBookingSearchParams,
   validateBookingSearch,
 } from '../../features/booking/validation'
+import { getSiteLanguageTag } from '../../i18n/public-translations'
+import { useSiteTranslation } from '../../i18n/useSiteTranslation'
 
 export function BookingPage() {
   const navigate = useNavigate()
@@ -220,6 +223,8 @@ function RoomConfigurator({
   onUpdate: (index: number, patch: Partial<BookingRoomInput>) => void
   onProceed: () => void
 }) {
+  const { locale } = useSiteTranslation()
+  const languageTag = getSiteLanguageTag(locale)
   const nights = differenceInCalendarDays(
     new Date(`${params.checkOut}T00:00:00`),
     new Date(`${params.checkIn}T00:00:00`),
@@ -233,8 +238,9 @@ function RoomConfigurator({
       <p className="eyebrow">ROOM SELECTION</p>
       <h2 className="font-serif text-3xl">客室ごとの内容</h2>
       <p className="mt-3 text-sm leading-7 text-muted">
-        {params.checkIn.replaceAll('-', '/')} →{' '}
-        {params.checkOut.replaceAll('-', '/')} · {nights}泊 · {rooms.length}室
+        {formatBookingDate(params.checkIn, locale)} →{' '}
+        {formatBookingDate(params.checkOut, locale)} · {nights}泊 ·{' '}
+        {rooms.length}室
       </p>
       <div className="mt-7 space-y-6">
         {rooms.map((room, index) => {
@@ -247,6 +253,7 @@ function RoomConfigurator({
               <h3 className="font-serif text-xl">客室 {index + 1}</h3>
               <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <SelectField
+                  lang={languageTag}
                   label="客室タイプ"
                   value={room.roomTypeId}
                   onChange={(value) => onUpdate(index, { roomTypeId: value })}
@@ -258,6 +265,7 @@ function RoomConfigurator({
                   ))}
                 </SelectField>
                 <NumberField
+                  lang={languageTag}
                   label="大人"
                   min={1}
                   max={4}
@@ -267,6 +275,7 @@ function RoomConfigurator({
                   }
                 />
                 <NumberField
+                  lang={languageTag}
                   label="子ども（有料）"
                   min={0}
                   max={3}
@@ -276,6 +285,7 @@ function RoomConfigurator({
                   }
                 />
                 <NumberField
+                  lang={languageTag}
                   label="添い寝の未就学児"
                   min={0}
                   value={room.freePreschoolCount}
@@ -357,11 +367,13 @@ function SelectField({
   value,
   onChange,
   children,
+  lang,
 }: {
   label: string
   value: string
   onChange: (value: string) => void
   children: React.ReactNode
+  lang: string
 }) {
   return (
     <label>
@@ -370,6 +382,7 @@ function SelectField({
       </span>
       <select
         className="admin-input"
+        lang={lang}
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >
@@ -385,12 +398,14 @@ function NumberField({
   onChange,
   min,
   max,
+  lang,
 }: {
   label: string
   value: number
   onChange: (value: number) => void
   min: number
   max?: number
+  lang: string
 }) {
   return (
     <label>
@@ -400,6 +415,7 @@ function NumberField({
       <input
         className="admin-input"
         type="number"
+        lang={lang}
         min={min}
         max={max}
         value={value}

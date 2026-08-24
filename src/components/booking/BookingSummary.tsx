@@ -5,8 +5,10 @@ import {
 } from '../../features/booking/booking-format'
 import type { BookingDraft } from '../../features/booking/types'
 import { mealPlanLabels } from '../../features/booking/meal-plan'
+import { useSiteTranslation } from '../../i18n/useSiteTranslation'
 
 export function BookingSummary({ booking }: { booking: BookingDraft }) {
+  const { locale } = useSiteTranslation()
   const paidGuests = booking.adults + booking.paidChildren
   return (
     <aside className="border border-line bg-surface p-6 shadow-soft lg:sticky lg:top-24">
@@ -15,11 +17,11 @@ export function BookingSummary({ booking }: { booking: BookingDraft }) {
       <dl className="mt-5 space-y-4 text-sm">
         <SummaryRow
           label="チェックイン"
-          value={formatBookingDate(booking.checkIn)}
+          value={formatBookingDate(booking.checkIn, locale)}
         />
         <SummaryRow
           label="チェックアウト"
-          value={formatBookingDate(booking.checkOut)}
+          value={formatBookingDate(booking.checkOut, locale)}
         />
         <SummaryRow
           label="宿泊数"
