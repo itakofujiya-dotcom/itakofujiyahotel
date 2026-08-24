@@ -94,8 +94,12 @@ html[lang='ko'] {
     gap: 3mm !important;
   }
 
-  .sales-details .overflow-x-auto {
-    overflow: visible !important;
+  .sales-table-wrapper {
+    display: block !important;
+  }
+
+  .sales-card-list {
+    display: none !important;
   }
 
   .sales-table {
@@ -131,6 +135,14 @@ textarea {
 
 .sales-print-only {
   display: none;
+}
+
+.sales-summary {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+}
+
+.sales-payment-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
 }
 img {
   display: block;

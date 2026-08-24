@@ -15,6 +15,16 @@ test('keeps Japanese as the default resource and provides Korean navigation', ()
   assert.equal(adminTranslations.ja['navigation.sales'], '売上管理')
   assert.equal(adminTranslations.ko['navigation.sales'], '매출관리')
   assert.equal(ADMIN_LOCALE_STORAGE_KEY, 'admin_locale')
+  assert.equal(adminTranslations.ja['common.furigana'], 'フリガナ')
+  assert.equal(adminTranslations.ko['common.furigana'], '가타카나')
+  assert.equal(
+    adminTranslations.ko['reservations.search.placeholder'],
+    '예약번호·이름·가타카나·전화번호',
+  )
+  assert.equal(
+    adminTranslations.ko['customers.search.label'],
+    '이름·가타카나·전화번호',
+  )
 })
 
 test('switches core reservation, payment, meal, and room labels to Korean', () => {
@@ -84,7 +94,10 @@ test('removes known Japanese and English remnants from Korean admin UI', () => {
   assert.equal(translateAdminText('カレンダー', 'ko'), '캘린더')
   assert.equal(translateAdminText('該当なし', 'ko'), '해당 없음')
   assert.equal(translateAdminText('すべて', 'ko'), '전체')
-  assert.equal(translateAdminText('入力範囲: 0〜8室', 'ko'), '입력 범위: 0〜8실')
+  assert.equal(
+    translateAdminText('入力範囲: 0〜8室', 'ko'),
+    '입력 범위: 0〜8실',
+  )
   assert.equal(
     translateAdminText('週末料金（+1,000円）', 'ko'),
     '주말 요금 (+1,000엔)',
@@ -94,20 +107,14 @@ test('removes known Japanese and English remnants from Korean admin UI', () => {
     '고급 요금 설정 (최종 금액 직접 지정)',
   )
   assert.equal(translateAdminText('SELECTED DATES', 'ko'), '선택 날짜')
-  assert.equal(
-    translateAdminText('LEGACY OVERRIDES', 'ko'),
-    '날짜별 최종 금액',
-  )
+  assert.equal(translateAdminText('LEGACY OVERRIDES', 'ko'), '날짜별 최종 금액')
   assert.equal(translateAdminText('CALENDAR APPLICATION', 'ko'), '캘린더 적용')
   assert.equal(translateAdminText('IN 3', 'ko'), '체크인 3')
   assert.equal(translateAdminText('OUT 2', 'ko'), '체크아웃 2')
   assert.equal(translateAdminText('NEW', 'ko'), '신규')
   assert.equal(translateAdminText('カード', 'ko'), '카드')
   assert.equal(translateAdminText('本日チェックイン', 'ko'), '오늘 체크인')
-  assert.equal(
-    translateAdminText('客室（2/4室）', 'ko'),
-    '객실 (2/4실)',
-  )
+  assert.equal(translateAdminText('客室（2/4室）', 'ko'), '객실 (2/4실)')
 })
 
 test('formats Japanese calendar text naturally in Korean', () => {

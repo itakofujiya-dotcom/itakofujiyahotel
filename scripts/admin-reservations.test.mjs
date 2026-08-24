@@ -17,6 +17,7 @@ import {
   getTodayOperationLabels,
   isNewOnlineReservation,
   isReservationAwaitingPayment,
+  normalizeAdminGuestSearch,
   parseReservationFilters,
   reservationStatusLabels,
   validateAdminReservationInput,
@@ -49,7 +50,7 @@ const reservation = {
   guest: {
     id: 'guest-1',
     name: 'TEST USER',
-    name_kana_or_roman: null,
+    name_kana_or_roman: 'テスト ユーザー',
     email: 'test@example.com',
     telephone: '090-0000-0000',
   },
@@ -82,6 +83,50 @@ test('builds a calendar card and detail route from the actual reservation id', (
   })
 })
 
+test('shows kana across reservation Admin UI and safely omits a missing legacy value', () => {
+  const nameComponent = readFileSync(
+    new URL('../src/components/admin/GuestNameWithKana.tsx', import.meta.url),
+    'utf8',
+  )
+  const table = readFileSync(
+    new URL(
+      '../src/features/admin-reservations/ReservationsTable.tsx',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+  const calendar = readFileSync(
+    new URL(
+      '../src/features/admin-reservations/ReservationCalendar.tsx',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+  const detail = readFileSync(
+    new URL('../src/pages/admin/ReservationDetailPage.tsx', import.meta.url),
+    'utf8',
+  )
+  const create = readFileSync(
+    new URL('../src/pages/admin/NewReservationAdminPage.tsx', import.meta.url),
+    'utf8',
+  )
+
+  assert.match(nameComponent, /nameKanaOrRoman\?\.trim\(\)/)
+  assert.match(nameComponent, /\{kana && \(/)
+  assert.match(
+    table,
+    /nameKanaOrRoman=\{reservation\.guest\.name_kana_or_roman\}/,
+  )
+  assert.match(
+    calendar,
+    /nameKanaOrRoman=\{reservation\.guest\.name_kana_or_roman\}/,
+  )
+  assert.match(detail, /label=\{t\('common\.furigana'\)\}/)
+  assert.match(detail, /name_kana_or_roman \?\? '—'/)
+  assert.match(detail, /\$\{reservation\.guest\.name\}（\$\{/)
+  assert.match(create, /label=\{t\('common\.furigana'\)\}[\s\S]*required/)
+})
+
 test('filters by new online reservation and searchable guest fields', () => {
   const filters = {
     status: 'all',
@@ -97,6 +142,28 @@ test('filters by new online reservation and searchable guest fields', () => {
       filters,
     ).length,
     0,
+  )
+  assert.equal(
+    filterReservations([reservation], { ...filters, search: 'テストユーザー' })
+      .length,
+    1,
+  )
+  assert.equal(
+    filterReservations([reservation], { ...filters, search: 'ﾃｽﾄ' }).length,
+    1,
+  )
+  assert.equal(normalizeAdminGuestSearch('ﾔﾏﾀﾞ ﾀﾛｳ'), 'ヤマダタロウ')
+  assert.equal(
+    filterReservations(
+      [
+        {
+          ...reservation,
+          guest: { ...reservation.guest, name_kana_or_roman: null },
+        },
+      ],
+      { ...filters, search: 'TEST USER' },
+    ).length,
+    1,
   )
 })
 
@@ -359,7 +426,7 @@ test('validates one to ten nights and at most four rooms', () => {
   const input = {
     guest: {
       name: 'TEST USER',
-      name_kana_or_roman: '',
+      name_kana_or_roman: 'テスト ユーザー',
       email: 'test@example.com',
       telephone: '090',
       nationality: '',
@@ -385,6 +452,13 @@ test('validates one to ten nights and at most four rooms', () => {
     ],
   }
   assert.equal(validateAdminReservationInput(input), null)
+  assert.match(
+    validateAdminReservationInput({
+      ...input,
+      guest: { ...input.guest, name_kana_or_roman: '' },
+    }) ?? '',
+    /フリガナ/,
+  )
   assert.equal(
     validateAdminReservationInput({
       ...input,

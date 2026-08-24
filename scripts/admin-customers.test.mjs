@@ -114,3 +114,42 @@ test('admin routes and navigation include customer management', () => {
   assert.match(app, /path: 'customers\/:id'/)
   assert.match(navigation, /顧客管理.*\/admin\/customers/)
 })
+
+test('customer kana search reuses the latest reservation guest snapshot', () => {
+  const migration = readFileSync(
+    new URL(
+      '../supabase/migrations/202608210011_admin_guest_kana_search.sql',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+  const api = readFileSync(
+    new URL(
+      '../src/features/admin-customers/admin-customers-api.ts',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+  const listPage = readFileSync(
+    new URL('../src/pages/admin/CustomersAdminPage.tsx', import.meta.url),
+    'utf8',
+  )
+  const detailPage = readFileSync(
+    new URL('../src/pages/admin/CustomerDetailPage.tsx', import.meta.url),
+    'utf8',
+  )
+
+  assert.match(migration, /name_kana_or_roman text/)
+  assert.match(migration, /normalize\([^,]+, NFKC\)/)
+  assert.match(
+    migration,
+    /latest_guest[\s\S]*recent_reservation\.created_at desc/,
+  )
+  assert.match(migration, /matched_guest\.name_kana_or_roman/)
+  assert.match(migration, /if not public\.is_admin\(\)/)
+  assert.doesNotMatch(migration, /alter table public\.customers/)
+  assert.match(api, /customer\.name_kana_or_roman/)
+  assert.match(api, /guests!reservations_primary_guest_id_fkey/)
+  assert.match(listPage, /<GuestNameWithKana/)
+  assert.match(detailPage, /t\('common\.furigana'\)/)
+})

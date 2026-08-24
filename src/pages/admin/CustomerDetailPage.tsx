@@ -13,8 +13,10 @@ import {
 import type { CustomerDetail } from '../../features/admin-customers/types'
 import { paymentMethodLabels } from '../../features/admin-reservations/payment-helpers'
 import { ReservationStatusBadge } from '../../features/admin-reservations/ReservationStatusBadge'
+import { useAdminTranslation } from '../../i18n/useAdminTranslation'
 
 export function CustomerDetailPage() {
+  const { t } = useAdminTranslation()
   const { id = '' } = useParams()
   const [customer, setCustomer] = useState<CustomerDetail | null>(null)
   const [memo, setMemo] = useState('')
@@ -95,10 +97,24 @@ export function CustomerDetailPage() {
       <section className="border border-line bg-surface p-6">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
-            <p className="text-xs font-semibold text-muted">顧客</p>
+            <p className="text-xs font-semibold text-muted">氏名</p>
             <h2 className="mt-2 font-serif text-2xl">{customer.name}</h2>
-            <p className="mt-2 text-sm text-muted">{customer.phone}</p>
-            <p className="mt-1 text-sm text-muted">{customer.email ?? '—'}</p>
+            <p className="mt-4 text-xs font-semibold text-muted">
+              {t('common.furigana')}
+            </p>
+            <p className="mt-1 text-sm">{customer.nameKanaOrRoman ?? '—'}</p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-semibold text-muted">電話番号</p>
+                <p className="mt-1 text-sm">{customer.phone}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted">メール</p>
+                <p className="mt-1 break-words text-sm">
+                  {customer.email ?? '—'}
+                </p>
+              </div>
+            </div>
           </div>
           <span className="rounded bg-accent/10 px-4 py-2 text-sm font-semibold text-accent">
             {getCustomerVisitLabel(customer.completedStays)}

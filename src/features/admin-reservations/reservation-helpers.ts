@@ -143,7 +143,8 @@ export function filterReservations(
   reservations: ReservationListItem[],
   filters: ReservationFilters,
 ): ReservationListItem[] {
-  const query = filters.search.trim().toLocaleLowerCase('ja-JP')
+  const query = normalizeAdminGuestSearch(filters.search)
+  const phoneQuery = filters.search.replace(/[^0-9]/g, '')
   return reservations.filter((reservation) => {
     if (filters.status !== 'all' && reservation.status !== filters.status)
       return false
@@ -188,12 +189,23 @@ export function filterReservations(
     )
       return false
     if (!query) return true
-    return [
+    const matchesText = [
       reservation.reservation_number,
       reservation.guest.name,
-      reservation.guest.telephone,
-    ].some((value) => value.toLocaleLowerCase('ja-JP').includes(query))
+      reservation.guest.name_kana_or_roman ?? '',
+    ].some((value) => normalizeAdminGuestSearch(value).includes(query))
+    const matchesPhone =
+      phoneQuery.length > 0 &&
+      reservation.guest.telephone.replace(/[^0-9]/g, '').includes(phoneQuery)
+    return matchesText || matchesPhone
   })
+}
+
+export function normalizeAdminGuestSearch(value: string): string {
+  return value
+    .normalize('NFKC')
+    .replace(/[\s\u3000]+/g, '')
+    .toLocaleLowerCase('ja-JP')
 }
 
 function parseDateParameter(value: string | null): string {
@@ -289,6 +301,9 @@ export function validateAdminReservationInput(
   input: CreateAdminReservationInput,
 ): string | null {
   if (!input.guest.name.trim()) return '氏名を入力してください。'
+  const kanaOrRomanLength = input.guest.name_kana_or_roman.trim().length
+  if (kanaOrRomanLength < 2 || kanaOrRomanLength > 100)
+    return 'フリガナまたは英文名を入力してください。'
   if (!input.guest.telephone.trim()) return '電話番号を入力してください。'
   if (!input.guest.email.trim() || !/^\S+@\S+\.\S+$/.test(input.guest.email))
     return '有効なメールアドレスを入力してください。'

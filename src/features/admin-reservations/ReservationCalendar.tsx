@@ -8,6 +8,7 @@ import {
 } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { GuestNameWithKana } from '../../components/admin/GuestNameWithKana'
 import { getSundayStartCalendarDays } from '../admin-rates/rate-helpers'
 import {
   getReservationCalendarCardInfo,
@@ -171,9 +172,11 @@ function ReservationDayGroup({
                 className="block cursor-pointer border border-line p-3 text-sm transition hover:border-accent hover:bg-background focus-visible:bg-background"
               >
                 <span className="flex items-start justify-between gap-2">
-                  <span className="font-semibold">
-                    {reservation.guest.name}
-                  </span>
+                  <GuestNameWithKana
+                    name={reservation.guest.name}
+                    nameKanaOrRoman={reservation.guest.name_kana_or_roman}
+                    nameClassName="font-semibold"
+                  />
                   {isNewOnlineReservation(reservation) && (
                     <NewReservationBadge compact />
                   )}
@@ -185,10 +188,7 @@ function ReservationDayGroup({
                   {info.roomTypes || '客室タイプ未設定'} · {info.paidGuests}名
                 </span>
                 <span className="mt-1 block">
-                  <ReservationStatusBadge
-                    status={reservation.status}
-                    compact
-                  />
+                  <ReservationStatusBadge status={reservation.status} compact />
                 </span>
               </Link>
             )

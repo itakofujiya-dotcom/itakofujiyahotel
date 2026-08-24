@@ -30,7 +30,7 @@ export function validateBookingGuest(
   const errors: BookingGuestErrors = {}
   if (guest.name.trim().length < 2)
     errors.name = '氏名を2文字以上で入力してください。'
-  if (guest.nameKanaOrRoman.trim().length < 2)
+  if (!isNameKanaOrRomanValid(guest.nameKanaOrRoman))
     errors.nameKanaOrRoman = 'フリガナまたは英文名を入力してください。'
   if (guest.telephone.trim().length < 6)
     errors.telephone = '電話番号を入力してください。'
@@ -43,6 +43,11 @@ export function validateBookingGuest(
   if (guest.guestNote.length > 1000)
     errors.guestNote = 'ご要望は1,000文字以内で入力してください。'
   return errors
+}
+
+export function isNameKanaOrRomanValid(value: string): boolean {
+  const length = value.trim().length
+  return length >= 2 && length <= 100
 }
 
 export function hasBookingGuestErrors(errors: BookingGuestErrors) {

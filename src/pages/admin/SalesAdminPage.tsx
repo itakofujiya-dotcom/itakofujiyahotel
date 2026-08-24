@@ -144,7 +144,7 @@ export function SalesAdminPage() {
   const displayedDetails = printDetails ?? report.details
 
   return (
-    <section className="sales-report">
+    <section className="sales-report min-w-0 max-w-full">
       <div className="sales-screen-header flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <AdminPageHeader
           title="売上管理"
@@ -175,7 +175,7 @@ export function SalesAdminPage() {
         </div>
       </div>
 
-      <div className="sales-controls mb-7 border border-line bg-surface p-5">
+      <div className="sales-controls mb-7 min-w-0 max-w-full border border-line bg-surface p-5">
         <div className="flex flex-wrap gap-2">
           {quickRanges.map((item) => (
             <button
@@ -196,7 +196,7 @@ export function SalesAdminPage() {
           </button>
         </div>
 
-        <div className="mt-5 grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+        <div className="mt-5 grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end">
           <DateField
             label="開始日"
             value={draftRange.startDate}
@@ -216,7 +216,7 @@ export function SalesAdminPage() {
           <button
             type="button"
             onClick={applyCustomRange}
-            className="min-h-11 bg-moss px-6 text-sm font-semibold text-white"
+            className="min-h-11 w-full bg-moss px-6 text-sm font-semibold text-white sm:col-span-2 xl:col-span-1 xl:w-auto"
           >
             この期間を表示
           </button>
@@ -227,7 +227,7 @@ export function SalesAdminPage() {
           </p>
         )}
 
-        <div className="mt-5 grid gap-4 border-t border-line pt-5 md:grid-cols-3">
+        <div className="mt-5 grid min-w-0 gap-4 border-t border-line pt-5 md:grid-cols-3">
           <SelectField
             label="支払方法"
             value={paymentMethod}
@@ -281,7 +281,7 @@ export function SalesAdminPage() {
       <SummaryCards report={report} />
       <PaymentMethodCards report={report} />
 
-      <div className="sales-details mt-8">
+      <div className="sales-details mt-8 min-w-0 max-w-full">
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>
             <p className="text-xs font-semibold tracking-[.16em] text-accent">
@@ -342,7 +342,7 @@ function SummaryCards({ report }: { report: SalesReport }) {
     ['返金対象', formatSalesYen(report.summary.refundTargetYen)],
   ]
   return (
-    <div className="sales-summary grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="sales-summary grid min-w-0 gap-4">
       {cards.map(([label, value]) => (
         <article key={label} className="border border-line bg-surface p-5">
           <p className="text-xs font-semibold text-muted">{label}</p>
@@ -357,7 +357,7 @@ function PaymentMethodCards({ report }: { report: SalesReport }) {
   return (
     <div className="sales-payment-methods mt-8">
       <h2 className="mb-4 text-xl font-semibold">支払方法別</h2>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="sales-payment-grid grid min-w-0 gap-4">
         {report.summary.paymentMethods.map((item) => (
           <article
             key={item.method}
@@ -392,88 +392,194 @@ function SalesDetailsTable({
   translate: (value: string) => string
 }) {
   return (
-    <div className="overflow-x-auto border border-line bg-surface">
-      <table className="sales-table min-w-[1500px] w-full text-left text-xs">
-        <thead className="border-b border-line bg-background text-muted">
-          <tr>
-            {[
-              '日付',
-              '予約番号',
-              '顧客名',
-              'チェックイン',
-              'チェックアウト',
-              '客室',
-              '支払方法',
-              '予約金額',
-              '売上計上額',
-              '入金額',
-              'キャンセル料',
-              '予約状態',
-              '支払状態',
-            ].map((heading) => (
-              <th key={heading} className="whitespace-nowrap px-3 py-3">
-                {heading}
-              </th>
+    <>
+      <div className="sales-table-wrapper hidden min-w-0 max-w-full border border-line bg-surface 2xl:block">
+        <table className="sales-table w-full table-fixed text-left text-[10px] leading-snug">
+          <colgroup>
+            <col className="w-[6%]" />
+            <col className="w-[9%]" />
+            <col className="w-[7%]" />
+            <col className="w-[7%]" />
+            <col className="w-[7%]" />
+            <col className="w-[11%]" />
+            <col className="w-[7%]" />
+            <col className="w-[8%]" />
+            <col className="w-[8%]" />
+            <col className="w-[7%]" />
+            <col className="w-[7%]" />
+            <col className="w-[8%]" />
+            <col className="w-[8%]" />
+          </colgroup>
+          <thead className="border-b border-line bg-background text-muted">
+            <tr>
+              {[
+                '日付',
+                '予約番号',
+                '顧客名',
+                'チェックイン',
+                'チェックアウト',
+                '客室',
+                '支払方法',
+                '予約金額',
+                '売上計上額',
+                '入金額',
+                'キャンセル料',
+                '予約状態',
+                '支払状態',
+              ].map((heading) => (
+                <th
+                  key={heading}
+                  className="break-words px-2 py-3 [overflow-wrap:anywhere]"
+                >
+                  {heading}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {details.map((detail) => (
+              <tr key={detail.reservationId} className="break-inside-avoid">
+                <td className="break-words px-2 py-3 [overflow-wrap:anywhere]">
+                  {formatSalesDate(detail.eventDate)}
+                </td>
+                <td className="break-words px-2 py-3 font-semibold [overflow-wrap:anywhere]">
+                  <Link
+                    to={`/admin/reservations/${detail.reservationId}`}
+                    className="text-accent print:text-black"
+                  >
+                    {detail.reservationNumber}
+                  </Link>
+                </td>
+                <td className="break-words px-2 py-3 [overflow-wrap:anywhere]">
+                  {detail.guestName}
+                </td>
+                <td className="break-words px-2 py-3 [overflow-wrap:anywhere]">
+                  {formatSalesDate(detail.checkIn)}
+                </td>
+                <td className="break-words px-2 py-3 [overflow-wrap:anywhere]">
+                  {formatSalesDate(detail.checkOut)}
+                </td>
+                <td className="break-words px-2 py-3 [overflow-wrap:anywhere]">
+                  {formatSalesRoomSummary(detail.rooms, translate)}
+                </td>
+                <td className="break-words px-2 py-3 [overflow-wrap:anywhere]">
+                  {detail.paymentMethod
+                    ? paymentMethodLabels[detail.paymentMethod]
+                    : '該当なし'}
+                </td>
+                <td className="break-words px-2 py-3 [overflow-wrap:anywhere]">
+                  {formatSalesYen(detail.reservationAmountYen)}
+                </td>
+                <td className="break-words px-2 py-3 [overflow-wrap:anywhere]">
+                  {formatSalesYen(detail.recognizedRevenueYen)}
+                </td>
+                <td className="break-words px-2 py-3 [overflow-wrap:anywhere]">
+                  {formatSalesYen(detail.collectedYen)}
+                </td>
+                <td className="break-words px-2 py-3 [overflow-wrap:anywhere]">
+                  {formatSalesYen(detail.cancellationFeeYen)}
+                </td>
+                <td className="break-words px-2 py-3 [overflow-wrap:anywhere]">
+                  {reservationStatusLabels[detail.reservationStatus]}
+                </td>
+                <td className="break-words px-2 py-3 [overflow-wrap:anywhere]">
+                  {detail.paymentStatus
+                    ? paymentStatusLabels[detail.paymentStatus]
+                    : detail.paymentIssue === 'multiple'
+                      ? '複数あり'
+                      : '該当なし'}
+                </td>
+              </tr>
             ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-line">
-          {details.map((detail) => (
-            <tr key={detail.reservationId} className="break-inside-avoid">
-              <td className="whitespace-nowrap px-3 py-3">
-                {formatSalesDate(detail.eventDate)}
-              </td>
-              <td className="whitespace-nowrap px-3 py-3 font-semibold">
+          </tbody>
+        </table>
+      </div>
+
+      <div className="sales-card-list grid min-w-0 max-w-full gap-4 2xl:hidden">
+        {details.map((detail) => (
+          <article
+            key={detail.reservationId}
+            className="min-w-0 border border-line bg-surface p-4 sm:p-5"
+          >
+            <div className="flex min-w-0 flex-col gap-2 border-b border-line pb-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-xs text-muted">
+                  {formatSalesDate(detail.eventDate)}
+                </p>
                 <Link
                   to={`/admin/reservations/${detail.reservationId}`}
-                  className="text-accent print:text-black"
+                  className="mt-1 block break-words font-semibold text-accent [overflow-wrap:anywhere]"
                 >
                   {detail.reservationNumber}
                 </Link>
-              </td>
-              <td className="whitespace-nowrap px-3 py-3">
-                {detail.guestName}
-              </td>
-              <td className="whitespace-nowrap px-3 py-3">
-                {formatSalesDate(detail.checkIn)}
-              </td>
-              <td className="whitespace-nowrap px-3 py-3">
-                {formatSalesDate(detail.checkOut)}
-              </td>
-              <td className="px-3 py-3">
-                {formatSalesRoomSummary(detail.rooms, translate)}
-              </td>
-              <td className="whitespace-nowrap px-3 py-3">
-                {detail.paymentMethod
-                  ? paymentMethodLabels[detail.paymentMethod]
-                  : '該当なし'}
-              </td>
-              <td className="whitespace-nowrap px-3 py-3">
-                {formatSalesYen(detail.reservationAmountYen)}
-              </td>
-              <td className="whitespace-nowrap px-3 py-3">
-                {formatSalesYen(detail.recognizedRevenueYen)}
-              </td>
-              <td className="whitespace-nowrap px-3 py-3">
-                {formatSalesYen(detail.collectedYen)}
-              </td>
-              <td className="whitespace-nowrap px-3 py-3">
-                {formatSalesYen(detail.cancellationFeeYen)}
-              </td>
-              <td className="whitespace-nowrap px-3 py-3">
-                {reservationStatusLabels[detail.reservationStatus]}
-              </td>
-              <td className="whitespace-nowrap px-3 py-3">
-                {detail.paymentStatus
-                  ? paymentStatusLabels[detail.paymentStatus]
-                  : detail.paymentIssue === 'multiple'
-                    ? '複数あり'
-                    : '該当なし'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="border border-line bg-background px-2 py-1">
+                  {reservationStatusLabels[detail.reservationStatus]}
+                </span>
+                <span className="border border-line bg-background px-2 py-1">
+                  {getPaymentStatusLabel(detail)}
+                </span>
+              </div>
+            </div>
+
+            <dl className="mt-4 grid min-w-0 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+              <SalesCardRow label="顧客名" value={detail.guestName} />
+              <SalesCardRow
+                label="宿泊期間"
+                value={`${formatSalesDate(detail.checkIn)} ～ ${formatSalesDate(detail.checkOut)}`}
+              />
+              <SalesCardRow
+                label="客室"
+                value={formatSalesRoomSummary(detail.rooms, translate)}
+              />
+              <SalesCardRow
+                label="支払方法"
+                value={
+                  detail.paymentMethod
+                    ? paymentMethodLabels[detail.paymentMethod]
+                    : '該当なし'
+                }
+              />
+              <SalesCardRow
+                label="予約金額"
+                value={formatSalesYen(detail.reservationAmountYen)}
+              />
+              <SalesCardRow
+                label="売上計上額"
+                value={formatSalesYen(detail.recognizedRevenueYen)}
+              />
+              <SalesCardRow
+                label="入金額"
+                value={formatSalesYen(detail.collectedYen)}
+              />
+              <SalesCardRow
+                label="キャンセル料"
+                value={formatSalesYen(detail.cancellationFeeYen)}
+              />
+            </dl>
+          </article>
+        ))}
+      </div>
+    </>
+  )
+}
+
+function getPaymentStatusLabel(detail: SalesDetail) {
+  return detail.paymentStatus
+    ? paymentStatusLabels[detail.paymentStatus]
+    : detail.paymentIssue === 'multiple'
+      ? '複数あり'
+      : '該当なし'
+}
+
+function SalesCardRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs font-semibold text-muted">{label}</dt>
+      <dd className="mt-1 break-words text-sm [overflow-wrap:anywhere]">
+        {value}
+      </dd>
     </div>
   )
 }
@@ -488,7 +594,7 @@ function DateField({
   onChange: (value: string) => void
 }) {
   return (
-    <label>
+    <label className="min-w-0">
       <span className="mb-2 block text-xs font-semibold text-muted">
         {label}
       </span>
@@ -514,7 +620,7 @@ function SelectField({
   options: readonly (readonly [string, string])[]
 }) {
   return (
-    <label>
+    <label className="min-w-0">
       <span className="mb-2 block text-xs font-semibold text-muted">
         {label}
       </span>

@@ -1,5 +1,6 @@
 import { format } from 'date-fns'
 import { Link } from 'react-router-dom'
+import { GuestNameWithKana } from '../../components/admin/GuestNameWithKana'
 import { formatYen } from '../admin-rates/rate-helpers'
 import {
   bookingSourceLabels,
@@ -64,7 +65,12 @@ export function ReservationsTable({
                   <span>{reservation.reservation_number}</span>
                 </span>
               </td>
-              <td className="px-4 py-4">{reservation.guest.name}</td>
+              <td className="px-4 py-4">
+                <GuestNameWithKana
+                  name={reservation.guest.name}
+                  nameKanaOrRoman={reservation.guest.name_kana_or_roman}
+                />
+              </td>
               <td className="px-4 py-4">
                 {reservation.check_in.replaceAll('-', '/')}
               </td>

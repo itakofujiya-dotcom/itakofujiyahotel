@@ -131,6 +131,8 @@ function ReservationFiltersPanel({
   filters: ReservationFilters
   onChange: (filters: ReservationFilters) => void
 }) {
+  const { t } = useAdminTranslation()
+
   return (
     <div className="grid gap-3 border border-line bg-surface p-4 md:grid-cols-2 xl:grid-cols-4">
       <label>
@@ -264,7 +266,7 @@ function ReservationFiltersPanel({
         </span>
         <input
           className="admin-input"
-          placeholder="予約番号・氏名・電話番号"
+          placeholder={t('reservations.search.placeholder')}
           value={filters.search}
           onChange={(event) =>
             onChange({ ...filters, search: event.target.value })

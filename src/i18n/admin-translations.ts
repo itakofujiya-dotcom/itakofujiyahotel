@@ -10,6 +10,7 @@ export const adminTranslations = {
     'common.logout': 'ログアウト',
     'common.loggingOut': 'ログアウト中…',
     'common.admin': '管理者',
+    'common.furigana': 'フリガナ',
     'navigation.dashboard': 'ダッシュボード',
     'navigation.reservations': '予約管理',
     'navigation.customers': '顧客管理',
@@ -22,6 +23,9 @@ export const adminTranslations = {
     'reservations.tab.list': '一覧',
     'reservations.tab.new': '新規予約',
     'reservations.action.createManaged': '電話・管理者予約を登録',
+    'reservations.search.placeholder': '予約番号・氏名・フリガナ・電話番号',
+    'customers.search.label': '氏名・フリガナ・電話番号',
+    'customers.search.placeholder': '山田太郎 / ヤマダ / 090-1234',
   },
   ko: {
     'common.korean': '한국어',
@@ -30,6 +34,7 @@ export const adminTranslations = {
     'common.logout': '로그아웃',
     'common.loggingOut': '로그아웃 중…',
     'common.admin': '관리자',
+    'common.furigana': '가타카나',
     'navigation.dashboard': '대시보드',
     'navigation.reservations': '예약관리',
     'navigation.customers': '고객관리',
@@ -42,6 +47,9 @@ export const adminTranslations = {
     'reservations.tab.list': '목록',
     'reservations.tab.new': '신규 예약',
     'reservations.action.createManaged': '전화·관리자 예약 등록',
+    'reservations.search.placeholder': '예약번호·이름·가타카나·전화번호',
+    'customers.search.label': '이름·가타카나·전화번호',
+    'customers.search.placeholder': '야마다 타로 / ヤマダ / 090-1234',
   },
 } as const
 
@@ -714,7 +722,8 @@ const phraseTranslations: readonly [string, string][] = [
   ['FAX番号', '팩스번호'],
   ['フロント対応開始', '프론트 운영 시작'],
   ['フロント対応終了', '프론트 운영 종료'],
-  ['フリガナ / 英文名', '후리가나 / 영문명'],
+  ['フリガナ / 英文名', '가타카나 / 영문명'],
+  ['フリガナ', '가타카나'],
   [
     '変更した内容はホテル情報として保存されます。',
     '변경한 내용은 호텔 정보로 저장됩니다.',

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader'
+import { GuestNameWithKana } from '../../components/admin/GuestNameWithKana'
 import {
   customerPageSize,
   fetchCustomers,
@@ -13,8 +14,10 @@ import type {
   CustomerSort,
   CustomerSummary,
 } from '../../features/admin-customers/types'
+import { useAdminTranslation } from '../../i18n/useAdminTranslation'
 
 export function CustomersAdminPage() {
+  const { t } = useAdminTranslation()
   const [customers, setCustomers] = useState<CustomerSummary[]>([])
   const [searchDraft, setSearchDraft] = useState('')
   const [search, setSearch] = useState('')
@@ -64,13 +67,13 @@ export function CustomersAdminPage() {
         >
           <label className="flex-1">
             <span className="mb-2 block text-xs font-semibold text-muted">
-              氏名・電話番号
+              {t('customers.search.label')}
             </span>
             <input
               className="admin-input"
               value={searchDraft}
               onChange={(event) => setSearchDraft(event.target.value)}
-              placeholder="山田太郎 / 090-1234"
+              placeholder={t('customers.search.placeholder')}
             />
           </label>
           <button
@@ -126,7 +129,10 @@ export function CustomersAdminPage() {
                       to={`/admin/customers/${customer.id}`}
                       className="block px-5 py-4 font-semibold text-ink"
                     >
-                      {customer.name}
+                      <GuestNameWithKana
+                        name={customer.name}
+                        nameKanaOrRoman={customer.nameKanaOrRoman}
+                      />
                       <span className="mt-1 block text-xs font-normal text-accent">
                         {getCustomerVisitLabel(customer.completedStays)}
                       </span>

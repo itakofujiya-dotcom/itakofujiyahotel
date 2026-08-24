@@ -747,6 +747,7 @@ export type Database = {
         Returns: {
           id: string
           name: string
+          name_kana_or_roman: string | null
           phone: string
           email: string | null
           memo: string | null

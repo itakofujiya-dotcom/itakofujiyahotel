@@ -30,6 +30,7 @@ export async function fetchCustomers({
     customers: data.map((customer) => ({
       id: customer.id,
       name: customer.name,
+      nameKanaOrRoman: customer.name_kana_or_roman,
       phone: customer.phone,
       email: customer.email,
       memo: customer.memo,
@@ -61,6 +62,7 @@ export async function fetchCustomerDetail(
       .select(
         `
         id, reservation_number, check_in, check_out, status,
+        guest:guests!reservations_primary_guest_id_fkey (name_kana_or_roman),
         rooms:reservation_rooms (room_type:room_types (name_ja)),
         payments (method, status)
       `,
@@ -86,7 +88,16 @@ export async function fetchCustomerDetail(
         reservation.payments.length === 1 ? reservation.payments[0] : null,
     }))
   const stats = calculateCustomerStats(reservations)
-  return { ...customerResult.data, ...stats, reservations }
+  const nameKanaOrRoman =
+    reservationsResult.data
+      .map((reservation) => reservation.guest?.name_kana_or_roman?.trim())
+      .find(Boolean) ?? null
+  return {
+    ...customerResult.data,
+    nameKanaOrRoman,
+    ...stats,
+    reservations,
+  }
 }
 
 export async function fetchCustomerVisitStats(

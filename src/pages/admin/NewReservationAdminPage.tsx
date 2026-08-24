@@ -15,6 +15,7 @@ import {
 import type { CreateAdminReservationInput } from '../../features/admin-reservations/types'
 import { mealPlanLabels } from '../../features/booking/meal-plan'
 import type { MealPlan } from '../../features/booking/types'
+import { useAdminTranslation } from '../../i18n/useAdminTranslation'
 
 const today = format(new Date(), 'yyyy-MM-dd')
 const emptyRoom = {
@@ -26,6 +27,7 @@ const emptyRoom = {
 }
 
 export function NewReservationAdminPage() {
+  const { t } = useAdminTranslation()
   const navigate = useNavigate()
   const {
     roomTypes,
@@ -115,7 +117,8 @@ export function NewReservationAdminPage() {
                 }
               />
               <TextField
-                label="フリガナ / 英文名"
+                label={t('common.furigana')}
+                required
                 value={input.guest.name_kana_or_roman}
                 onChange={(value) =>
                   setInput({

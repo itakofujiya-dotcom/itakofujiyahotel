@@ -200,6 +200,10 @@ test('adds the Admin route, navigation, i18n, and print-only report layout', () 
     new URL('../src/styles/global.css', import.meta.url),
     'utf8',
   )
+  const layout = readFileSync(
+    new URL('../src/layouts/AdminLayout.tsx', import.meta.url),
+    'utf8',
+  )
   assert.match(app, /path: 'sales'.*SalesAdminPage/)
   assert.match(navigation, /売上管理.*\/admin\/sales/)
   assert.equal(translateAdminText('予約売上', 'ko'), '예약 매출')
@@ -210,4 +214,14 @@ test('adds the Admin route, navigation, i18n, and print-only report layout', () 
   assert.match(css, /@page sales-report[\s\S]*size: A4 landscape/)
   assert.match(css, /\.sales-controls,[\s\S]*display: none !important/)
   assert.match(css, /\.sales-print-only[\s\S]*display: block !important/)
+  assert.match(layout, /grid-cols-\[250px_minmax\(0,1fr\)\]/)
+  assert.match(layout, /<main className="min-w-0 max-w-full/)
+  assert.doesNotMatch(page, /min-w-\[1500px\]/)
+  assert.doesNotMatch(page, /overflow-x-auto/)
+  assert.match(page, /sales-table w-full table-fixed/)
+  assert.match(page, /sales-card-list[\s\S]*2xl:hidden/)
+  assert.match(page, /sales-table-wrapper[\s\S]*2xl:block/)
+  assert.match(css, /\.sales-table-wrapper[\s\S]*display: block !important/)
+  assert.match(css, /\.sales-card-list[\s\S]*display: none !important/)
+  assert.doesNotMatch(css, /overflow-x:\s*hidden/)
 })

@@ -67,7 +67,7 @@ export function AdminLayout() {
           </button>
         </div>
       </header>
-      <div className="lg:grid lg:min-h-screen lg:grid-cols-[250px_1fr]">
+      <div className="lg:grid lg:min-h-screen lg:grid-cols-[250px_minmax(0,1fr)]">
         <aside className="hidden bg-[#26302b] p-7 text-white lg:block">
           <p className="font-serif text-lg">{hotelSettings.hotelNameJa}</p>
           <p className="mt-1 text-[10px] tracking-[.25em] text-white/50">
@@ -110,7 +110,7 @@ export function AdminLayout() {
             </button>
           </div>
         </aside>
-        <div>
+        <div className="min-w-0 max-w-full">
           <nav className="flex gap-1 overflow-x-auto border-b border-line bg-surface p-2 lg:hidden">
             {adminNavigation.map((item) => (
               <NavLink
@@ -129,7 +129,7 @@ export function AdminLayout() {
               </NavLink>
             ))}
           </nav>
-          <main className="p-5 sm:p-8 lg:p-12">
+          <main className="min-w-0 max-w-full p-5 sm:p-8 lg:p-12">
             <Outlet />
           </main>
         </div>

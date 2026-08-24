@@ -8,6 +8,7 @@ import type { CustomerStats } from '../../features/admin-customers/types'
 import { getJapanToday } from '../../features/admin-dashboard/dashboard-helpers'
 import { formatYen } from '../../features/admin-rates/rate-helpers'
 import { mealPlanLabels } from '../../features/booking/meal-plan'
+import { isNameKanaOrRomanValid } from '../../features/booking/guest-validation'
 import { RateConfirmDialog } from '../../features/admin-rates/RateConfirmDialog'
 import {
   assignRoom,
@@ -51,6 +52,7 @@ import type {
   ReservationStatus,
 } from '../../features/admin-reservations/types'
 import type { ReservationCancellationQuote } from '../../features/public-reservation/types'
+import { useAdminTranslation } from '../../i18n/useAdminTranslation'
 
 type ActionRequest =
   | { type: 'status'; status: Exclude<ReservationStatus, 'cancelled'> }
@@ -58,6 +60,7 @@ type ActionRequest =
   | null
 
 export function ReservationDetailPage() {
+  const { t } = useAdminTranslation()
   const { id = '' } = useParams()
   const location = useLocation()
   const returnTo =
@@ -154,6 +157,8 @@ export function ReservationDetailPage() {
       !draft.email.trim()
     )
       return setFeedback('氏名・電話番号・メールアドレスを入力してください。')
+    if (!isNameKanaOrRomanValid(draft.name_kana_or_roman))
+      return setFeedback('フリガナまたは英文名を入力してください。')
     if (
       draft.expected_check_in_time &&
       !isAdminExpectedCheckInTimeValid(draft.expected_check_in_time)
@@ -444,7 +449,7 @@ export function ReservationDetailPage() {
         <DetailSection title="お客様">
           <Definition label="氏名" value={reservation.guest.name} />
           <Definition
-            label="フリガナ / 英文名"
+            label={t('common.furigana')}
             value={reservation.guest.name_kana_or_roman ?? '—'}
           />
           <Definition label="電話" value={reservation.guest.telephone} />
@@ -625,7 +630,7 @@ export function ReservationDetailPage() {
                     {
                       {
                         name: '氏名',
-                        name_kana_or_roman: 'フリガナ / 英文名',
+                        name_kana_or_roman: t('common.furigana'),
                         telephone: '電話',
                         email: 'メール',
                         expected_check_in_time: 'チェックイン予定時間',
@@ -989,7 +994,10 @@ function getActionDialogProperties(
         : `${room.room_type.name_ja}（未割当）`,
     )
     .join('・')
-  const common = `予約番号\n${reservation.reservation_number}\n\nお客様\n${reservation.guest.name}\n\n客室\n${rooms}`
+  const guestName = reservation.guest.name_kana_or_roman?.trim()
+    ? `${reservation.guest.name}（${reservation.guest.name_kana_or_roman.trim()}）`
+    : reservation.guest.name
+  const common = `予約番号\n${reservation.reservation_number}\n\nお客様\n${guestName}\n\n客室\n${rooms}`
 
   if (action.type === 'cancel')
     return {

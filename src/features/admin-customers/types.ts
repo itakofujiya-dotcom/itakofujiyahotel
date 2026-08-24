@@ -18,6 +18,7 @@ export type CustomerStats = {
 export type CustomerSummary = CustomerStats & {
   id: string
   name: string
+  nameKanaOrRoman: string | null
   phone: string
   email: string | null
   memo: string | null
