@@ -32,7 +32,11 @@ export function useLocalizedDom({
 
       for (const localizedRoot of roots) {
         localizedRoot.setAttribute('lang', locale)
+        localizedRoot.setAttribute('data-locale', locale)
         document.documentElement.lang = locale
+        document.documentElement.dataset.locale = locale
+        document.documentElement.classList.toggle('lang-ko', locale === 'ko')
+        document.documentElement.classList.toggle('lang-ja', locale === 'ja')
         localizeElement(localizedRoot, locale, ignoreSelector, translate)
       }
     }

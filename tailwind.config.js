@@ -14,12 +14,7 @@ export default {
         moss: 'rgb(var(--color-moss) / <alpha-value>)',
       },
       fontFamily: {
-        sans: [
-          '"Noto Sans JP"',
-          '"Hiragino Kaku Gothic ProN"',
-          '"Yu Gothic"',
-          'sans-serif',
-        ],
+        sans: ['var(--font-ui)'],
         serif: ['"Noto Serif JP"', '"Yu Mincho"', 'serif'],
       },
       boxShadow: { soft: '0 18px 60px rgba(45, 39, 30, 0.1)' },

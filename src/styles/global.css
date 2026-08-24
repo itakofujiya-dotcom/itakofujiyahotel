@@ -11,8 +11,14 @@
   --color-accent: 153 74 50;
   --color-accent-hover: 121 55 36;
   --color-moss: 66 82 63;
+  --font-ui:
+    'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+}
+
+html[lang='ko'] {
+  --font-ui: 'Noto Sans KR', sans-serif;
 }
 
 @media print {
@@ -52,9 +58,9 @@ body {
 body,
 button,
 input,
-select {
-  font-family:
-    'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+select,
+textarea {
+  font-family: var(--font-ui);
 }
 img {
   display: block;
