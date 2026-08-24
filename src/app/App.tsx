@@ -27,6 +27,7 @@ import { CustomerDetailPage } from '../pages/admin/CustomerDetailPage'
 import { AdminAuthProvider } from '../features/auth/AdminAuthProvider'
 import { AdminProtectedRoute } from '../features/auth/AdminProtectedRoute'
 import { AdminLocaleProvider } from '../i18n/AdminLocaleProvider'
+import { SiteLocaleProvider } from '../i18n/SiteLocaleProvider'
 
 const router = createBrowserRouter([
   {
@@ -73,10 +74,12 @@ const router = createBrowserRouter([
 
 export function App() {
   return (
-    <AdminLocaleProvider>
-      <AdminAuthProvider>
-        <RouterProvider router={router} />
-      </AdminAuthProvider>
-    </AdminLocaleProvider>
+    <SiteLocaleProvider>
+      <AdminLocaleProvider>
+        <AdminAuthProvider>
+          <RouterProvider router={router} />
+        </AdminAuthProvider>
+      </AdminLocaleProvider>
+    </SiteLocaleProvider>
   )
 }

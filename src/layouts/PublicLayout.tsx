@@ -5,7 +5,7 @@ import { MobileBookingCta } from '../components/layout/MobileBookingCta'
 
 export function PublicLayout() {
   return (
-    <>
+    <div data-site-i18n-root>
       <Header />
       <main>
         <Outlet />
@@ -13,6 +13,6 @@ export function PublicLayout() {
       <Footer />
       <MobileBookingCta />
       <ScrollRestoration />
-    </>
+    </div>
   )
 }

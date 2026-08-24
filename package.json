@@ -21,6 +21,7 @@
     "test:dashboard": "node --experimental-strip-types --test scripts/admin-dashboard.test.mjs",
     "test:settings": "node --experimental-strip-types --test scripts/admin-settings.test.mjs",
     "test:admin-i18n": "node --experimental-strip-types --test scripts/admin-i18n.test.mjs",
+    "test:public-i18n": "node --experimental-strip-types --test scripts/public-i18n.test.mjs",
     "test:cancellation": "node --experimental-strip-types --test scripts/public-reservation-cancellation.test.mjs",
     "test:config": "node --experimental-strip-types --test scripts/supabase-config.test.mjs",
     "test:booking-search": "node --experimental-strip-types --test scripts/booking-search.test.mjs",

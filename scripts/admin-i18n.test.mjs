@@ -22,8 +22,8 @@ test('switches core reservation, payment, meal, and room labels to Korean', () =
   assert.equal(translateAdminText('支払い済み', 'ko'), '결제 완료')
   assert.equal(translateAdminText('朝食付き', 'ko'), '조식 포함')
   assert.equal(translateAdminText('朝食・夕食付き', 'ko'), '조식·석식 포함')
-  assert.equal(translateAdminText('和室', 'ko'), '화실')
-  assert.equal(translateAdminText('洋室', 'ko'), '양실')
+  assert.equal(translateAdminText('和室', 'ko'), '다다미방')
+  assert.equal(translateAdminText('洋室', 'ko'), '침대방')
 })
 
 test('translates required admin sections and cancellation messages', () => {
@@ -35,6 +35,36 @@ test('translates required admin sections and cancellation messages', () => {
     '환불 처리가 필요합니다',
   )
   assert.equal(translateAdminText('キャンセル料', 'ko'), '취소 수수료')
+})
+
+test('removes known Japanese and English remnants from Korean admin UI', () => {
+  assert.equal(translateAdminText('カレンダー', 'ko'), '캘린더')
+  assert.equal(translateAdminText('該当なし', 'ko'), '해당 없음')
+  assert.equal(translateAdminText('すべて', 'ko'), '전체')
+  assert.equal(translateAdminText('入力範囲: 0〜8室', 'ko'), '입력 범위: 0〜8실')
+  assert.equal(
+    translateAdminText('週末料金（+1,000円）', 'ko'),
+    '주말 요금 (+1,000엔)',
+  )
+  assert.equal(
+    translateAdminText('高度な料金設定（最終金額の直接指定）', 'ko'),
+    '고급 요금 설정 (최종 금액 직접 지정)',
+  )
+  assert.equal(translateAdminText('SELECTED DATES', 'ko'), '선택 날짜')
+  assert.equal(
+    translateAdminText('LEGACY OVERRIDES', 'ko'),
+    '날짜별 최종 금액',
+  )
+  assert.equal(translateAdminText('CALENDAR APPLICATION', 'ko'), '캘린더 적용')
+  assert.equal(translateAdminText('IN 3', 'ko'), '체크인 3')
+  assert.equal(translateAdminText('OUT 2', 'ko'), '체크아웃 2')
+  assert.equal(translateAdminText('NEW', 'ko'), '신규')
+  assert.equal(translateAdminText('カード', 'ko'), '카드')
+  assert.equal(translateAdminText('本日チェックイン', 'ko'), '오늘 체크인')
+  assert.equal(
+    translateAdminText('客室（2/4室）', 'ko'),
+    '객실 (2/4실)',
+  )
 })
 
 test('formats Japanese calendar text naturally in Korean', () => {
@@ -89,8 +119,13 @@ test('locale provider persists selection and translates dynamic attributes', () 
     new URL('../src/i18n/AdminLocaleProvider.tsx', import.meta.url),
     'utf8',
   )
+  const commonDom = readFileSync(
+    new URL('../src/i18n/useLocalizedDom.ts', import.meta.url),
+    'utf8',
+  )
   assert.match(provider, /localStorage\.setItem\(ADMIN_LOCALE_STORAGE_KEY/)
   assert.match(provider, /localStorage\.getItem\(ADMIN_LOCALE_STORAGE_KEY\)/)
-  assert.match(provider, /'placeholder', 'title', 'aria-label'/)
-  assert.match(provider, /MutationObserver/)
+  assert.match(provider, /useLocalizedDom/)
+  assert.match(commonDom, /'placeholder', 'title', 'aria-label'/)
+  assert.match(commonDom, /MutationObserver/)
 })

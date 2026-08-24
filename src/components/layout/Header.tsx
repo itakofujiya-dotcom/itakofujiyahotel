@@ -3,9 +3,12 @@ import { Link, NavLink } from 'react-router-dom'
 import { CalendarDays, Menu, X } from 'lucide-react'
 import { publicNavigation } from '../../data/navigation'
 import { hotelSettings } from '../../data/hotel'
+import { SiteLocaleSwitcher } from './SiteLocaleSwitcher'
+import { useSiteTranslation } from '../../i18n/useSiteTranslation'
 
 export function Header() {
   const [open, setOpen] = useState(false)
+  const { translate } = useSiteTranslation()
   return (
     <header className="sticky top-0 z-50 border-b border-line/70 bg-surface/95 backdrop-blur">
       <div className="page-shell flex h-20 items-center justify-between gap-5 lg:h-24">
@@ -34,11 +37,12 @@ export function Header() {
                 `py-3 text-sm transition hover:text-accent ${isActive ? 'text-accent' : 'text-ink'}`
               }
             >
-              {item.label}
+              {translate(item.label)}
             </NavLink>
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <SiteLocaleSwitcher />
           <Link
             to="/booking"
             className="hidden min-h-12 items-center gap-2 bg-accent px-5 text-sm font-semibold text-white hover:bg-accent-hover sm:flex"
@@ -68,7 +72,7 @@ export function Header() {
               onClick={() => setOpen(false)}
               className="block border-b border-line/70 py-4 text-sm"
             >
-              {item.label}
+              {translate(item.label)}
             </NavLink>
           ))}
           <Link

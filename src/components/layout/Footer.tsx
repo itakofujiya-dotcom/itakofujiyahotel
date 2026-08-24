@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
 import { hotelSettings, hotelTelephoneHref } from '../../data/hotel'
 import { publicNavigation } from '../../data/navigation'
+import { useSiteTranslation } from '../../i18n/useSiteTranslation'
 
 export function Footer() {
+  const { translate } = useSiteTranslation()
   return (
     <footer className="bg-[#2f332d] pb-24 pt-16 text-white/80 sm:pb-10">
       <div className="page-shell grid gap-12 md:grid-cols-[1.3fr_1fr]">
@@ -27,7 +29,7 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
           {publicNavigation.map((item) => (
             <Link key={item.to} to={item.to} className="hover:text-white">
-              {item.label}
+              {translate(item.label)}
             </Link>
           ))}
           <Link to="/policies">ご利用案内</Link>

@@ -179,11 +179,18 @@ const phraseTranslations: readonly [string, string][] = [
   ['運営メモ', '운영 메모'],
   ['客室番号', '객실 번호'],
   ['客室タイプ', '객실 타입'],
+  ['客室', '객실'],
   ['基準人数', '기준 인원'],
   ['最大人数', '최대 인원'],
   ['販売状態', '판매 상태'],
-  ['和室', '화실'],
-  ['洋室', '양실'],
+  ['和室', '다다미방'],
+  ['洋室', '침대방'],
+  ['カレンダー', '캘린더'],
+  ['該当なし', '해당 없음'],
+  ['すべて', '전체'],
+  ['入力範囲', '입력 범위'],
+  ['週末料金', '주말 요금'],
+  ['最終金額の直接指定', '최종 금액 직접 지정'],
   ['絞り込み', '필터'],
   ['表示', '표시'],
   [
@@ -503,6 +510,8 @@ const phraseTranslations: readonly [string, string][] = [
   ['予約を確定して登録', '예약을 확정하여 등록'],
   ['予約登録', '예약 등록'],
   ['予約日時', '예약 일시'],
+  ['当日受付', '당일 접수'],
+  ['管理者登録', '관리자 등록'],
   [
     '電話・当日受付・管理者受付の予約を登録します。',
     '전화·당일 접수·관리자 접수 예약을 등록합니다.',
@@ -558,6 +567,7 @@ const phraseTranslations: readonly [string, string][] = [
   ['銀行振込', '계좌이체'],
   ['現地払い', '현장결제'],
   ['現地決済', '현장결제'],
+  ['カード', '카드'],
   ['予約確定', '예약 확정'],
   ['確認待ち', '확인 대기'],
   ['チェックイン済み', '체크인 완료'],
@@ -667,6 +677,8 @@ const phraseTranslations: readonly [string, string][] = [
   ['データの取得に失敗しました。', '데이터를 불러오지 못했습니다.'],
   ['今日のチェックイン', '오늘 체크인'],
   ['今日のチェックアウト', '오늘 체크아웃'],
+  ['本日チェックイン', '오늘 체크인'],
+  ['本日チェックアウト', '오늘 체크아웃'],
   ['宿泊中', '숙박 중'],
   ['宿泊情報', '숙박 정보'],
   ['客室情報なし', '객실 정보 없음'],
@@ -682,6 +694,8 @@ const phraseTranslations: readonly [string, string][] = [
   ['宿泊は最大10泊までです。', '숙박은 최대 10박까지 가능합니다.'],
   ['客室数は1〜4室で指定してください。', '객실 수는 1~4실로 지정해 주세요.'],
   ['すべての客室タイプを選択してください。', '모든 객실 타입을 선택해 주세요.'],
+  ['客室タイプを選択してください。', '객실 타입을 선택해 주세요.'],
+  ['人数を選択してください。', '인원을 선택해 주세요.'],
   [
     '各客室の人数は1〜4名で指定してください。',
     '각 객실의 인원은 1~4명으로 지정해 주세요.',
@@ -726,6 +740,11 @@ const phraseTranslations: readonly [string, string][] = [
   ['更新できませんでした。', '업데이트할 수 없습니다.'],
   ['読み込み中', '불러오는 중'],
   ['未設定', '미설정'],
+  ['適用日を選択してください。', '적용일을 선택해 주세요.'],
+  [
+    '過去の日付には料金を登録できません。',
+    '과거 날짜에는 요금을 등록할 수 없습니다.',
+  ],
   [
     '既存の設定がある日付は上書きされます。',
     '기존 설정이 있는 날짜는 덮어씁니다.',
@@ -773,18 +792,29 @@ const exactTextTranslations: Record<string, string> = {
   室: '실',
   名: '명',
   円: '엔',
+  ADMINISTRATION: '관리자 시스템',
+  ADMIN: '관리자',
+  'ADMIN LOGIN': '관리자 로그인',
+  CONFIRM: '확인',
+  'BULK UPDATE': '일괄 변경',
+  'CALENDAR APPLICATION': '캘린더 적용',
+  'BASE RATES': '기본요금',
+  'SPECIAL RATE RULES': '특별요금 규칙',
+  'SELECTED DATES': '선택 날짜',
+  'LEGACY OVERRIDES': '날짜별 최종 금액',
+  NEW: '신규',
 }
 
 export function translateAdminText(value: string, locale: AdminLocale): string {
-  if (
-    locale === 'ja' ||
-    (!japanesePattern.test(value) && !slashDatePattern.test(value))
-  )
-    return value
+  if (locale === 'ja') return value
 
   const trimmed = value.trim()
   if (trimmed in exactTextTranslations)
     return value.replace(trimmed, exactTextTranslations[trimmed])
+  const calendarCount = trimmed.match(/^(IN|OUT) (\d+)$/)
+  if (calendarCount)
+    return `${calendarCount[1] === 'IN' ? '체크인' : '체크아웃'} ${calendarCount[2]}`
+  if (!japanesePattern.test(value) && !slashDatePattern.test(value)) return value
 
   let translated = value
   for (const [ja, ko] of sortedPhraseTranslations) {
@@ -804,6 +834,8 @@ export function translateAdminText(value: string, locale: AdminLocale): string {
     .replace(/(\d+)泊/g, '$1박')
     .replace(/(\d+)件/g, '$1건')
     .replace(/(\d+)回/g, '$1회')
+    .replace(/([+-]?[¥￥]?[0-9,]+)円/g, '$1엔')
+    .replace(/（([^）]+)）/g, ' ($1)')
 
   return translated
 }
