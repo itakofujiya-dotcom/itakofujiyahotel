@@ -13,6 +13,7 @@ import {
   assignRoom,
   cancelReservation,
   changeReservationStatus,
+  fetchAdminCancellationQuote,
   fetchAssignableRooms,
   fetchReservationDetail,
   markReservationSeen,
@@ -36,7 +37,6 @@ import {
   ADMIN_CHECK_IN_TIME_RANGE_MESSAGE,
   bookingSourceLabels,
   getAllowedNextStatuses,
-  getCancellationFee,
   getRoomAssignmentSummary,
   getTodayOperationLabels,
   reservationStatusLabels,
@@ -50,6 +50,7 @@ import type {
   ReservationPayment,
   ReservationStatus,
 } from '../../features/admin-reservations/types'
+import type { ReservationCancellationQuote } from '../../features/public-reservation/types'
 
 type ActionRequest =
   | { type: 'status'; status: Exclude<ReservationStatus, 'cancelled'> }
@@ -73,6 +74,8 @@ export function ReservationDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [statusUpdateFailed, setStatusUpdateFailed] = useState(false)
+  const [cancellationQuote, setCancellationQuote] =
+    useState<ReservationCancellationQuote | null>(null)
   const [editing, setEditing] = useState(false)
   const [action, setAction] = useState<ActionRequest>(null)
   const [paymentAction, setPaymentAction] = useState<PaymentAction | null>(null)
@@ -96,6 +99,13 @@ export function ReservationDetailPage() {
     try {
       const detail = await fetchReservationDetail(id)
       setReservation(detail)
+      if (['pending', 'confirmed'].includes(detail.status)) {
+        try {
+          setCancellationQuote(await fetchAdminCancellationQuote(detail.id))
+        } catch {
+          setCancellationQuote(null)
+        }
+      } else setCancellationQuote(null)
       if (detail.customer_id) {
         try {
           setCustomerStats(await fetchCustomerVisitStats(detail.customer_id))
@@ -313,12 +323,6 @@ export function ReservationDetailPage() {
     reservation.status,
     reservation.payment,
   )
-  const cancelFee = getCancellationFee(
-    reservation.check_in,
-    reservation.total_amount_yen ?? 0,
-    format(new Date(), 'yyyy-MM-dd'),
-  )
-
   return (
     <div className="reservation-print-root">
       <div className="print:hidden">
@@ -403,6 +407,7 @@ export function ReservationDetailPage() {
           reservation={reservation}
           assignment={assignment}
           nextStatuses={nextStatuses}
+          cancellationQuote={cancellationQuote}
           isMutating={isMutating}
           onAction={setAction}
         />
@@ -748,7 +753,7 @@ export function ReservationDetailPage() {
 
       {action && (
         <RateConfirmDialog
-          {...getActionDialogProperties(action, reservation, cancelFee)}
+          {...getActionDialogProperties(action, reservation, cancellationQuote)}
           isMutating={isMutating}
           onCancel={() => setAction(null)}
           onConfirm={() => void confirmAction()}
@@ -845,12 +850,14 @@ function ReservationStatusActions({
   reservation,
   assignment,
   nextStatuses,
+  cancellationQuote,
   isMutating,
   onAction,
 }: {
   reservation: ReservationDetail
   assignment: ReturnType<typeof getRoomAssignmentSummary>
   nextStatuses: ReservationStatus[]
+  cancellationQuote: ReservationCancellationQuote | null
   isMutating: boolean
   onAction: (action: ActionRequest) => void
 }) {
@@ -908,7 +915,7 @@ function ReservationStatusActions({
           <button
             type="button"
             onClick={() => onAction({ type: 'cancel' })}
-            disabled={isMutating}
+            disabled={isMutating || !cancellationQuote}
             className="min-h-12 w-full border border-red-300 px-5 text-sm font-semibold text-red-700 disabled:opacity-40 sm:w-auto"
           >
             キャンセルする
@@ -926,6 +933,11 @@ function ReservationStatusActions({
           )}
           {!assignment.complete && paymentBlockMessage && <br />}
           {paymentBlockMessage}
+        </p>
+      )}
+      {nextStatuses.includes('cancelled') && !cancellationQuote && (
+        <p className="mt-4 text-sm font-medium text-red-700" role="alert">
+          キャンセル料を取得できませんでした。ページを再読み込みしてください。
         </p>
       )}
     </div>
@@ -968,7 +980,7 @@ function getStatusActionLabel(status: ReservationStatus): string {
 function getActionDialogProperties(
   action: Exclude<ActionRequest, null>,
   reservation: ReservationDetail,
-  cancelFee: ReturnType<typeof getCancellationFee>,
+  cancellationQuote: ReservationCancellationQuote | null,
 ) {
   const rooms = reservation.rooms
     .map((room) =>
@@ -982,7 +994,9 @@ function getActionDialogProperties(
   if (action.type === 'cancel')
     return {
       title: '予約をキャンセルしますか？',
-      description: `${common}\n\n宿泊日の${cancelFee.daysBefore}日前\nキャンセル料: ${cancelFee.rate}%\n\n予約金額: ${formatYen(reservation.total_amount_yen ?? 0)}\nキャンセル料: ${formatYen(cancelFee.amount)}\n\n現地払いのため返金処理は行いません。割り当て済み客室は解放されます。`,
+      description: cancellationQuote
+        ? `${common}\n\n${cancellationQuote.policyDescriptionJa ?? cancellationQuote.policyCode}\n宿泊日の${cancellationQuote.daysBefore}日前\nキャンセル料: ${cancellationQuote.feePercent}%\n\n予約金額: ${formatYen(reservation.total_amount_yen ?? 0)}\nキャンセル料: ${formatYen(cancellationQuote.feeYen)}\n返金対象額: ${formatYen(cancellationQuote.refundTargetYen)}\n\n自動返金は行いません。割り当て済み客室は解放されます。`
+        : `${common}\n\nキャンセル料を確認できません。再読み込みしてください。`,
       confirmLabel: 'キャンセル確定',
       destructive: true,
     }

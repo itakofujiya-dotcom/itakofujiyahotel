@@ -11,6 +11,7 @@ import type {
   PaymentStatus,
 } from './types'
 import type { MealPlan } from '../booking/types'
+import type { ReservationCancellationQuote } from '../public-reservation/types'
 
 const listSelect = `
   id, reservation_number, customer_id, check_in, check_out, adults, paid_children,
@@ -247,6 +248,28 @@ export async function cancelReservation(reservationId: string): Promise<void> {
   if (error) throwReservationError('cancel reservation', error)
 }
 
+export async function fetchAdminCancellationQuote(
+  reservationId: string,
+): Promise<ReservationCancellationQuote> {
+  const { data, error } = await supabase.rpc(
+    'get_admin_reservation_cancellation_quote',
+    { p_reservation_id: reservationId },
+  )
+  if (error) throwReservationError('load cancellation quote', error)
+  if (!isRecord(data)) throw new Error('CANCELLATION_QUOTE_INVALID')
+  return {
+    policyCode: requireString(data.policyCode),
+    policyDescriptionJa:
+      typeof data.policyDescriptionJa === 'string'
+        ? data.policyDescriptionJa
+        : null,
+    daysBefore: requireNumber(data.daysBefore),
+    feePercent: requireNumber(data.feePercent),
+    feeYen: requireNumber(data.feeYen),
+    refundTargetYen: requireNumber(data.refundTargetYen),
+  }
+}
+
 export async function updateAdminPaymentStatus({
   paymentId,
   expectedStatus,
@@ -337,6 +360,21 @@ function mapReservationListItem(data: {
 
 function parseMealPlan(value: string): MealPlan {
   return value === 'breakfast_dinner' ? 'breakfast_dinner' : 'breakfast'
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function requireString(value: unknown): string {
+  if (typeof value !== 'string') throw new Error('INVALID_RPC_RESPONSE')
+  return value
+}
+
+function requireNumber(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value))
+    throw new Error('INVALID_RPC_RESPONSE')
+  return value
 }
 
 function throwReservationError(

@@ -9,7 +9,6 @@ import {
   countNewOnlineReservations,
   filterReservations,
   getAllowedNextStatuses,
-  getCancellationFee,
   getReservationCalendarCounts,
   getReservationCalendarCardInfo,
   getReservationDetailPath,
@@ -250,16 +249,6 @@ test('calendar separates arrivals, staying guests, and completed departures', ()
     ).checkOuts.length,
     1,
   )
-})
-
-test('calculates the confirmed cancellation policy', () => {
-  assert.deepEqual(getCancellationFee('2026-08-25', 34000, '2026-08-20'), {
-    daysBefore: 5,
-    rate: 30,
-    amount: 10200,
-  })
-  assert.equal(getCancellationFee('2026-08-25', 34000, '2026-08-18').rate, 0)
-  assert.equal(getCancellationFee('2026-08-25', 34000, '2026-08-24').rate, 100)
 })
 
 test('allows only safe forward reservation status transitions', () => {

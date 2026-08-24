@@ -4,6 +4,7 @@ import { hotelSettings } from '../../data/hotel'
 import { AdminAuthLoading } from '../../features/auth/AdminProtectedRoute'
 import { useAdminAuth } from '../../features/auth/use-admin-auth'
 import type { AdminAccessIssue } from '../../types/admin'
+import { AdminLocaleSwitcher } from '../../components/admin/AdminLocaleSwitcher'
 
 const errorMessages: Record<AdminAccessIssue, string> = {
   invalid_credentials: 'メールアドレスまたはパスワードが正しくありません。',
@@ -56,10 +57,20 @@ export function LoginPage() {
   const displayedIssue = formIssue ?? accessIssue
 
   return (
-    <main className="grid min-h-screen place-items-center bg-[#e9ece8] p-5">
+    <main
+      className="grid min-h-screen place-items-center bg-[#e9ece8] p-5"
+      data-admin-i18n-root
+    >
       <div className="w-full max-w-md bg-surface p-8 shadow-soft sm:p-10">
-        <p className="font-serif text-xl">{hotelSettings.hotelNameJa}</p>
-        <p className="mt-2 text-xs tracking-[.2em] text-muted">ADMIN LOGIN</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="font-serif text-xl">{hotelSettings.hotelNameJa}</p>
+            <p className="mt-2 text-xs tracking-[.2em] text-muted">
+              ADMIN LOGIN
+            </p>
+          </div>
+          <AdminLocaleSwitcher />
+        </div>
         <form className="mt-9 space-y-5" onSubmit={handleSubmit} noValidate>
           <label className="block">
             <span className="mb-2 block text-sm">メールアドレス</span>

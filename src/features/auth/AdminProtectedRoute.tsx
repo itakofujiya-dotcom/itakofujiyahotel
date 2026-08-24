@@ -26,7 +26,10 @@ export function AdminProtectedRoute() {
 
 export function AdminAuthLoading({ message }: { message: string }) {
   return (
-    <main className="grid min-h-screen place-items-center bg-[#e9ece8] p-5">
+    <main
+      className="grid min-h-screen place-items-center bg-[#e9ece8] p-5"
+      data-admin-i18n-root
+    >
       <div className="text-center" role="status" aria-live="polite">
         <span className="mx-auto block size-8 animate-spin rounded-full border-2 border-line border-t-moss" />
         <p className="mt-4 text-sm text-muted">{message}</p>

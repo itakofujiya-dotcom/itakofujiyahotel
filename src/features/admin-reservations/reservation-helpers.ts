@@ -1,9 +1,4 @@
-import {
-  differenceInCalendarDays,
-  eachDayOfInterval,
-  format,
-  subDays,
-} from 'date-fns'
+import { eachDayOfInterval, format, subDays } from 'date-fns'
 import type {
   BookingSource,
   CreateAdminReservationInput,
@@ -243,20 +238,6 @@ export function getReservationCalendarCounts(
         day < reservation.check_out,
     ),
   }
-}
-
-export function getCancellationFee(
-  checkIn: string,
-  totalAmount: number,
-  today: string,
-) {
-  const daysBefore = differenceInCalendarDays(
-    new Date(`${checkIn}T00:00:00`),
-    new Date(`${today}T00:00:00`),
-  )
-  const rate =
-    daysBefore >= 7 ? 0 : daysBefore >= 4 ? 30 : daysBefore >= 2 ? 50 : 100
-  return { daysBefore, rate, amount: Math.round((totalAmount * rate) / 100) }
 }
 
 export function getAllowedNextStatuses(

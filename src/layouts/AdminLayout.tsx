@@ -9,11 +9,14 @@ import {
   adminReservationSeenEvent,
   fetchNewOnlineReservationCount,
 } from '../features/admin-reservations/admin-reservations-api'
+import { AdminLocaleSwitcher } from '../components/admin/AdminLocaleSwitcher'
+import { useAdminTranslation } from '../i18n/useAdminTranslation'
 
 export function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { adminProfile, logout } = useAdminAuth()
+  const { t, translate } = useAdminTranslation()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [newReservationCount, setNewReservationCount] = useState(0)
 
@@ -43,7 +46,7 @@ export function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f2f3f1]">
+    <div className="min-h-screen bg-[#f2f3f1]" data-admin-i18n-root>
       <header className="flex items-center justify-between border-b border-line bg-surface px-5 py-4 lg:hidden">
         <div>
           <p className="font-serif">{hotelSettings.hotelNameJa}</p>
@@ -52,14 +55,17 @@ export function AdminLayout() {
             {adminProfile ? adminRoleLabels[adminProfile.role] : ''}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          className="inline-flex min-h-11 items-center gap-2 px-3 text-xs text-muted disabled:opacity-50"
-        >
-          <LogOut size={16} /> ログアウト
-        </button>
+        <div className="flex items-center gap-2">
+          <AdminLocaleSwitcher />
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="inline-flex min-h-11 items-center gap-2 px-3 text-xs text-muted disabled:opacity-50"
+          >
+            <LogOut size={16} /> {t('common.logout')}
+          </button>
+        </div>
       </header>
       <div className="lg:grid lg:min-h-screen lg:grid-cols-[250px_1fr]">
         <aside className="hidden bg-[#26302b] p-7 text-white lg:block">
@@ -78,7 +84,7 @@ export function AdminLayout() {
                 }
               >
                 <AdminNavigationLabel
-                  label={item.label}
+                  label={translate(item.label)}
                   showCount={item.to === '/admin/reservations'}
                   count={newReservationCount}
                 />
@@ -86,8 +92,9 @@ export function AdminLayout() {
             ))}
           </nav>
           <div className="mt-10 border-t border-white/15 pt-6">
+            <AdminLocaleSwitcher dark />
             <p className="text-sm font-medium">
-              {adminProfile?.display_name ?? '管理者'}
+              {adminProfile?.display_name ?? t('common.admin')}
             </p>
             <p className="mt-1 text-xs text-white/50">
               {adminProfile ? adminRoleLabels[adminProfile.role] : ''}
@@ -99,7 +106,7 @@ export function AdminLayout() {
               className="mt-5 inline-flex min-h-11 items-center gap-2 text-xs text-white/65 transition hover:text-white disabled:opacity-50"
             >
               <LogOut size={15} />
-              {isLoggingOut ? 'ログアウト中…' : 'ログアウト'}
+              {isLoggingOut ? t('common.loggingOut') : t('common.logout')}
             </button>
           </div>
         </aside>
@@ -115,7 +122,7 @@ export function AdminLayout() {
                 }
               >
                 <AdminNavigationLabel
-                  label={item.label}
+                  label={translate(item.label)}
                   showCount={item.to === '/admin/reservations'}
                   count={newReservationCount}
                 />

@@ -707,6 +707,18 @@ export type Database = {
         Args: { p_reservation_id: string }
         Returns: undefined
       }
+      get_admin_reservation_cancellation_quote: {
+        Args: { p_reservation_id: string }
+        Returns: Json
+      }
+      lookup_public_reservation: {
+        Args: { p_reservation_number: string; p_contact: string }
+        Returns: Json
+      }
+      cancel_public_reservation: {
+        Args: { p_reservation_number: string; p_contact: string }
+        Returns: Json
+      }
       update_admin_reservation_contact: {
         Args: { p_reservation_id: string; p_guest: Json; p_reservation: Json }
         Returns: undefined

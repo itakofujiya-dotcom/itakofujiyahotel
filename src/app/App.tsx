@@ -12,6 +12,7 @@ import { BookingDetailsPage } from '../pages/public/BookingDetailsPage'
 import { BookingConfirmPage } from '../pages/public/BookingConfirmPage'
 import { BookingCompletePage } from '../pages/public/BookingCompletePage'
 import { InfoPage } from '../pages/public/InfoPage'
+import { ReservationLookupPage } from '../pages/public/ReservationLookupPage'
 import { LoginPage } from '../pages/admin/LoginPage'
 import { DashboardPage } from '../pages/admin/DashboardPage'
 import { ReservationsAdminPage } from '../pages/admin/ReservationsAdminPage'
@@ -25,6 +26,7 @@ import { CustomersAdminPage } from '../pages/admin/CustomersAdminPage'
 import { CustomerDetailPage } from '../pages/admin/CustomerDetailPage'
 import { AdminAuthProvider } from '../features/auth/AdminAuthProvider'
 import { AdminProtectedRoute } from '../features/auth/AdminProtectedRoute'
+import { AdminLocaleProvider } from '../i18n/AdminLocaleProvider'
 
 const router = createBrowserRouter([
   {
@@ -40,7 +42,7 @@ const router = createBrowserRouter([
       { path: '/booking/details', element: <BookingDetailsPage /> },
       { path: '/booking/confirm', element: <BookingConfirmPage /> },
       { path: '/booking/complete', element: <BookingCompletePage /> },
-      { path: '/reservation', element: <InfoPage kind="reservation" /> },
+      { path: '/reservation', element: <ReservationLookupPage /> },
       { path: '/policies', element: <InfoPage kind="policies" /> },
       { path: '*', element: <InfoPage kind="policies" /> },
     ],
@@ -71,8 +73,10 @@ const router = createBrowserRouter([
 
 export function App() {
   return (
-    <AdminAuthProvider>
-      <RouterProvider router={router} />
-    </AdminAuthProvider>
+    <AdminLocaleProvider>
+      <AdminAuthProvider>
+        <RouterProvider router={router} />
+      </AdminAuthProvider>
+    </AdminLocaleProvider>
   )
 }
