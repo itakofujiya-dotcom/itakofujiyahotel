@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BookingMissing } from '../../components/booking/BookingMissing'
 import { BookingSteps } from '../../components/booking/BookingSteps'
@@ -282,11 +282,24 @@ export function BookingConfirmPage() {
           </ConfirmSection>
 
           <div className="mt-7 border border-line bg-surface p-6 shadow-soft">
-            <Consent checked={privacyConsent} onChange={setPrivacyConsent}>
-              個人情報の取扱いに同意します。
+            <Consent
+              checked={privacyConsent}
+              onChange={setPrivacyConsent}
+              label="プライバシーポリシーに同意します。"
+            >
+              <PolicyDocumentLink to="/privacy">内容を見る</PolicyDocumentLink>
             </Consent>
-            <Consent checked={policyConsent} onChange={setPolicyConsent}>
-              宿泊条件・キャンセルポリシーを確認し、同意します。
+            <Consent
+              checked={policyConsent}
+              onChange={setPolicyConsent}
+              label="宿泊約款およびキャンセルポリシーに同意します。"
+            >
+              <PolicyDocumentLink to="/terms">
+                宿泊約款を見る
+              </PolicyDocumentLink>
+              <PolicyDocumentLink to="/cancellation-policy">
+                キャンセルポリシーを見る
+              </PolicyDocumentLink>
             </Consent>
             <button
               type="button"
@@ -335,21 +348,50 @@ function DefinitionGrid({ rows }: { rows: [string, string][] }) {
 function Consent({
   checked,
   onChange,
+  label,
   children,
 }: {
   checked: boolean
   onChange: (checked: boolean) => void
+  label: string
   children: React.ReactNode
 }) {
+  const inputId = useId()
   return (
-    <label className="mt-3 flex min-h-11 cursor-pointer items-start gap-3 text-sm first:mt-0">
+    <div className="mt-4 flex min-h-11 items-start gap-3 text-sm first:mt-0">
       <input
+        id={inputId}
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
         className="mt-0.5 size-5 accent-[#994a32]"
       />
-      <span className="leading-6">{children}</span>
-    </label>
+      <div className="min-w-0 flex-1">
+        <label htmlFor={inputId} className="cursor-pointer leading-6">
+          {label}
+        </label>
+        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+function PolicyDocumentLink({
+  to,
+  children,
+}: {
+  to: string
+  children: React.ReactNode
+}) {
+  return (
+    <Link
+      to={to}
+      target="_blank"
+      rel="noreferrer"
+      className="font-semibold text-accent underline decoration-accent/40 underline-offset-4 hover:text-accent-hover"
+    >
+      {children}
+      <span className="sr-only">（新しいタブで開く）</span>
+    </Link>
   )
 }

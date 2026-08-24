@@ -35,7 +35,6 @@ export function RoomsPage() {
                 )}
                 <span className={item.provided ? '' : 'text-muted'}>
                   {item.labelJa}
-                  {!item.provided && '（ご用意なし）'}
                 </span>
               </div>
             ))}

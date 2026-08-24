@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { PublicLayout } from '../layouts/PublicLayout'
 import { AdminLayout } from '../layouts/AdminLayout'
 import { HomePage } from '../pages/public/HomePage'
@@ -11,7 +11,7 @@ import { BookingPage } from '../pages/public/BookingPage'
 import { BookingDetailsPage } from '../pages/public/BookingDetailsPage'
 import { BookingConfirmPage } from '../pages/public/BookingConfirmPage'
 import { BookingCompletePage } from '../pages/public/BookingCompletePage'
-import { InfoPage } from '../pages/public/InfoPage'
+import { PolicyPage } from '../pages/public/PolicyPage'
 import { ReservationLookupPage } from '../pages/public/ReservationLookupPage'
 import { LoginPage } from '../pages/admin/LoginPage'
 import { DashboardPage } from '../pages/admin/DashboardPage'
@@ -45,8 +45,14 @@ const router = createBrowserRouter([
       { path: '/booking/confirm', element: <BookingConfirmPage /> },
       { path: '/booking/complete', element: <BookingCompletePage /> },
       { path: '/reservation', element: <ReservationLookupPage /> },
-      { path: '/policies', element: <InfoPage kind="policies" /> },
-      { path: '*', element: <InfoPage kind="policies" /> },
+      { path: '/terms', element: <PolicyPage kind="terms" /> },
+      { path: '/privacy', element: <PolicyPage kind="privacy" /> },
+      {
+        path: '/cancellation-policy',
+        element: <PolicyPage kind="cancellation" />,
+      },
+      { path: '/policies', element: <Navigate to="/terms" replace /> },
+      { path: '*', element: <Navigate to="/terms" replace /> },
     ],
   },
   { path: '/admin/login', element: <LoginPage /> },

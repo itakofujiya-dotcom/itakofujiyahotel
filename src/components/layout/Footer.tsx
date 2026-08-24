@@ -32,7 +32,9 @@ export function Footer() {
               {translate(item.label)}
             </Link>
           ))}
-          <Link to="/policies">ご利用案内</Link>
+          <Link to="/terms">宿泊約款</Link>
+          <Link to="/privacy">プライバシーポリシー</Link>
+          <Link to="/cancellation-policy">キャンセルポリシー</Link>
           <Link to="/reservation">予約確認</Link>
         </div>
       </div>
