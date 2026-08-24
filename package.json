@@ -23,6 +23,7 @@
     "test:admin-i18n": "node --experimental-strip-types --test scripts/admin-i18n.test.mjs",
     "test:public-i18n": "node --experimental-strip-types --test scripts/public-i18n.test.mjs",
     "test:locale-fonts": "node --test scripts/locale-fonts.test.mjs",
+    "test:sales": "node --experimental-strip-types --test scripts/admin-sales.test.mjs",
     "test:cancellation": "node --experimental-strip-types --test scripts/public-reservation-cancellation.test.mjs",
     "test:config": "node --experimental-strip-types --test scripts/supabase-config.test.mjs",
     "test:booking-search": "node --experimental-strip-types --test scripts/booking-search.test.mjs",

@@ -12,6 +12,8 @@ test('keeps Japanese as the default resource and provides Korean navigation', ()
   assert.equal(adminTranslations.ja['navigation.dashboard'], 'ダッシュボード')
   assert.equal(adminTranslations.ko['navigation.dashboard'], '대시보드')
   assert.equal(adminTranslations.ko['navigation.reservations'], '예약관리')
+  assert.equal(adminTranslations.ja['navigation.sales'], '売上管理')
+  assert.equal(adminTranslations.ko['navigation.sales'], '매출관리')
   assert.equal(ADMIN_LOCALE_STORAGE_KEY, 'admin_locale')
 })
 

@@ -759,6 +759,44 @@ export type Database = {
           total_count: number
         }[]
       }
+      get_admin_sales_summary: {
+        Args: {
+          p_start_date: string
+          p_end_date: string
+          p_payment_method?: string | null
+        }
+        Returns: Json
+      }
+      get_admin_sales_details: {
+        Args: {
+          p_start_date: string
+          p_end_date: string
+          p_payment_method?: string | null
+          p_status_filter?: string
+          p_sort?: string
+          p_page?: number
+          p_page_size?: number
+        }
+        Returns: {
+          reservation_id: string
+          event_date: string
+          reservation_number: string
+          guest_name: string
+          check_in: string
+          check_out: string
+          rooms: Json
+          payment_method: string | null
+          payment_status: string | null
+          reservation_status: string
+          reservation_amount_yen: number
+          recognized_revenue_yen: number
+          collected_yen: number
+          cancellation_fee_yen: number
+          refund_target_yen: number
+          payment_issue: string | null
+          total_count: number
+        }[]
+      }
       get_public_hotel_information: {
         Args: Record<PropertyKey, never>
         Returns: {

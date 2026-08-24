@@ -16,6 +16,7 @@ export const adminTranslations = {
     'navigation.rooms': '客室管理',
     'navigation.inventory': '在庫管理',
     'navigation.rates': '料金管理',
+    'navigation.sales': '売上管理',
     'navigation.settings': '基本設定',
   },
   ko: {
@@ -31,6 +32,7 @@ export const adminTranslations = {
     'navigation.rooms': '객실관리',
     'navigation.inventory': '재고관리',
     'navigation.rates': '요금관리',
+    'navigation.sales': '매출관리',
     'navigation.settings': '기본설정',
   },
 } as const
@@ -68,7 +70,64 @@ const phraseTranslations: readonly [string, string][] = [
   ['客室管理', '객실관리'],
   ['在庫管理', '재고관리'],
   ['料金管理', '요금관리'],
+  ['売上管理', '매출관리'],
   ['基本設定', '기본설정'],
+  [
+    '予約・入金・キャンセル料を期間別に集計します。',
+    '예약·입금·취소 수수료를 기간별로 집계합니다.',
+  ],
+  ['売上情報を取得できませんでした。', '매출 정보를 불러올 수 없습니다.'],
+  [
+    '印刷用の売上情報を取得できませんでした。',
+    '인쇄용 매출 정보를 불러올 수 없습니다.',
+  ],
+  ['印刷データを準備しています…', '인쇄 데이터를 준비하는 중…'],
+  ['売上情報を読み込んでいます…', '매출 정보를 불러오는 중…'],
+  [
+    '選択した期間の売上明細はありません。',
+    '선택한 기간의 매출 내역이 없습니다.',
+  ],
+  [
+    '開始日は終了日以前の日付にしてください。',
+    '시작일은 종료일 이전 또는 같은 날짜로 설정해 주세요.',
+  ],
+  ['開始日と終了日を入力してください。', '시작일과 종료일을 입력해 주세요.'],
+  ['この期間を表示', '이 기간 보기'],
+  ['キャンセル・無連絡不泊', '취소·노쇼'],
+  ['支払方法別', '결제수단별'],
+  ['売上計上額', '매출 인식액'],
+  ['予約売上', '예약 매출'],
+  ['入金合計', '실수납액'],
+  ['予約件数', '예약 건수'],
+  ['宿泊完了', '숙박 완료'],
+  ['返金対象', '환불 대상'],
+  ['売上明細', '매출 내역'],
+  ['潮来富士屋ホテル 売上レポート', '潮来富士屋ホテル 매출 보고서'],
+  ['予約金額', '예약 금액'],
+  ['入金額', '실수납액'],
+  ['支払方法', '결제 방법'],
+  ['支払状態', '결제 상태'],
+  ['顧客名', '고객명'],
+  ['日付', '날짜'],
+  ['通常予約', '정상 예약'],
+  ['すべての状態', '전체 상태'],
+  ['金額が高い順', '금액 높은순'],
+  ['新しい順', '최신순'],
+  ['古い順', '오래된순'],
+  ['期間指定', '직접 선택'],
+  ['開始日', '시작일'],
+  ['終了日', '종료일'],
+  ['集計期間', '조회기간'],
+  ['出力日', '출력일'],
+  ['今週', '이번 주'],
+  ['今月', '이번 달'],
+  ['先月', '지난달'],
+  ['今日', '오늘'],
+  ['印刷', '인쇄'],
+  ['複数あり', '여러 건'],
+  ['ページ', '페이지'],
+  ['予約', '예약'],
+  ['全', '전체 '],
   ['新規オンライン予約', '신규 온라인 예약'],
   ['新規予約', '신규 예약'],
   ['予約はまだありません。', '예약이 아직 없습니다.'],
@@ -803,6 +862,8 @@ const exactTextTranslations: Record<string, string> = {
   'SELECTED DATES': '선택 날짜',
   'LEGACY OVERRIDES': '날짜별 최종 금액',
   NEW: '신규',
+  'SALES DETAILS': '매출 상세',
+  '～': '~',
 }
 
 export function translateAdminText(value: string, locale: AdminLocale): string {
@@ -814,7 +875,8 @@ export function translateAdminText(value: string, locale: AdminLocale): string {
   const calendarCount = trimmed.match(/^(IN|OUT) (\d+)$/)
   if (calendarCount)
     return `${calendarCount[1] === 'IN' ? '체크인' : '체크아웃'} ${calendarCount[2]}`
-  if (!japanesePattern.test(value) && !slashDatePattern.test(value)) return value
+  if (!japanesePattern.test(value) && !slashDatePattern.test(value))
+    return value
 
   let translated = value
   for (const [ja, ko] of sortedPhraseTranslations) {

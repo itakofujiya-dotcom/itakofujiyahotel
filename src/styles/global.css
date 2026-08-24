@@ -26,6 +26,11 @@ html[lang='ko'] {
     margin: 12mm;
   }
 
+  @page sales-report {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
   body {
     background: white !important;
     color: black !important;
@@ -44,6 +49,67 @@ html[lang='ko'] {
     min-height: 0 !important;
     padding: 0 !important;
   }
+
+  .sales-report {
+    page: sales-report;
+    color: black;
+    font-size: 9pt;
+  }
+
+  .sales-screen-header,
+  .sales-controls,
+  .sales-pagination,
+  .sales-screen-only {
+    display: none !important;
+  }
+
+  .sales-print-only {
+    display: block !important;
+    margin-bottom: 8mm;
+  }
+
+  .sales-summary,
+  .sales-payment-methods,
+  .sales-details,
+  .sales-summary > article,
+  .sales-payment-methods article,
+  .sales-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .sales-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 3mm !important;
+  }
+
+  .sales-summary > article,
+  .sales-payment-methods article {
+    border-color: #999 !important;
+    padding: 3mm !important;
+  }
+
+  .sales-payment-methods > div {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 3mm !important;
+  }
+
+  .sales-details .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  .sales-table {
+    min-width: 0 !important;
+    width: 100% !important;
+    table-layout: auto;
+    font-size: 6.5pt;
+  }
+
+  .sales-table th,
+  .sales-table td {
+    padding: 1.5mm !important;
+    border-color: #bbb !important;
+  }
 }
 
 html {
@@ -61,6 +127,10 @@ input,
 select,
 textarea {
   font-family: var(--font-ui);
+}
+
+.sales-print-only {
+  display: none;
 }
 img {
   display: block;
