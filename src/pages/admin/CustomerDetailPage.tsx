@@ -2,6 +2,8 @@ import { differenceInCalendarDays } from 'date-fns'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader'
+import { GuestNameWithKana } from '../../components/admin/GuestNameWithKana'
+import { formatGuestNameWithKana } from '../../components/admin/guest-name'
 import {
   fetchCustomerDetail,
   updateCustomerMemo,
@@ -13,10 +15,8 @@ import {
 import type { CustomerDetail } from '../../features/admin-customers/types'
 import { paymentMethodLabels } from '../../features/admin-reservations/payment-helpers'
 import { ReservationStatusBadge } from '../../features/admin-reservations/ReservationStatusBadge'
-import { useAdminTranslation } from '../../i18n/useAdminTranslation'
 
 export function CustomerDetailPage() {
-  const { t } = useAdminTranslation()
   const { id = '' } = useParams()
   const [customer, setCustomer] = useState<CustomerDetail | null>(null)
   const [memo, setMemo] = useState('')
@@ -82,7 +82,7 @@ export function CustomerDetailPage() {
   return (
     <>
       <AdminPageHeader
-        title={customer.name}
+        title={formatGuestNameWithKana(customer.name, customer.nameKanaOrRoman)}
         description="顧客情報、再訪状況、予約履歴を確認します。"
       />
       <div className="mb-6">
@@ -98,11 +98,13 @@ export function CustomerDetailPage() {
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
             <p className="text-xs font-semibold text-muted">氏名</p>
-            <h2 className="mt-2 font-serif text-2xl">{customer.name}</h2>
-            <p className="mt-4 text-xs font-semibold text-muted">
-              {t('common.furigana')}
-            </p>
-            <p className="mt-1 text-sm">{customer.nameKanaOrRoman ?? '—'}</p>
+            <GuestNameWithKana
+              name={customer.name}
+              nameKanaOrRoman={customer.nameKanaOrRoman}
+              className="mt-2"
+              nameClassName="font-serif text-2xl"
+              kanaClassName="mt-1 text-sm text-muted"
+            />
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div>
                 <p className="text-xs font-semibold text-muted">電話番号</p>

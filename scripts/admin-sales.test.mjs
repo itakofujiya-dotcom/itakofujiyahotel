@@ -18,6 +18,13 @@ const migration = readFileSync(
   ),
   'utf8',
 )
+const kanaMigration = readFileSync(
+  new URL(
+    '../supabase/migrations/202608210012_customer_kana_master_and_sales.sql',
+    import.meta.url,
+  ),
+  'utf8',
+)
 
 const range = { startDate: '2026-08-01', endDate: '2026-08-31' }
 
@@ -221,6 +228,14 @@ test('adds the Admin route, navigation, i18n, and print-only report layout', () 
   assert.match(page, /sales-table w-full table-fixed/)
   assert.match(page, /sales-card-list[\s\S]*2xl:hidden/)
   assert.match(page, /sales-table-wrapper[\s\S]*2xl:block/)
+  assert.match(page, /<GuestNameWithKana/)
+  assert.match(page, /nameKanaOrRoman=\{detail\.guestNameKanaOrRoman\}/)
+  assert.match(
+    kanaMigration,
+    /create or replace function public\.get_admin_sales_details_with_kana/,
+  )
+  assert.match(kanaMigration, /guest\.name_kana_or_roman/)
+  assert.match(kanaMigration, /if not public\.is_admin\(\)/)
   assert.match(css, /\.sales-table-wrapper[\s\S]*display: block !important/)
   assert.match(css, /\.sales-card-list[\s\S]*display: none !important/)
   assert.doesNotMatch(css, /overflow-x:\s*hidden/)

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader'
+import { GuestNameWithKana } from '../../components/admin/GuestNameWithKana'
 import { fetchAdminSalesReport } from '../../features/admin-sales/admin-sales-api'
 import {
   createEmptySalesSummary,
@@ -451,7 +452,10 @@ function SalesDetailsTable({
                   </Link>
                 </td>
                 <td className="break-words px-2 py-3 [overflow-wrap:anywhere]">
-                  {detail.guestName}
+                  <GuestNameWithKana
+                    name={detail.guestName}
+                    nameKanaOrRoman={detail.guestNameKanaOrRoman}
+                  />
                 </td>
                 <td className="break-words px-2 py-3 [overflow-wrap:anywhere]">
                   {formatSalesDate(detail.checkIn)}
@@ -524,7 +528,15 @@ function SalesDetailsTable({
             </div>
 
             <dl className="mt-4 grid min-w-0 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-              <SalesCardRow label="顧客名" value={detail.guestName} />
+              <div className="min-w-0">
+                <dt className="text-xs font-semibold text-muted">顧客名</dt>
+                <dd className="mt-1">
+                  <GuestNameWithKana
+                    name={detail.guestName}
+                    nameKanaOrRoman={detail.guestNameKanaOrRoman}
+                  />
+                </dd>
+              </div>
               <SalesCardRow
                 label="宿泊期間"
                 value={`${formatSalesDate(detail.checkIn)} ～ ${formatSalesDate(detail.checkOut)}`}

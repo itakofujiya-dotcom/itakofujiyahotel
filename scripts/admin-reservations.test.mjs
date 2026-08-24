@@ -22,6 +22,7 @@ import {
   reservationStatusLabels,
   validateAdminReservationInput,
 } from '../src/features/admin-reservations/reservation-helpers.ts'
+import { formatGuestNameWithKana } from '../src/components/admin/guest-name.ts'
 
 const reservation = {
   id: 'reservation-1',
@@ -83,7 +84,7 @@ test('builds a calendar card and detail route from the actual reservation id', (
   })
 })
 
-test('shows kana across reservation Admin UI and safely omits a missing legacy value', () => {
+test('shows kana across reservation Admin UI and falls back for a missing legacy value', () => {
   const nameComponent = readFileSync(
     new URL('../src/components/admin/GuestNameWithKana.tsx', import.meta.url),
     'utf8',
@@ -111,8 +112,7 @@ test('shows kana across reservation Admin UI and safely omits a missing legacy v
     'utf8',
   )
 
-  assert.match(nameComponent, /nameKanaOrRoman\?\.trim\(\)/)
-  assert.match(nameComponent, /\{kana && \(/)
+  assert.match(nameComponent, /nameKanaOrRoman\?\.trim\(\) \|\| '—'/)
   assert.match(
     table,
     /nameKanaOrRoman=\{reservation\.guest\.name_kana_or_roman\}/,
@@ -121,10 +121,14 @@ test('shows kana across reservation Admin UI and safely omits a missing legacy v
     calendar,
     /nameKanaOrRoman=\{reservation\.guest\.name_kana_or_roman\}/,
   )
-  assert.match(detail, /label=\{t\('common\.furigana'\)\}/)
-  assert.match(detail, /name_kana_or_roman \?\? '—'/)
-  assert.match(detail, /\$\{reservation\.guest\.name\}（\$\{/)
+  assert.match(detail, /<GuestNameWithKana/)
+  assert.match(detail, /formatGuestNameWithKana/)
   assert.match(create, /label=\{t\('common\.furigana'\)\}[\s\S]*required/)
+  assert.equal(
+    formatGuestNameWithKana('山田 太郎', 'ヤマダ タロウ'),
+    '山田 太郎（ヤマダ タロウ）',
+  )
+  assert.equal(formatGuestNameWithKana('旧データ', null), '旧データ（—）')
 })
 
 test('filters by new online reservation and searchable guest fields', () => {

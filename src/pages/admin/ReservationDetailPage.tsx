@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { differenceInCalendarDays, format } from 'date-fns'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader'
+import { GuestNameWithKana } from '../../components/admin/GuestNameWithKana'
+import { formatGuestNameWithKana } from '../../components/admin/guest-name'
 import { fetchCustomerVisitStats } from '../../features/admin-customers/admin-customers-api'
 import { getCustomerVisitLabel } from '../../features/admin-customers/customer-helpers'
 import type { CustomerStats } from '../../features/admin-customers/types'
@@ -447,10 +449,14 @@ export function ReservationDetailPage() {
           />
         </DetailSection>
         <DetailSection title="お客様">
-          <Definition label="氏名" value={reservation.guest.name} />
           <Definition
-            label={t('common.furigana')}
-            value={reservation.guest.name_kana_or_roman ?? '—'}
+            label="氏名"
+            value={
+              <GuestNameWithKana
+                name={reservation.guest.name}
+                nameKanaOrRoman={reservation.guest.name_kana_or_roman}
+              />
+            }
           />
           <Definition label="電話" value={reservation.guest.telephone} />
           <Definition label="メール" value={reservation.guest.email} />
@@ -994,9 +1000,10 @@ function getActionDialogProperties(
         : `${room.room_type.name_ja}（未割当）`,
     )
     .join('・')
-  const guestName = reservation.guest.name_kana_or_roman?.trim()
-    ? `${reservation.guest.name}（${reservation.guest.name_kana_or_roman.trim()}）`
-    : reservation.guest.name
+  const guestName = formatGuestNameWithKana(
+    reservation.guest.name,
+    reservation.guest.name_kana_or_roman,
+  )
   const common = `予約番号\n${reservation.reservation_number}\n\nお客様\n${guestName}\n\n客室\n${rooms}`
 
   if (action.type === 'cancel')
@@ -1049,7 +1056,13 @@ function DetailSection({
     </section>
   )
 }
-function Definition({ label, value }: { label: string; value: string }) {
+function Definition({
+  label,
+  value,
+}: {
+  label: string
+  value: React.ReactNode
+}) {
   return (
     <div className="grid grid-cols-[140px_1fr] border-b border-line py-2 text-sm last:border-0">
       <dt className="text-muted">{label}</dt>

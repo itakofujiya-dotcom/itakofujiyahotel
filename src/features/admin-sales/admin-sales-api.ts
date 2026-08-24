@@ -40,7 +40,7 @@ export async function fetchAdminSalesReport({
       p_end_date: range.endDate,
       p_payment_method: method,
     }),
-    supabase.rpc('get_admin_sales_details', {
+    supabase.rpc('get_admin_sales_details_with_kana', {
       p_start_date: range.startDate,
       p_end_date: range.endDate,
       p_payment_method: method,
@@ -94,7 +94,7 @@ function parsePaymentMethodSummary(value: Json): SalesPaymentMethodSummary {
 }
 
 type SalesDetailRow =
-  Database['public']['Functions']['get_admin_sales_details']['Returns'][number]
+  Database['public']['Functions']['get_admin_sales_details_with_kana']['Returns'][number]
 
 function parseDetail(detail: SalesDetailRow): SalesDetail {
   return {
@@ -102,6 +102,7 @@ function parseDetail(detail: SalesDetailRow): SalesDetail {
     eventDate: detail.event_date,
     reservationNumber: detail.reservation_number,
     guestName: detail.guest_name,
+    guestNameKanaOrRoman: detail.guest_name_kana_or_roman,
     checkIn: detail.check_in,
     checkOut: detail.check_out,
     rooms: parseRooms(detail.rooms),

@@ -54,7 +54,7 @@ export async function fetchCustomerDetail(
   const [customerResult, reservationsResult] = await Promise.all([
     supabase
       .from('customers')
-      .select('id, name, phone, email, memo')
+      .select('id, name, name_kana_or_roman, phone, email, memo')
       .eq('id', customerId)
       .single(),
     supabase
@@ -62,7 +62,6 @@ export async function fetchCustomerDetail(
       .select(
         `
         id, reservation_number, check_in, check_out, status,
-        guest:guests!reservations_primary_guest_id_fkey (name_kana_or_roman),
         rooms:reservation_rooms (room_type:room_types (name_ja)),
         payments (method, status)
       `,
@@ -88,12 +87,10 @@ export async function fetchCustomerDetail(
         reservation.payments.length === 1 ? reservation.payments[0] : null,
     }))
   const stats = calculateCustomerStats(reservations)
-  const nameKanaOrRoman =
-    reservationsResult.data
-      .map((reservation) => reservation.guest?.name_kana_or_roman?.trim())
-      .find(Boolean) ?? null
+  const { name_kana_or_roman: nameKanaOrRoman, ...customer } =
+    customerResult.data
   return {
-    ...customerResult.data,
+    ...customer,
     nameKanaOrRoman,
     ...stats,
     reservations,

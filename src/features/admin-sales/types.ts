@@ -42,6 +42,7 @@ export type SalesDetail = {
   eventDate: string
   reservationNumber: string
   guestName: string
+  guestNameKanaOrRoman: string | null
   checkIn: string
   checkOut: string
   rooms: SalesRoomSummary[]

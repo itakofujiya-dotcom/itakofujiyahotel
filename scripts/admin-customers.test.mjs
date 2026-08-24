@@ -115,10 +115,10 @@ test('admin routes and navigation include customer management', () => {
   assert.match(navigation, /顧客管理.*\/admin\/customers/)
 })
 
-test('customer kana search reuses the latest reservation guest snapshot', () => {
+test('customer master stores, backfills, syncs, and searches kana', () => {
   const migration = readFileSync(
     new URL(
-      '../supabase/migrations/202608210011_admin_guest_kana_search.sql',
+      '../supabase/migrations/202608210012_customer_kana_master_and_sales.sql',
       import.meta.url,
     ),
     'utf8',
@@ -139,17 +139,24 @@ test('customer kana search reuses the latest reservation guest snapshot', () => 
     'utf8',
   )
 
-  assert.match(migration, /name_kana_or_roman text/)
-  assert.match(migration, /normalize\([^,]+, NFKC\)/)
   assert.match(
     migration,
-    /latest_guest[\s\S]*recent_reservation\.created_at desc/,
+    /alter table public\.customers[\s\S]*name_kana_or_roman text/,
   )
-  assert.match(migration, /matched_guest\.name_kana_or_roman/)
+  assert.match(migration, /latest_customer_kana/)
+  assert.match(migration, /order by r\.customer_id, r\.created_at desc/)
+  assert.match(migration, /after update of name, name_kana_or_roman/)
+  assert.match(migration, /guests_name_kana_or_roman_required/)
+  assert.match(migration, /not valid/)
+  assert.match(migration, /normalize\([^,]+, NFKC\)/)
   assert.match(migration, /if not public\.is_admin\(\)/)
-  assert.doesNotMatch(migration, /alter table public\.customers/)
   assert.match(api, /customer\.name_kana_or_roman/)
-  assert.match(api, /guests!reservations_primary_guest_id_fkey/)
+  assert.match(
+    api,
+    /select\('id, name, name_kana_or_roman, phone, email, memo'\)/,
+  )
+  assert.doesNotMatch(api, /guests!reservations_primary_guest_id_fkey/)
   assert.match(listPage, /<GuestNameWithKana/)
-  assert.match(detailPage, /t\('common\.furigana'\)/)
+  assert.match(detailPage, /<GuestNameWithKana/)
+  assert.match(detailPage, /formatGuestNameWithKana/)
 })

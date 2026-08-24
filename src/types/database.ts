@@ -271,6 +271,7 @@ export type Database = {
         Row: {
           id: string
           name: string
+          name_kana_or_roman: string | null
           normalized_name: string
           phone: string
           normalized_phone: string
@@ -282,6 +283,7 @@ export type Database = {
         Insert: {
           id?: string
           name: string
+          name_kana_or_roman?: string | null
           phone: string
           email?: string | null
           memo?: string | null
@@ -290,6 +292,7 @@ export type Database = {
         }
         Update: {
           name?: string
+          name_kana_or_roman?: string | null
           phone?: string
           email?: string | null
           memo?: string | null
@@ -783,6 +786,37 @@ export type Database = {
           event_date: string
           reservation_number: string
           guest_name: string
+          check_in: string
+          check_out: string
+          rooms: Json
+          payment_method: string | null
+          payment_status: string | null
+          reservation_status: string
+          reservation_amount_yen: number
+          recognized_revenue_yen: number
+          collected_yen: number
+          cancellation_fee_yen: number
+          refund_target_yen: number
+          payment_issue: string | null
+          total_count: number
+        }[]
+      }
+      get_admin_sales_details_with_kana: {
+        Args: {
+          p_start_date: string
+          p_end_date: string
+          p_payment_method?: string | null
+          p_status_filter?: string
+          p_sort?: string
+          p_page?: number
+          p_page_size?: number
+        }
+        Returns: {
+          reservation_id: string
+          event_date: string
+          reservation_number: string
+          guest_name: string
+          guest_name_kana_or_roman: string | null
           check_in: string
           check_out: string
           rooms: Json

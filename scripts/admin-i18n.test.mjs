@@ -16,14 +16,14 @@ test('keeps Japanese as the default resource and provides Korean navigation', ()
   assert.equal(adminTranslations.ko['navigation.sales'], '매출관리')
   assert.equal(ADMIN_LOCALE_STORAGE_KEY, 'admin_locale')
   assert.equal(adminTranslations.ja['common.furigana'], 'フリガナ')
-  assert.equal(adminTranslations.ko['common.furigana'], '가타카나')
+  assert.equal(adminTranslations.ko['common.furigana'], '후리가나')
   assert.equal(
     adminTranslations.ko['reservations.search.placeholder'],
-    '예약번호·이름·가타카나·전화번호',
+    '예약번호·이름·후리가나·전화번호',
   )
   assert.equal(
     adminTranslations.ko['customers.search.label'],
-    '이름·가타카나·전화번호',
+    '이름·후리가나·전화번호',
   )
 })
 
