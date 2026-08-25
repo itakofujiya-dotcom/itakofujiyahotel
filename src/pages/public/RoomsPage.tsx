@@ -2,7 +2,10 @@ import { Check, Minus } from 'lucide-react'
 import { PageHero } from '../../components/common/PageHero'
 import { RoomCard } from '../../components/rooms/RoomCard'
 import { amenities } from '../../data/hotel'
-import { roomTypePreviews } from '../../data/rooms'
+import {
+  japaneseRoomRepresentativeImage,
+  roomTypePreviews,
+} from '../../data/rooms'
 
 export function RoomsPage() {
   return (
@@ -11,7 +14,7 @@ export function RoomsPage() {
         eyebrow="ROOMS"
         title="客室"
         description="旅の人数や過ごし方に合わせて、和室と洋室からお選びいただけます。"
-        image="/images/rooms/japanese-room.webp"
+        image={japaneseRoomRepresentativeImage}
       />
       <section className="page-shell py-16 lg:py-24">
         <div className="grid gap-8 md:grid-cols-2">

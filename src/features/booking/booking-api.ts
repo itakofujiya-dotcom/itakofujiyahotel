@@ -9,10 +9,12 @@ import type {
 } from './types'
 import type { Json } from '../../types/database'
 import { parseMixedBookingRooms, toRoomRpcInput } from './booking-search-api'
+import type { SiteLocale } from '../../i18n/public-translations'
 
 export async function createPublicReservation(
   booking: BookingDraft,
   guest: BookingSubmissionDraft,
+  locale: SiteLocale,
 ): Promise<PublicBookingResult> {
   const { data, error } = await supabase.rpc(
     'create_public_mixed_reservation',
@@ -28,6 +30,7 @@ export async function createPublicReservation(
       p_expected_check_in_time: guest.expectedCheckInTime,
       p_guest_note: guest.guestNote.trim(),
       p_expected_total_yen: booking.totalAmountYen,
+      p_locale: locale,
     },
   )
   if (error) {
@@ -38,6 +41,29 @@ export async function createPublicReservation(
     return { ok: false, code: 'BOOKING_FAILED' }
   }
   return parsePublicBookingResult(data)
+}
+
+export async function requestReservationCreatedNotifications(
+  reservationId: string,
+  bookingRequestId: string,
+): Promise<'processed' | 'queued'> {
+  try {
+    const { error } = await supabase.functions.invoke(
+      'send-reservation-notifications',
+      { body: { reservationId, bookingRequestId } },
+    )
+    if (!error) return 'processed'
+    // The transactional outbox remains pending for the scheduled worker. This
+    // must never turn a successfully created reservation into a booking error.
+    console.warn('[Reservation email] Immediate delivery was deferred.', {
+      message: error.message,
+    })
+  } catch (error) {
+    console.warn('[Reservation email] Immediate delivery was deferred.', {
+      errorType: error instanceof Error ? error.name : 'UnknownError',
+    })
+  }
+  return 'queued'
 }
 
 export async function getPublicBookingInformation(): Promise<{

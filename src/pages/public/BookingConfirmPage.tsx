@@ -7,6 +7,7 @@ import { formatYen } from '../../features/admin-rates/rate-helpers'
 import {
   createPublicReservation,
   getPublicBookingInformation,
+  requestReservationCreatedNotifications,
 } from '../../features/booking/booking-api'
 import {
   formatBookingDate,
@@ -76,8 +77,12 @@ export function BookingConfirmPage() {
     setIsSubmitting(true)
     setError(null)
     try {
-      const result = await createPublicReservation(booking, guest)
+      const result = await createPublicReservation(booking, guest, locale)
       if (result.ok) {
+        await requestReservationCreatedNotifications(
+          result.reservationId,
+          guest.bookingRequestId,
+        )
         completeBooking(result)
         navigate('/booking/complete', { replace: true })
         return

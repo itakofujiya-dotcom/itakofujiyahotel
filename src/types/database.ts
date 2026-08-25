@@ -24,6 +24,8 @@ export type Database = {
           telephone: string | null
           fax: string | null
           email: string | null
+          bank_transfer_instructions_ja: string | null
+          bank_transfer_instructions_ko: string | null
           map_url: string | null
           check_in_time: string
           check_out_time: string
@@ -48,6 +50,8 @@ export type Database = {
           telephone?: string | null
           fax?: string | null
           email?: string | null
+          bank_transfer_instructions_ja?: string | null
+          bank_transfer_instructions_ko?: string | null
           map_url?: string | null
           check_in_time?: string
           check_out_time?: string
@@ -328,6 +332,7 @@ export type Database = {
           cancellation_fee_rate: number | null
           cancellation_fee_yen: number | null
           booking_request_id: string | null
+          booking_locale: 'ja' | 'ko'
           created_at: string
           updated_at: string
         }
@@ -352,6 +357,7 @@ export type Database = {
           cancellation_fee_rate?: number | null
           cancellation_fee_yen?: number | null
           booking_request_id?: string | null
+          booking_locale?: 'ja' | 'ko'
           created_at?: string
           updated_at?: string
         }
@@ -495,6 +501,52 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'payments_reservation_id_fkey'
+            columns: ['reservation_id']
+            isOneToOne: false
+            referencedRelation: 'reservations'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      notification_deliveries: {
+        Row: {
+          id: string
+          reservation_id: string
+          notification_type: string
+          recipient_kind: 'customer' | 'hotel'
+          status: 'pending' | 'sending' | 'sent' | 'failed' | 'skipped'
+          attempt_count: number
+          provider: string | null
+          provider_message_id: string | null
+          last_error_code: string | null
+          last_error_message: string | null
+          claimed_at: string | null
+          sent_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          reservation_id: string
+          notification_type: string
+          recipient_kind: 'customer' | 'hotel'
+          status?: 'pending' | 'sending' | 'sent' | 'failed' | 'skipped'
+          attempt_count?: number
+          provider?: string | null
+          provider_message_id?: string | null
+          last_error_code?: string | null
+          last_error_message?: string | null
+          claimed_at?: string | null
+          sent_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<
+          Database['public']['Tables']['notification_deliveries']['Insert']
+        >
+        Relationships: [
+          {
+            foreignKeyName: 'notification_deliveries_reservation_id_fkey'
             columns: ['reservation_id']
             isOneToOne: false
             referencedRelation: 'reservations'
@@ -889,6 +941,35 @@ export type Database = {
         }
         Returns: Json
       }
+      claim_pending_notification_deliveries: {
+        Args: { p_limit?: number }
+        Returns: Database['public']['Tables']['notification_deliveries']['Row'][]
+      }
+      claim_reservation_notification_deliveries: {
+        Args: { p_reservation_id: string; p_booking_request_id: string }
+        Returns: Database['public']['Tables']['notification_deliveries']['Row'][]
+      }
+      get_notification_reservation_snapshot: {
+        Args: { p_delivery_id: string }
+        Returns: Json
+      }
+      mark_notification_delivery_sent: {
+        Args: {
+          p_delivery_id: string
+          p_provider: string
+          p_provider_message_id: string
+        }
+        Returns: undefined
+      }
+      mark_notification_delivery_failed: {
+        Args: {
+          p_delivery_id: string
+          p_error_code: string
+          p_error_message: string
+          p_skipped?: boolean
+        }
+        Returns: undefined
+      }
       search_public_mixed_booking: {
         Args: {
           p_check_in: string
@@ -910,6 +991,7 @@ export type Database = {
           p_expected_check_in_time: string
           p_guest_note: string
           p_expected_total_yen: number
+          p_locale: 'ja' | 'ko'
         }
         Returns: Json
       }

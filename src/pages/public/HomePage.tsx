@@ -12,15 +12,18 @@ import { SectionHeading } from '../../components/common/SectionHeading'
 import { RoomCard } from '../../components/rooms/RoomCard'
 import { accessInfo, hotelSettings } from '../../data/hotel'
 import { roomTypePreviews } from '../../data/rooms'
+import { useSiteTranslation } from '../../i18n/useSiteTranslation'
 
 export function HomePage() {
+  const { t } = useSiteTranslation()
+
   return (
     <>
       <section className="relative min-h-[72vh] bg-[#27312d] text-white lg:min-h-[78vh]">
         <img
           src="/images/hotel/hero.webp"
           alt="夜の潮来富士屋ホテル外観"
-          className="absolute inset-0 h-full w-full object-cover opacity-75"
+          className="absolute inset-0 h-full w-full object-cover object-[62%_54%] opacity-75 md:object-[52%_56%]"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
         <div className="page-shell relative flex min-h-[72vh] items-center py-20 lg:min-h-[78vh]">
@@ -50,19 +53,21 @@ export function HomePage() {
       <section className="page-shell grid items-center gap-12 py-16 lg:grid-cols-2 lg:py-24">
         <div className="relative">
           <img
-            src="/images/hotel/exterior.webp"
-            alt="潮来富士屋ホテル外観"
-            className="aspect-[4/3] w-full object-cover"
+            src="/images/hotel/welcome-garden.webp"
+            alt={t('home.welcomeImageAlt')}
+            className="aspect-[4/3] w-full object-cover object-center"
           />
           <div className="absolute -bottom-5 -right-3 bg-moss px-6 py-5 text-white sm:-right-6">
-            <p className="font-serif text-lg">水郷のまち、潮来</p>
+            <p className="font-serif text-lg">
+              {t('home.welcomeImageCaption')}
+            </p>
           </div>
         </div>
         <div className="lg:pl-10">
           <SectionHeading
             eyebrow="WELCOME"
-            title="気取らず、ゆっくり。旅の拠点にちょうどいい宿。"
-            description="観光やお仕事の一日を終えたあと、ほっと肩の力を抜ける場所。地域に根ざしたホテルとして、皆さまをあたたかくお迎えします。"
+            title={t('home.welcomeTitle')}
+            description={t('home.welcomeDescription')}
           />
           <dl className="mt-8 grid grid-cols-2 gap-5 border-t border-line pt-6 text-sm">
             <div>

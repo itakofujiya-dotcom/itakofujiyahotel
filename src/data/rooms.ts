@@ -36,6 +36,9 @@ export const physicalRooms: PhysicalRoom[] = floors.flatMap((floor) =>
 )
 
 // Presentation groups only. Final saleable room types await measurements and operations policy.
+export const japaneseRoomRepresentativeImage =
+  '/images/rooms/tatami-room.webp'
+
 export const roomTypePreviews: RoomType[] = [
   {
     id: 'japanese-preview',
@@ -45,7 +48,7 @@ export const roomTypePreviews: RoomType[] = [
       '畳の落ち着きに包まれ、人数に合わせたお布団でお休みいただけます。',
     standardCapacity: 2,
     maxCapacity: 4,
-    image: '/images/rooms/japanese-room.webp',
+    image: japaneseRoomRepresentativeImage,
     areaSquareMeters: null,
     bedDescriptionJa: 'ご宿泊人数分のお布団をご用意します',
   },

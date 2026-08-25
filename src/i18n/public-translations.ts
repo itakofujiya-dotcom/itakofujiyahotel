@@ -18,6 +18,11 @@ export const siteTranslations = {
     'booking.search': '空室を検索',
     'booking.searching': '確認中…',
     'booking.dateInputFormat': '年. 月. 日.',
+    'home.welcomeTitle': '庭を眺めながら、ゆったりとしたひとときを。',
+    'home.welcomeDescription':
+      '大きな窓から庭を望む、明るく開放的な空間。ご到着からご出発まで、どうぞゆっくりとお過ごしください。',
+    'home.welcomeImageAlt': '庭を望む明るいラウンジ',
+    'home.welcomeImageCaption': '庭を望む、寛ぎの時間',
   },
   ko: {
     'common.korean': '한국어',
@@ -33,6 +38,11 @@ export const siteTranslations = {
     'booking.search': '객실 검색',
     'booking.searching': '확인 중…',
     'booking.dateInputFormat': '연도. 월. 일.',
+    'home.welcomeTitle': '정원을 바라보며, 여유로운 시간을.',
+    'home.welcomeDescription':
+      '큰 창 너머로 정원이 펼쳐지는 밝고 편안한 공간입니다. 도착부터 떠나는 순간까지, 편안하게 머물러 보세요.',
+    'home.welcomeImageAlt': '정원이 보이는 밝은 라운지',
+    'home.welcomeImageCaption': '정원을 바라보는, 여유로운 시간',
   },
 } as const
 
@@ -403,7 +413,6 @@ const publicPhrases: readonly [string, string][] = [
     '水郷のまち・潮来で、皆さまをお待ちしています。',
     '수향 도시 이타코에서 여러분을 기다립니다.',
   ],
-  ['水郷のまち、潮来', '수향 도시, 이타코'],
   ['水郷・潮来で、', '수향 이타코에서,'],
   ['心ほどけるひとときを。', '마음이 편안해지는 시간을.'],
   ['潮来でのご滞在を、ごゆっくり。', '이타코에서 편안히 머무르세요.'],

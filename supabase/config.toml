@@ -382,6 +382,11 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+[functions.send-reservation-notifications]
+# The function performs its own capability check for browser-triggered delivery
+# and a shared-secret check for scheduled worker calls.
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
