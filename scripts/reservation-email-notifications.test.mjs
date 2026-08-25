@@ -4,10 +4,12 @@ import test from 'node:test'
 import { URL } from 'node:url'
 import { isEmailAddress } from '../supabase/functions/_shared/email-safety.ts'
 import {
-  GmailApiProvider,
-  MailProviderError,
-} from '../supabase/functions/_shared/mail-provider.ts'
-import { buildReservationCreatedEmail } from '../supabase/functions/_shared/reservation-created-template.ts'
+  buildMimeMessage,
+  createGmailMailer,
+  GmailApiClient,
+  GmailError,
+} from '../supabase/functions/send-booking-email/gmail.ts'
+import { buildReservationCreatedEmail } from '../supabase/functions/send-booking-email/templates.ts'
 
 const baseSnapshot = {
   deliveryId: '00000000-0000-4000-8000-000000000001',
@@ -18,6 +20,7 @@ const baseSnapshot = {
   locale: 'ja',
   checkIn: '2026-08-28',
   checkOut: '2026-08-30',
+  expectedCheckInTime: '17:30',
   stayNights: 2,
   roomCount: 2,
   totalAmountYen: 68000,
@@ -82,6 +85,9 @@ const baseSnapshot = {
     nameEn: 'ITAKO FUJIYA HOTEL',
     email: 'hotel@example.com',
     telephone: '0299-94-2662',
+    fax: '0299-94-2663',
+    checkInTime: '15:00',
+    checkOutTime: '10:00',
     bankTransferInstructionsJa: '常陽銀行\n普通 1234567',
     bankTransferInstructionsKo: '조요은행\n보통 1234567',
   },
@@ -94,12 +100,15 @@ test('builds a Japanese customer confirmation for mixed multiple rooms', () => {
     '潮来富士屋ホテル',
   )
   assert.equal(message.to, 'guest@example.com')
-  assert.match(message.subject, /ご予約ありがとうございます/)
+  assert.match(message.subject, /ご予約を承りました/)
   assert.match(message.subject, /IFH-20260825-001/)
   assert.match(message.html, /和室/)
   assert.match(message.html, /洋室/)
   assert.match(message.html, /朝食＋夕食/)
   assert.match(message.html, /食事追加料金/)
+  assert.match(message.html, /到着予定時刻/)
+  assert.match(message.html, /17:30/)
+  assert.match(message.html, /0299-94-2663/)
   assert.match(message.text, /予約総額: 68,000円/)
 })
 
@@ -113,6 +122,8 @@ test('builds Korean copy and localized room, meal, payment labels', () => {
   assert.match(message.html, /다다미방/)
   assert.match(message.html, /침대방/)
   assert.match(message.html, /조식 \+ 석식/)
+  assert.match(message.html, /도착 예정시간/)
+  assert.match(message.html, /요청사항/)
   assert.match(message.text, /예약 총액: 68,000엔/)
   assert.doesNotMatch(message.text, /予約総額/)
 })
@@ -175,7 +186,7 @@ test('rejects a missing or malformed recipient before provider delivery', () => 
 
 test('Gmail provider uses OAuth and Gmail messages.send', async () => {
   const calls = []
-  const provider = new GmailApiProvider(
+  const provider = new GmailApiClient(
     { clientId: 'client', clientSecret: 'secret', refreshToken: 'refresh' },
     async (url, init) => {
       calls.push({ url: String(url), init })
@@ -206,7 +217,7 @@ test('Gmail provider uses OAuth and Gmail messages.send', async () => {
 })
 
 test('provider failures remain explicit and test mode sends no real email', async () => {
-  const provider = new GmailApiProvider(
+  const provider = new GmailApiClient(
     { clientId: 'client', clientSecret: 'secret', refreshToken: 'refresh' },
     async (url) =>
       String(url).includes('oauth2.googleapis.com')
@@ -222,9 +233,72 @@ test('provider failures remain explicit and test mode sends no real email', asyn
           '潮来富士屋ホテル',
         ),
       ),
-    (error) =>
-      error instanceof MailProviderError && error.code === 'GMAIL_SEND_503',
+    (error) => error instanceof GmailError && error.code === 'GMAIL_SEND_503',
   )
+})
+
+test('reports OAuth refresh failure without attempting Gmail send', async () => {
+  const calls = []
+  const provider = new GmailApiClient(
+    { clientId: 'client', clientSecret: 'secret', refreshToken: 'refresh' },
+    async (url) => {
+      calls.push(String(url))
+      return new globalThis.Response('{}', { status: 401 })
+    },
+  )
+  await assert.rejects(
+    () =>
+      provider.send(
+        buildReservationCreatedEmail(
+          baseSnapshot,
+          'sender@example.com',
+          '潮来富士屋ホテル',
+        ),
+      ),
+    (error) => error instanceof GmailError && error.code === 'GMAIL_OAUTH_401',
+  )
+  assert.equal(calls.length, 1)
+  assert.match(calls[0], /oauth2\.googleapis\.com\/token/)
+})
+
+test('reads Gmail credentials only from the Edge Function environment', () => {
+  const secrets = new Map([
+    ['GMAIL_CLIENT_ID', 'client'],
+    ['GMAIL_CLIENT_SECRET', 'secret'],
+    ['GMAIL_REFRESH_TOKEN', 'refresh'],
+    ['GMAIL_SENDER_EMAIL', 'sender@example.com'],
+  ])
+  const mailer = createGmailMailer({ get: (name) => secrets.get(name) })
+  assert.equal(mailer.senderEmail, 'sender@example.com')
+  assert.throws(
+    () => createGmailMailer({ get: () => undefined }),
+    (error) =>
+      error instanceof GmailError &&
+      error.code === 'MISSING_GMAIL_SENDER_EMAIL',
+  )
+})
+
+test('encodes Japanese and Korean MIME headers with RFC 2047 UTF-8', () => {
+  const japanese = buildMimeMessage(
+    buildReservationCreatedEmail(
+      baseSnapshot,
+      'sender@example.com',
+      '潮来富士屋ホテル',
+    ),
+  )
+  const korean = buildMimeMessage(
+    buildReservationCreatedEmail(
+      { ...baseSnapshot, locale: 'ko' },
+      'sender@example.com',
+      '이타코 후지야 호텔',
+    ),
+  )
+  assert.match(japanese, /Subject: =\?UTF-8\?B\?/)
+  assert.match(japanese, /From: =\?UTF-8\?B\?/)
+  assert.match(korean, /Subject: =\?UTF-8\?B\?/)
+  assert.match(japanese, /multipart\/alternative/)
+  assert.match(japanese, /text\/plain; charset=UTF-8/)
+  assert.match(japanese, /text\/html; charset=UTF-8/)
 })
 
 test('migration uses a transactional outbox with idempotent delivery keys', async () => {
@@ -264,8 +338,27 @@ test('booking completion keeps email failure outside the reservation RPC', async
     'utf8',
   )
   assert.match(api, /The transactional outbox remains pending/)
+  assert.match(api, /send-booking-email/)
+  assert.match(api, /reservation_id: reservationId/)
+  assert.match(api, /booking_request_id: bookingRequestId/)
   assert.match(api, /return 'queued'/)
   assert.match(page, /if \(result\.ok\)/)
-  assert.match(page, /requestReservationCreatedNotifications/)
+  assert.match(page, /void requestReservationCreatedNotifications/)
   assert.match(page, /completeBooking\(result\)/)
+})
+
+test('snapshot correction adds hotel times, fax, and expected arrival time', async () => {
+  const sql = await readFile(
+    new URL(
+      '../supabase/migrations/202608250002_send_booking_email_snapshot.sql',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+  assert.match(sql, /expectedCheckInTime/)
+  assert.match(sql, /reservation\.expected_check_in_time/)
+  assert.match(sql, /'fax', hotel\.fax/)
+  assert.match(sql, /'checkInTime'/)
+  assert.match(sql, /'checkOutTime'/)
+  assert.match(sql, /to service_role/)
 })

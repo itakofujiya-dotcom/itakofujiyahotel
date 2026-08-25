@@ -15,7 +15,7 @@ export function buildReservationCreatedEmail(
     : buildCustomerConfirmation(snapshot, senderEmail, senderName)
 }
 
-function buildCustomerConfirmation(
+export function buildCustomerConfirmation(
   snapshot: ReservationNotificationSnapshot,
   senderEmail: string,
   senderName: string,
@@ -27,7 +27,7 @@ function buildCustomerConfirmation(
     snapshot.hotel.nameJa
   const subject = ko
     ? `[${hotelName}] 예약이 완료되었습니다 (예약번호: ${snapshot.reservationNumber})`
-    : `【${hotelName}】ご予約ありがとうございます（予約番号: ${snapshot.reservationNumber}）`
+    : `【${hotelName}】ご予約を承りました（予約番号: ${snapshot.reservationNumber}）`
   const roomRows = snapshot.rooms
     .map((room, index) => renderRoomHtml(room, index, locale))
     .join('')
@@ -40,9 +40,7 @@ function buildCustomerConfirmation(
     })
     .join('')
   const bankInstructions = getBankInstructions(snapshot, locale)
-  const contact = [snapshot.hotel.telephone, snapshot.hotel.email]
-    .filter(Boolean)
-    .join(' / ')
+  const contact = formatHotelContact(snapshot, locale)
 
   const html = emailShell(
     hotelName,
@@ -61,6 +59,14 @@ function buildCustomerConfirmation(
         [
           ko ? '체크아웃' : 'チェックアウト',
           formatHotelDate(snapshot.checkOut, locale),
+        ],
+        [
+          ko ? '도착 예정시간' : '到着予定時刻',
+          formatHotelTime(snapshot.expectedCheckInTime),
+        ],
+        [
+          ko ? '호텔 체크인/체크아웃' : 'ホテルのチェックイン／アウト',
+          `${formatHotelTime(snapshot.hotel.checkInTime)} / ${formatHotelTime(snapshot.hotel.checkOutTime)}`,
         ],
         [
           ko ? '숙박 일수' : '泊数',
@@ -87,6 +93,10 @@ function buildCustomerConfirmation(
         ],
       ]) + bankInstructions,
     )}
+    ${section(
+      ko ? '요청사항' : 'ご要望',
+      `<p style="white-space:pre-wrap;margin:0">${escapeHtml(snapshot.guestNote || (ko ? '없음' : 'なし'))}</p>`,
+    )}
     ${section(ko ? '취소 안내' : 'キャンセルポリシー', `<ul style="margin:0;padding-left:20px">${policyRows}</ul>`)}
     <p style="margin:24px 0 0;color:#625f59;font-size:13px;line-height:1.7">${ko ? '문의처' : 'お問い合わせ'}: ${escapeHtml(contact || '—')}</p>`,
   )
@@ -102,7 +112,7 @@ function buildCustomerConfirmation(
       return `- ${description}: ${formatPercent(policy.feePercent)}%`
     })
     .join('\n')
-  const text = `${hotelName}\n\n${ko ? '예약이 완료되었습니다.' : 'ご予約を承りました。'}\n\n${ko ? '예약번호' : '予約番号'}: ${snapshot.reservationNumber}\n${ko ? '예약자명' : 'ご予約者名'}: ${snapshot.guest.name}\n${ko ? '후리가나' : 'フリガナ'}: ${snapshot.guest.kana || '—'}\n${ko ? '체크인' : 'チェックイン'}: ${formatHotelDate(snapshot.checkIn, locale)}\n${ko ? '체크아웃' : 'チェックアウト'}: ${formatHotelDate(snapshot.checkOut, locale)}\n${ko ? '숙박 일수' : '泊数'}: ${snapshot.stayNights}${ko ? '박' : '泊'}\n${ko ? '객실 수' : '客室数'}: ${snapshot.roomCount}${ko ? '실' : '室'}\n\n${textRooms}\n\n${ko ? '예약 총액' : '予約総額'}: ${formatYen(snapshot.totalAmountYen, locale)}\n${ko ? '결제 방법' : 'お支払い方法'}: ${paymentMethodLabel(snapshot.payment.method, locale)}\n${ko ? '결제 상태' : 'お支払い状況'}: ${paymentStatusLabel(snapshot.payment.status, locale)}${bankInstructions ? `\n\n${stripHtml(bankInstructions)}` : ''}\n\n${ko ? '취소 안내' : 'キャンセルポリシー'}\n${textPolicies}\n\n${ko ? '문의처' : 'お問い合わせ'}: ${contact || '—'}`
+  const text = `${hotelName}\n\n${ko ? '예약이 완료되었습니다.' : 'ご予約を承りました。'}\n\n${ko ? '예약번호' : '予約番号'}: ${snapshot.reservationNumber}\n${ko ? '예약자명' : 'ご予約者名'}: ${snapshot.guest.name}\n${ko ? '후리가나' : 'フリガナ'}: ${snapshot.guest.kana || '—'}\n${ko ? '체크인' : 'チェックイン'}: ${formatHotelDate(snapshot.checkIn, locale)}\n${ko ? '체크아웃' : 'チェックアウト'}: ${formatHotelDate(snapshot.checkOut, locale)}\n${ko ? '도착 예정시간' : '到着予定時刻'}: ${formatHotelTime(snapshot.expectedCheckInTime)}\n${ko ? '호텔 체크인/체크아웃' : 'ホテルのチェックイン／アウト'}: ${formatHotelTime(snapshot.hotel.checkInTime)} / ${formatHotelTime(snapshot.hotel.checkOutTime)}\n${ko ? '숙박 일수' : '泊数'}: ${snapshot.stayNights}${ko ? '박' : '泊'}\n${ko ? '객실 수' : '客室数'}: ${snapshot.roomCount}${ko ? '실' : '室'}\n\n${textRooms}\n\n${ko ? '예약 총액' : '予約総額'}: ${formatYen(snapshot.totalAmountYen, locale)}\n${ko ? '결제 방법' : 'お支払い方法'}: ${paymentMethodLabel(snapshot.payment.method, locale)}\n${ko ? '결제 상태' : 'お支払い状況'}: ${paymentStatusLabel(snapshot.payment.status, locale)}${bankInstructions ? `\n\n${stripHtml(bankInstructions)}` : ''}\n\n${ko ? '요청사항' : 'ご要望'}: ${snapshot.guestNote || (ko ? '없음' : 'なし')}\n\n${ko ? '취소 안내' : 'キャンセルポリシー'}\n${textPolicies}\n\n${ko ? '문의처' : 'お問い合わせ'}: ${contact || '—'}`
 
   return {
     to: snapshot.guest.email,
@@ -115,12 +125,12 @@ function buildCustomerConfirmation(
   }
 }
 
-function buildHotelNotification(
+export function buildHotelNotification(
   snapshot: ReservationNotificationSnapshot,
   senderEmail: string,
   senderName: string,
 ): EmailMessage {
-  const subject = `【新規予約】予約番号 ${snapshot.reservationNumber} / ${snapshot.guest.name} 様`
+  const subject = `【新規予約】${snapshot.guest.name}様｜${formatHotelDate(snapshot.checkIn, 'ja')}〜${formatHotelDate(snapshot.checkOut, 'ja')}｜予約番号 ${snapshot.reservationNumber}`
   const roomRows = snapshot.rooms
     .map((room, index) => renderRoomHtml(room, index, 'ja'))
     .join('')
@@ -137,6 +147,9 @@ function buildHotelNotification(
         ['メールアドレス', snapshot.guest.email],
         ['チェックイン', formatHotelDate(snapshot.checkIn, 'ja')],
         ['チェックアウト', formatHotelDate(snapshot.checkOut, 'ja')],
+        ['到着予定時刻', formatHotelTime(snapshot.expectedCheckInTime)],
+        ['泊数', `${snapshot.stayNights}泊`],
+        ['客室数', `${snapshot.roomCount}室`],
         ['予約作成日時', formatCreatedAt(snapshot.createdAt)],
       ]),
     )}
@@ -154,7 +167,7 @@ function buildHotelNotification(
   const textRooms = snapshot.rooms
     .map((room, index) => renderRoomText(room, index, 'ja'))
     .join('\n\n')
-  const text = `新規オンライン予約\n\n予約番号: ${snapshot.reservationNumber}\n予約者名: ${snapshot.guest.name}\nフリガナ: ${snapshot.guest.kana || '—'}\n電話番号: ${snapshot.guest.telephone}\nメールアドレス: ${snapshot.guest.email}\nチェックイン: ${formatHotelDate(snapshot.checkIn, 'ja')}\nチェックアウト: ${formatHotelDate(snapshot.checkOut, 'ja')}\n予約作成日時: ${formatCreatedAt(snapshot.createdAt)}\n\n${textRooms}\n\n予約総額: ${formatYen(snapshot.totalAmountYen, 'ja')}\nお支払い方法: ${paymentMethodLabel(snapshot.payment.method, 'ja')}\nお支払い状況: ${paymentStatusLabel(snapshot.payment.status, 'ja')}\n\nお客様からのご要望:\n${snapshot.guestNote || 'なし'}`
+  const text = `新規オンライン予約\n\n予約番号: ${snapshot.reservationNumber}\n予約者名: ${snapshot.guest.name}\nフリガナ: ${snapshot.guest.kana || '—'}\n電話番号: ${snapshot.guest.telephone}\nメールアドレス: ${snapshot.guest.email}\nチェックイン: ${formatHotelDate(snapshot.checkIn, 'ja')}\nチェックアウト: ${formatHotelDate(snapshot.checkOut, 'ja')}\n到着予定時刻: ${formatHotelTime(snapshot.expectedCheckInTime)}\n泊数: ${snapshot.stayNights}泊\n客室数: ${snapshot.roomCount}室\n予約作成日時: ${formatCreatedAt(snapshot.createdAt)}\n\n${textRooms}\n\n予約総額: ${formatYen(snapshot.totalAmountYen, 'ja')}\nお支払い方法: ${paymentMethodLabel(snapshot.payment.method, 'ja')}\nお支払い状況: ${paymentStatusLabel(snapshot.payment.status, 'ja')}\n\nお客様からのご要望:\n${snapshot.guestNote || 'なし'}`
   return {
     to: snapshot.hotel.email || '',
     fromEmail: senderEmail,
@@ -246,6 +259,24 @@ function formatHotelDate(value: string, locale: NotificationLocale): string {
   return locale === 'ko'
     ? `${year}년 ${month}월 ${day}일`
     : `${year}年${month}月${day}日`
+}
+
+function formatHotelTime(value: string | null): string {
+  if (!value) return '—'
+  const match = /^(\d{2}):(\d{2})/.exec(value)
+  return match ? `${match[1]}:${match[2]}` : value
+}
+
+function formatHotelContact(
+  snapshot: ReservationNotificationSnapshot,
+  locale: NotificationLocale,
+): string {
+  const values = [
+    snapshot.hotel.telephone ? `TEL ${snapshot.hotel.telephone}` : null,
+    snapshot.hotel.fax ? `FAX ${snapshot.hotel.fax}` : null,
+    snapshot.hotel.email ? `Email ${snapshot.hotel.email}` : null,
+  ].filter((value): value is string => Boolean(value))
+  return values.join(locale === 'ko' ? ' / ' : ' / ')
 }
 
 function formatCreatedAt(value: string): string {

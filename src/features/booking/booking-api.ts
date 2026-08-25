@@ -48,10 +48,12 @@ export async function requestReservationCreatedNotifications(
   bookingRequestId: string,
 ): Promise<'processed' | 'queued'> {
   try {
-    const { error } = await supabase.functions.invoke(
-      'send-reservation-notifications',
-      { body: { reservationId, bookingRequestId } },
-    )
+    const { error } = await supabase.functions.invoke('send-booking-email', {
+      body: {
+        reservation_id: reservationId,
+        booking_request_id: bookingRequestId,
+      },
+    })
     if (!error) return 'processed'
     // The transactional outbox remains pending for the scheduled worker. This
     // must never turn a successfully created reservation into a booking error.

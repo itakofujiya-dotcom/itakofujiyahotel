@@ -10,6 +10,7 @@ export type ReservationNotificationSnapshot = {
   locale: NotificationLocale
   checkIn: string
   checkOut: string
+  expectedCheckInTime: string | null
   stayNights: number
   roomCount: number
   totalAmountYen: number
@@ -53,6 +54,9 @@ export type ReservationNotificationSnapshot = {
     nameEn: string | null
     email: string | null
     telephone: string | null
+    fax: string | null
+    checkInTime: string
+    checkOutTime: string
     bankTransferInstructionsJa: string | null
     bankTransferInstructionsKo: string | null
   }

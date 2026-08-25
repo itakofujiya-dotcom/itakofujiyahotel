@@ -79,7 +79,7 @@ export function BookingConfirmPage() {
     try {
       const result = await createPublicReservation(booking, guest, locale)
       if (result.ok) {
-        await requestReservationCreatedNotifications(
+        void requestReservationCreatedNotifications(
           result.reservationId,
           guest.bookingRequestId,
         )
