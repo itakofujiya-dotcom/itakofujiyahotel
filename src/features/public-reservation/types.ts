@@ -23,14 +23,7 @@ export type ReservationCancellationQuote = {
   refundTargetYen: number
 }
 
-export type PublicReservationLookup = Omit<
-  ReservationCancellationQuote,
-  'policyCode' | 'feePercent' | 'feeYen' | 'refundTargetYen'
-> & {
-  policyCode: string | null
-  feePercent: number | null
-  feeYen: number | null
-  refundTargetYen: number | null
+export type PublicReservationLookup = ReservationCancellationQuote & {
   reservationNumber: string
   guestName: string
   guestKana: string | null

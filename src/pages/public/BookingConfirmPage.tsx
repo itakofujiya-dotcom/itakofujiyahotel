@@ -34,11 +34,11 @@ import {
 
 const fallbackPolicies = [
   ['8日前まで', '無料'],
-  ['4日前', '30%'],
-  ['2日前', '50%'],
+  ['7日前～4日前', '30%'],
+  ['3日前～2日前', '50%'],
   ['前日', '100%'],
   ['当日', '100%'],
-  ['無連絡不泊', '100%'],
+  ['無断不泊（No-show）', '100%'],
 ] as const
 
 export function BookingConfirmPage() {
@@ -298,7 +298,9 @@ export function BookingConfirmPage() {
                   ))}
             </div>
             <p className="mt-4 text-xs leading-6 text-muted">
-              サイトからの取消受付期間外はホテルへ直接お問い合わせください。
+              オンラインでのキャンセルはチェックイン日の8日前まで可能です。
+              <br />
+              それ以降のキャンセルについては、ホテルまで直接お問い合わせください。
             </p>
           </ConfirmSection>
 

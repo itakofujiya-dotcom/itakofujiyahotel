@@ -132,16 +132,15 @@ function parseLookup(value: Record<string, unknown>): PublicReservationLookup {
     onlineCancellationReason: parseOnlineCancellationReason(
       value.onlineCancellationReason,
     ),
-    policyCode: typeof value.policyCode === 'string' ? value.policyCode : null,
+    policyCode: requireString(value.policyCode),
     policyDescriptionJa:
       typeof value.policyDescriptionJa === 'string'
         ? value.policyDescriptionJa
         : null,
     daysBefore: requireNumber(value.daysBefore),
-    feePercent: typeof value.feePercent === 'number' ? value.feePercent : null,
-    feeYen: typeof value.feeYen === 'number' ? value.feeYen : null,
-    refundTargetYen:
-      typeof value.refundTargetYen === 'number' ? value.refundTargetYen : null,
+    feePercent: requireNumber(value.feePercent),
+    feeYen: requireNumber(value.feeYen),
+    refundTargetYen: requireNumber(value.refundTargetYen),
     cancelledAt:
       typeof value.cancelledAt === 'string' ? value.cancelledAt : null,
     recordedCancellationFeePercent:

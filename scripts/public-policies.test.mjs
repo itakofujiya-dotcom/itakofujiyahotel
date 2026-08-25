@@ -73,14 +73,36 @@ test('booking consent links open documents without replacing booking state', () 
 test('published cancellation documents match the database policy boundaries', () => {
   for (const document of [documents.cancellationJa, documents.termsJa]) {
     assert.match(document, /8日前まで[\s\S]*無料/)
-    assert.match(document, /4日前[\s\S]*30％/)
-    assert.match(document, /2日前[\s\S]*50％/)
-    assert.doesNotMatch(document, /7日前(?:から|～)4日前/)
-    assert.doesNotMatch(document, /3日前(?:から|～)2日前/)
+    assert.match(document, /7日前～4日前[\s\S]*30％/)
+    assert.match(document, /3日前～2日前[\s\S]*50％/)
     assert.match(document, /前日[\s\S]*100％/)
     assert.match(document, /当日[\s\S]*100％/)
-    assert.match(document, /無連絡不泊[\s\S]*100％/)
+    assert.match(document, /無断不泊（No-show）[\s\S]*100％/)
   }
+  for (const document of [documents.cancellationKo, documents.termsKo]) {
+    assert.match(document, /8일 전까지[\s\S]*무료/)
+    assert.match(document, /7일 전~4일 전[\s\S]*30%/)
+    assert.match(document, /3일 전~2일 전[\s\S]*50%/)
+    assert.match(document, /전날[\s\S]*100%/)
+    assert.match(document, /당일[\s\S]*100%/)
+    assert.match(document, /노쇼\(No-show\)[\s\S]*100%/)
+  }
+  assert.match(
+    documents.cancellationJa,
+    /オンラインでのキャンセルはチェックイン日の8日前まで可能です。/,
+  )
+  assert.match(
+    documents.cancellationJa,
+    /それ以降のキャンセルについては、ホテルまで直接お問い合わせください。/,
+  )
+  assert.match(
+    documents.cancellationKo,
+    /온라인 취소는 체크인 8일 전까지 가능합니다\./,
+  )
+  assert.match(
+    documents.cancellationKo,
+    /그 이후의 취소는 호텔로 직접 문의해 주세요\./,
+  )
 })
 
 test('policy layout prevents long content from widening the viewport', () => {

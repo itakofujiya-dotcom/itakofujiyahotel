@@ -290,57 +290,46 @@ function ReservationResult({
 
       <section className="border border-line bg-surface p-6 shadow-soft sm:p-8">
         <h2 className="font-serif text-xl">{t('reservation.cancellation')}</h2>
-        {reservation.policyCode !== null &&
-          reservation.feePercent !== null &&
-          reservation.feeYen !== null &&
-          reservation.refundTargetYen !== null && (
-            <>
-              <p className="mt-4 text-sm leading-7">
-                {getLocalizedCancellationQuoteLabel(
-                  reservation.policyCode,
-                  reservation.policyDescriptionJa,
-                  reservation.feePercent,
-                  locale,
-                )}
-              </p>
-              <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-3">
-                <ResultRow
-                  label={
-                    reservation.reservationStatus === 'cancelled'
-                      ? t('reservation.appliedRate')
-                      : t('reservation.currentRate')
-                  }
-                  value={`${reservation.feePercent}%`}
-                />
-                <ResultRow
-                  label={
-                    reservation.reservationStatus === 'cancelled'
-                      ? t('reservation.confirmedFee')
-                      : t('reservation.currentFee')
-                  }
-                  value={formatLocalizedYen(reservation.feeYen, locale)}
-                />
-                <ResultRow
-                  label={t('reservation.refundTarget')}
-                  value={formatLocalizedYen(
-                    reservation.refundTargetYen,
-                    locale,
-                  )}
-                />
-              </dl>
-            </>
+        <p className="mt-4 text-sm leading-7">
+          {getLocalizedCancellationQuoteLabel(
+            reservation.policyCode,
+            reservation.policyDescriptionJa,
+            reservation.feePercent,
+            locale,
           )}
+        </p>
+        <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-3">
+          <ResultRow
+            label={
+              reservation.reservationStatus === 'cancelled'
+                ? t('reservation.appliedRate')
+                : t('reservation.currentRate')
+            }
+            value={`${reservation.feePercent}%`}
+          />
+          <ResultRow
+            label={
+              reservation.reservationStatus === 'cancelled'
+                ? t('reservation.confirmedFee')
+                : t('reservation.currentFee')
+            }
+            value={formatLocalizedYen(reservation.feeYen, locale)}
+          />
+          <ResultRow
+            label={t('reservation.refundTarget')}
+            value={formatLocalizedYen(reservation.refundTargetYen, locale)}
+          />
+        </dl>
         {reservation.cancellable && reservation.feeYen === 0 && (
           <p className="mt-4 border border-green-200 bg-green-50 p-4 text-sm text-green-900">
             {t('reservation.freeCancellation')}
           </p>
         )}
-        {reservation.refundTargetYen !== null &&
-          reservation.refundTargetYen > 0 && (
-            <p className="mt-4 border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-900">
-              {t('reservation.refundNotice')}
-            </p>
-          )}
+        {reservation.refundTargetYen > 0 && (
+          <p className="mt-4 border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-900">
+            {t('reservation.refundNotice')}
+          </p>
+        )}
         {reservation.cancellable ? (
           <button
             type="button"

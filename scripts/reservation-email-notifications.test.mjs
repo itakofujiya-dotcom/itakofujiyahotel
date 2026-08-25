@@ -70,13 +70,31 @@ const baseSnapshot = {
       descriptionKo: '8일 전까지',
     },
     {
+      code: 'days_6_to_4',
+      minDaysBefore: 4,
+      maxDaysBefore: 7,
+      feePercent: 30,
+      isNoShow: false,
+      descriptionJa: '7日前～4日前',
+      descriptionKo: '7~4일 전',
+    },
+    {
+      code: 'days_3_to_2',
+      minDaysBefore: 2,
+      maxDaysBefore: 3,
+      feePercent: 50,
+      isNoShow: false,
+      descriptionJa: '3日前～2日前',
+      descriptionKo: '3~2일 전',
+    },
+    {
       code: 'no_show',
       minDaysBefore: null,
       maxDaysBefore: null,
       feePercent: 100,
       isNoShow: true,
-      descriptionJa: '無連絡不泊',
-      descriptionKo: '노쇼',
+      descriptionJa: '無断不泊（No-show）',
+      descriptionKo: '노쇼(No-show)',
     },
   ],
   hotel: {
@@ -110,6 +128,14 @@ test('builds a Japanese customer confirmation for mixed multiple rooms', () => {
   assert.match(message.html, /17:30/)
   assert.match(message.html, /0299-94-2663/)
   assert.match(message.text, /予約総額: 68,000円/)
+  assert.match(message.text, /7日前～4日前: 30%/)
+  assert.match(message.text, /3日前～2日前: 50%/)
+  assert.match(message.text, /無断不泊（No-show）: 100%/)
+  assert.match(
+    message.text,
+    /オンラインでのキャンセルはチェックイン日の8日前まで可能です。/,
+  )
+  assert.match(message.text, /ホテルまで直接お問い合わせください。/)
 })
 
 test('builds Korean copy and localized room, meal, payment labels', () => {
@@ -123,6 +149,11 @@ test('builds Korean copy and localized room, meal, payment labels', () => {
   assert.match(message.html, /침대방/)
   assert.match(message.html, /조식 \+ 석식/)
   assert.match(message.html, /도착 예정시간/)
+  assert.match(message.text, /7~4일 전: 30%/)
+  assert.match(message.text, /3~2일 전: 50%/)
+  assert.match(message.text, /노쇼\(No-show\): 100%/)
+  assert.match(message.text, /온라인 취소는 체크인 8일 전까지 가능합니다\./)
+  assert.match(message.text, /그 이후의 취소는 호텔로 직접 문의해 주세요\./)
   assert.match(message.html, /요청사항/)
   assert.match(message.text, /예약 총액: 68,000엔/)
   assert.doesNotMatch(message.text, /予約総額/)

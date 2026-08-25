@@ -97,7 +97,7 @@ export function buildCustomerConfirmation(
       ko ? '요청사항' : 'ご要望',
       `<p style="white-space:pre-wrap;margin:0">${escapeHtml(snapshot.guestNote || (ko ? '없음' : 'なし'))}</p>`,
     )}
-    ${section(ko ? '취소 안내' : 'キャンセルポリシー', `<ul style="margin:0;padding-left:20px">${policyRows}</ul>`)}
+    ${section(ko ? '취소 안내' : 'キャンセルポリシー', `<ul style="margin:0;padding-left:20px">${policyRows}</ul><p style="margin:12px 0 0;white-space:pre-line">${escapeHtml(onlineCancellationNotice(locale))}</p>`)}
     <p style="margin:24px 0 0;color:#625f59;font-size:13px;line-height:1.7">${ko ? '문의처' : 'お問い合わせ'}: ${escapeHtml(contact || '—')}</p>`,
   )
 
@@ -112,7 +112,7 @@ export function buildCustomerConfirmation(
       return `- ${description}: ${formatPercent(policy.feePercent)}%`
     })
     .join('\n')
-  const text = `${hotelName}\n\n${ko ? '예약이 완료되었습니다.' : 'ご予約を承りました。'}\n\n${ko ? '예약번호' : '予約番号'}: ${snapshot.reservationNumber}\n${ko ? '예약자명' : 'ご予約者名'}: ${snapshot.guest.name}\n${ko ? '후리가나' : 'フリガナ'}: ${snapshot.guest.kana || '—'}\n${ko ? '체크인' : 'チェックイン'}: ${formatHotelDate(snapshot.checkIn, locale)}\n${ko ? '체크아웃' : 'チェックアウト'}: ${formatHotelDate(snapshot.checkOut, locale)}\n${ko ? '도착 예정시간' : '到着予定時刻'}: ${formatHotelTime(snapshot.expectedCheckInTime)}\n${ko ? '호텔 체크인/체크아웃' : 'ホテルのチェックイン／アウト'}: ${formatHotelTime(snapshot.hotel.checkInTime)} / ${formatHotelTime(snapshot.hotel.checkOutTime)}\n${ko ? '숙박 일수' : '泊数'}: ${snapshot.stayNights}${ko ? '박' : '泊'}\n${ko ? '객실 수' : '客室数'}: ${snapshot.roomCount}${ko ? '실' : '室'}\n\n${textRooms}\n\n${ko ? '예약 총액' : '予約総額'}: ${formatYen(snapshot.totalAmountYen, locale)}\n${ko ? '결제 방법' : 'お支払い方法'}: ${paymentMethodLabel(snapshot.payment.method, locale)}\n${ko ? '결제 상태' : 'お支払い状況'}: ${paymentStatusLabel(snapshot.payment.status, locale)}${bankInstructions ? `\n\n${stripHtml(bankInstructions)}` : ''}\n\n${ko ? '요청사항' : 'ご要望'}: ${snapshot.guestNote || (ko ? '없음' : 'なし')}\n\n${ko ? '취소 안내' : 'キャンセルポリシー'}\n${textPolicies}\n\n${ko ? '문의처' : 'お問い合わせ'}: ${contact || '—'}`
+  const text = `${hotelName}\n\n${ko ? '예약이 완료되었습니다.' : 'ご予約を承りました。'}\n\n${ko ? '예약번호' : '予約番号'}: ${snapshot.reservationNumber}\n${ko ? '예약자명' : 'ご予約者名'}: ${snapshot.guest.name}\n${ko ? '후리가나' : 'フリガナ'}: ${snapshot.guest.kana || '—'}\n${ko ? '체크인' : 'チェックイン'}: ${formatHotelDate(snapshot.checkIn, locale)}\n${ko ? '체크아웃' : 'チェックアウト'}: ${formatHotelDate(snapshot.checkOut, locale)}\n${ko ? '도착 예정시간' : '到着予定時刻'}: ${formatHotelTime(snapshot.expectedCheckInTime)}\n${ko ? '호텔 체크인/체크아웃' : 'ホテルのチェックイン／アウト'}: ${formatHotelTime(snapshot.hotel.checkInTime)} / ${formatHotelTime(snapshot.hotel.checkOutTime)}\n${ko ? '숙박 일수' : '泊数'}: ${snapshot.stayNights}${ko ? '박' : '泊'}\n${ko ? '객실 수' : '客室数'}: ${snapshot.roomCount}${ko ? '실' : '室'}\n\n${textRooms}\n\n${ko ? '예약 총액' : '予約総額'}: ${formatYen(snapshot.totalAmountYen, locale)}\n${ko ? '결제 방법' : 'お支払い方法'}: ${paymentMethodLabel(snapshot.payment.method, locale)}\n${ko ? '결제 상태' : 'お支払い状況'}: ${paymentStatusLabel(snapshot.payment.status, locale)}${bankInstructions ? `\n\n${stripHtml(bankInstructions)}` : ''}\n\n${ko ? '요청사항' : 'ご要望'}: ${snapshot.guestNote || (ko ? '없음' : 'なし')}\n\n${ko ? '취소 안내' : 'キャンセルポリシー'}\n${textPolicies}\n\n${onlineCancellationNotice(locale)}\n\n${ko ? '문의처' : 'お問い合わせ'}: ${contact || '—'}`
 
   return {
     to: snapshot.guest.email,
@@ -334,11 +334,18 @@ function paymentStatusLabel(value: string, locale: NotificationLocale): string {
   return labels[value as keyof typeof labels] || value
 }
 
+function onlineCancellationNotice(locale: NotificationLocale): string {
+  return locale === 'ko'
+    ? '온라인 취소는 체크인 8일 전까지 가능합니다.\n그 이후의 취소는 호텔로 직접 문의해 주세요.'
+    : 'オンラインでのキャンセルはチェックイン日の8日前まで可能です。\nそれ以降のキャンセルについては、ホテルまで直接お問い合わせください。'
+}
+
 function getPolicyRange(
   policy: ReservationNotificationSnapshot['cancellationPolicies'][number],
   locale: NotificationLocale,
 ): string {
-  if (policy.isNoShow) return locale === 'ko' ? '노쇼' : '無連絡不泊'
+  if (policy.isNoShow)
+    return locale === 'ko' ? '노쇼(No-show)' : '無断不泊（No-show）'
   if (policy.minDaysBefore === policy.maxDaysBefore)
     return locale === 'ko'
       ? `${policy.minDaysBefore}일 전`

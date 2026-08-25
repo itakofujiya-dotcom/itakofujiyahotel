@@ -18,12 +18,12 @@ const cancellationPolicyLabels: Record<string, Record<SiteLocale, string>> = {
     ko: '체크인 8일 전까지: 취소 수수료 무료',
   },
   days_6_to_4: {
-    ja: '宿泊日の4日前：宿泊料金の30％',
-    ko: '체크인 4일 전: 숙박요금의 30%',
+    ja: '宿泊日の7日前～4日前：宿泊料金の30％',
+    ko: '체크인 7~4일 전: 숙박요금의 30%',
   },
   days_3_to_2: {
-    ja: '宿泊日の2日前：宿泊料金の50％',
-    ko: '체크인 2일 전: 숙박요금의 50%',
+    ja: '宿泊日の3日前～2日前：宿泊料金の50％',
+    ko: '체크인 3~2일 전: 숙박요금의 50%',
   },
   previous_day: {
     ja: '宿泊日前日：宿泊料金の100％',
@@ -34,8 +34,8 @@ const cancellationPolicyLabels: Record<string, Record<SiteLocale, string>> = {
     ko: '체크인 당일: 숙박요금의 100%',
   },
   no_show: {
-    ja: '無連絡不泊：宿泊料金の100％',
-    ko: '노쇼: 숙박요금의 100%',
+    ja: '無断不泊（No-show）：宿泊料金の100％',
+    ko: '노쇼(No-show): 숙박요금의 100%',
   },
 }
 
@@ -110,7 +110,8 @@ export function getLocalizedCancellationPolicyLabel(
   const knownLabel = cancellationPolicyLabels[policy.code]?.[locale]
   if (knownLabel) return knownLabel
   if (locale === 'ja') return policy.descriptionJa ?? policy.code
-  if (policy.isNoShow) return '노쇼: 숙박요금의 ' + policy.feePercent + '%'
+  if (policy.isNoShow)
+    return '노쇼(No-show): 숙박요금의 ' + policy.feePercent + '%'
 
   const range =
     policy.minDaysBefore === policy.maxDaysBefore
@@ -219,22 +220,14 @@ export function buildLocalizedCancellationDescription(
     reservationNumber: string
     checkIn: string
     totalAmountYen: number
-    feePercent: number | null
-    feeYen: number | null
-    refundTargetYen: number | null
+    feePercent: number
+    feeYen: number
+    refundTargetYen: number
     rooms: Array<{ roomIndex: number; roomTypeNameJa: string }>
   },
   locale: SiteLocale,
 ): string {
   const ko = locale === 'ko'
-  if (
-    reservation.feePercent === null ||
-    reservation.feeYen === null ||
-    reservation.refundTargetYen === null
-  )
-    return ko
-      ? '온라인 취소 기간이 지났습니다. 호텔로 문의해 주세요.'
-      : 'オンラインキャンセル受付期間を過ぎています。ホテルへお問い合わせください。'
   const rooms = reservation.rooms
     .map(
       (room) =>

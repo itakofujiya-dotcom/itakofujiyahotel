@@ -89,6 +89,22 @@ test('builds Korean customer cancellation confirmation without Japanese UI copy'
   assert.doesNotMatch(message.text, /キャンセル料/)
 })
 
+test('renders the cancellation fee recorded by the cancellation calculation', () => {
+  const message = buildCustomerCancellationConfirmation(
+    {
+      ...snapshot,
+      cancellationFeePercent: 30,
+      cancellationFeeYen: 20400,
+      refundTargetYen: 47600,
+    },
+    'sender@example.com',
+    '潮来富士屋ホテル',
+  )
+  assert.match(message.text, /キャンセル料率: 30%/)
+  assert.match(message.text, /キャンセル料: 20,400円/)
+  assert.match(message.text, /返金予定額: 47,600円/)
+})
+
 test('hotel cancellation notification includes contacts, rooms, money, and request', () => {
   const message = buildHotelCancellationNotification(
     { ...snapshot, recipientKind: 'hotel' },

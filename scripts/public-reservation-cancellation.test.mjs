@@ -17,6 +17,13 @@ const completionMigration = readFileSync(
   ),
   'utf8',
 )
+const correctionMigration = readFileSync(
+  new URL(
+    '../supabase/migrations/202608250004_correct_cancellation_policy_ranges.sql',
+    import.meta.url,
+  ),
+  'utf8',
+)
 const seed = readFileSync(
   new URL('../supabase/seed/seed.sql', import.meta.url),
   'utf8',
@@ -48,8 +55,8 @@ const app = readFileSync(new URL('../src/app/App.tsx', import.meta.url), 'utf8')
 
 const policies = [
   { min: 8, max: null, fee: 0 },
-  { min: 4, max: 4, fee: 30 },
-  { min: 2, max: 2, fee: 50 },
+  { min: 4, max: 7, fee: 30 },
+  { min: 2, max: 3, fee: 50 },
   { min: 1, max: 1, fee: 100 },
   { min: 0, max: 0, fee: 100 },
 ]
@@ -70,10 +77,9 @@ function onlineCancellationFor(daysBefore) {
 
 test('covers the current cancellation policy boundaries', () => {
   assert.equal(policyFor(8)?.fee, 0)
-  assert.equal(policyFor(7), undefined)
-  assert.equal(policyFor(5), undefined)
+  assert.equal(policyFor(7)?.fee, 30)
   assert.equal(policyFor(4)?.fee, 30)
-  assert.equal(policyFor(3), undefined)
+  assert.equal(policyFor(3)?.fee, 50)
   assert.equal(policyFor(2)?.fee, 50)
   assert.equal(policyFor(1)?.fee, 100)
   assert.equal(policyFor(0)?.fee, 100)
@@ -83,10 +89,11 @@ test('covers the current cancellation policy boundaries', () => {
 test('matches the approved online cancellation and fee matrix', () => {
   for (const [daysBefore, online, fee] of [
     [8, true, 0],
-    [7, false, undefined],
-    [5, false, undefined],
+    [7, false, 30],
+    [6, false, 30],
+    [5, false, 30],
     [4, false, 30],
-    [3, false, undefined],
+    [3, false, 50],
     [2, false, 50],
     [1, false, 100],
     [0, false, 100],
@@ -103,17 +110,15 @@ test('uses active DB policies and the Asia/Tokyo hotel date', () => {
   assert.match(baseMigration, /now\(\) at time zone 'Asia\/Tokyo'/)
   assert.match(completionMigration, /min_days_before = 8/)
   assert.match(
-    completionMigration,
-    /set min_days_before = 4,[\s\S]*max_days_before = 4/,
+    correctionMigration,
+    /set min_days_before = 4,[\s\S]*max_days_before = 7/,
   )
   assert.match(
-    completionMigration,
-    /set min_days_before = 2,[\s\S]*max_days_before = 2/,
+    correctionMigration,
+    /set min_days_before = 2,[\s\S]*max_days_before = 3/,
   )
-  assert.match(seed, /'days_6_to_4',[\s\S]*?\n\s*4,\n\s*4,/)
-  assert.match(seed, /'days_3_to_2',[\s\S]*?\n\s*2,\n\s*2,/)
-  assert.doesNotMatch(seed, /7~4일 전\s+30%/)
-  assert.doesNotMatch(seed, /3~2일 전\s+50%/)
+  assert.match(seed, /'days_6_to_4',[\s\S]*?\n\s*4,\n\s*7,/)
+  assert.match(seed, /'days_3_to_2',[\s\S]*?\n\s*2,\n\s*3,/)
 })
 
 test('requires reservation number plus matching email or normalized phone', () => {
@@ -145,11 +150,12 @@ test('lookup exposes full safe detail and server-side online cancellation decisi
   assert.match(completionMigration, /'onlineCancellationReason'/)
   assert.match(completionMigration, /'CONTACT_HOTEL'/)
   assert.match(
-    completionMigration,
-    /Some dates intentionally have no fixed fee[\s\S]*v_days in \(4, 2, 1, 0\)/,
+    correctionMigration,
+    /from public\.calculate_reservation_cancellation/,
   )
-  assert.match(completionMigration, /'daysBefore', v_days/)
-  assert.match(api, /typeof value\.feePercent === 'number'/)
+  assert.doesNotMatch(correctionMigration, /Some dates intentionally/)
+  assert.match(correctionMigration, /'daysBefore', v_quote\.days_before/)
+  assert.match(api, /feePercent: requireNumber\(value\.feePercent\)/)
 })
 
 test('public cancellation locks, enforces 8-day limit, and releases every room block', () => {
@@ -242,8 +248,8 @@ test('cancellation email and admin displays use the recorded cancellation fee', 
     completionMigration,
     /'cancellationFeeYen', coalesce\(reservation\.cancellation_fee_yen, 0\)/,
   )
-  assert.match(labels, /宿泊日の4日前：宿泊料金の30％/)
-  assert.match(labels, /宿泊日の2日前：宿泊料金の50％/)
+  assert.match(labels, /宿泊日の7日前～4日前：宿泊料金の30％/)
+  assert.match(labels, /宿泊日の3日前～2日前：宿泊料金の50％/)
 })
 
 test('admin cancellation still shares policy calculation and generic status cannot cancel', () => {
@@ -257,6 +263,6 @@ test('admin cancellation still shares policy calculation and generic status cann
   assert.match(baseMigration, /USE_RESERVATION_CANCELLATION_RPC/)
   assert.match(
     adminDetail,
-    /該当日のキャンセル料は設定されていません。ホテルで確認してください。/,
+    /キャンセル料を取得できませんでした。ページを再読み込みしてください。/,
   )
 })
