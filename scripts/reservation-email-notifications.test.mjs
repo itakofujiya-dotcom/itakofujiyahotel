@@ -366,6 +366,28 @@ test('booking completion keeps email failure outside the reservation RPC', async
   )
 })
 
+test('booking email function answers browser preflight with shared CORS headers', async () => {
+  const source = await readFile(
+    new URL(
+      '../supabase/functions/send-booking-email/index.ts',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+  assert.match(source, /'Access-Control-Allow-Origin': '\*'/)
+  assert.match(source, /authorization, x-client-info, apikey, content-type/)
+  assert.match(source, /'Access-Control-Allow-Methods': 'POST, OPTIONS'/)
+  assert.match(source, /request\.method === 'OPTIONS'/)
+  assert.match(
+    source,
+    /new Response\(null, \{ status: 204, headers: corsHeaders \}\)/,
+  )
+  assert.match(
+    source,
+    /headers: \{ \.\.\.corsHeaders, 'content-type': 'application\/json' \}/,
+  )
+})
+
 test('snapshot correction adds hotel times, fax, and expected arrival time', async () => {
   const sql = await readFile(
     new URL(

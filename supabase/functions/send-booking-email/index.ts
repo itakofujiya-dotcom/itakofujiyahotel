@@ -29,17 +29,17 @@ declare const Deno: {
 }
 
 const corsHeaders = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-headers':
-    'authorization, apikey, content-type, x-client-info, x-notification-worker-secret',
-  'access-control-allow-methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, x-notification-worker-secret',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { status: 204, headers: corsHeaders })
   }
   if (request.method !== 'POST') {
     return jsonResponse({ ok: false, error: 'METHOD_NOT_ALLOWED' }, 405)
