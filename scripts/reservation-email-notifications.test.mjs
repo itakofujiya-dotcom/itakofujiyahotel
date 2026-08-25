@@ -337,14 +337,33 @@ test('booking completion keeps email failure outside the reservation RPC', async
     new URL('../src/pages/public/BookingConfirmPage.tsx', import.meta.url),
     'utf8',
   )
-  assert.match(api, /The transactional outbox remains pending/)
   assert.match(api, /send-booking-email/)
   assert.match(api, /reservation_id: reservationId/)
   assert.match(api, /booking_request_id: bookingRequestId/)
-  assert.match(api, /return 'queued'/)
+  assert.match(api, /\[booking-email\] preparing/)
+  assert.match(api, /\[booking-email\] invoking/)
+  assert.match(api, /\[booking-email\] success/)
+  assert.match(api, /\[booking-email\] failed/)
+  assert.match(api, /BOOKING_EMAIL_IDENTIFIERS_MISSING/)
   assert.match(page, /if \(result\.ok\)/)
-  assert.match(page, /void requestReservationCreatedNotifications/)
+  assert.match(page, /await requestReservationCreatedNotifications/)
+  assert.match(page, /catch \{/)
   assert.match(page, /completeBooking\(result\)/)
+  const reservationCreatedAt = page.indexOf(
+    'await createPublicReservation(booking, guest, locale)',
+  )
+  const emailInvokedAt = page.indexOf(
+    'await requestReservationCreatedNotifications(',
+  )
+  const bookingCompletedAt = page.indexOf('completeBooking(result)')
+  assert.ok(reservationCreatedAt >= 0)
+  assert.ok(emailInvokedAt > reservationCreatedAt)
+  assert.ok(bookingCompletedAt > emailInvokedAt)
+  assert.equal(
+    page.match(/await createPublicReservation\(booking, guest, locale\)/g)
+      ?.length,
+    1,
+  )
 })
 
 test('snapshot correction adds hotel times, fax, and expected arrival time', async () => {

@@ -79,10 +79,15 @@ export function BookingConfirmPage() {
     try {
       const result = await createPublicReservation(booking, guest, locale)
       if (result.ok) {
-        void requestReservationCreatedNotifications(
-          result.reservationId,
-          guest.bookingRequestId,
-        )
+        try {
+          await requestReservationCreatedNotifications(
+            result.reservationId,
+            guest.bookingRequestId,
+          )
+        } catch {
+          // The reservation is already committed. Email delivery must not turn
+          // a successful booking into an error or create a second reservation.
+        }
         completeBooking(result)
         navigate('/booking/complete', { replace: true })
         return

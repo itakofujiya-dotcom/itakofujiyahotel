@@ -46,7 +46,23 @@ export async function createPublicReservation(
 export async function requestReservationCreatedNotifications(
   reservationId: string,
   bookingRequestId: string,
-): Promise<'processed' | 'queued'> {
+): Promise<void> {
+  const context = {
+    reservation_id: reservationId || null,
+    booking_request_id: bookingRequestId || null,
+  }
+  console.info('[booking-email] preparing', context)
+
+  if (!reservationId?.trim() || !bookingRequestId?.trim()) {
+    const error = new Error('BOOKING_EMAIL_IDENTIFIERS_MISSING')
+    console.error('[booking-email] failed', {
+      ...context,
+      reason: error.message,
+    })
+    throw error
+  }
+
+  console.info('[booking-email] invoking', context)
   try {
     const { error } = await supabase.functions.invoke('send-booking-email', {
       body: {
@@ -54,18 +70,17 @@ export async function requestReservationCreatedNotifications(
         booking_request_id: bookingRequestId,
       },
     })
-    if (!error) return 'processed'
-    // The transactional outbox remains pending for the scheduled worker. This
-    // must never turn a successfully created reservation into a booking error.
-    console.warn('[Reservation email] Immediate delivery was deferred.', {
-      message: error.message,
-    })
+    if (error) throw error
+    console.info('[booking-email] success', context)
   } catch (error) {
-    console.warn('[Reservation email] Immediate delivery was deferred.', {
+    console.error('[booking-email] failed', {
+      ...context,
       errorType: error instanceof Error ? error.name : 'UnknownError',
+      message:
+        error instanceof Error ? error.message : 'Email invocation failed.',
     })
+    throw error
   }
-  return 'queued'
 }
 
 export async function getPublicBookingInformation(): Promise<{
