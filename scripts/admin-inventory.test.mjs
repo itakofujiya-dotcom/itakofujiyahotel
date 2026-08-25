@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import test from 'node:test'
+import { URL } from 'node:url'
 import {
   buildInventorySaveRows,
   calculateRoomTypeCapacities,
   clearInventoryDateSelection,
   getExistingInventoryKeys,
+  getInventoryCalendarSummaries,
   getInventoryMonthRange,
   getInventorySelectionDrafts,
   getInventorySummaries,
@@ -12,6 +15,28 @@ import {
   toggleInventoryDateSelection,
   validateInventoryDrafts,
 } from '../src/features/admin-inventory/inventory-helpers.ts'
+
+const api = await readFile(
+  new URL(
+    '../src/features/admin-inventory/admin-inventory-api.ts',
+    import.meta.url,
+  ),
+  'utf8',
+)
+const calendar = await readFile(
+  new URL(
+    '../src/features/admin-inventory/InventoryCalendar.tsx',
+    import.meta.url,
+  ),
+  'utf8',
+)
+const availabilityMigration = await readFile(
+  new URL(
+    '../supabase/migrations/202608250005_admin_inventory_availability.sql',
+    import.meta.url,
+  ),
+  'utf8',
+)
 
 const roomTypes = [
   { id: 'ja', code: 'japanese', name_ja: '和室', display_order: 1 },
@@ -87,6 +112,148 @@ test('uses saved quantities and distinguishes them from defaults', () => {
     summaries.every((summary) => !summary.isDefault),
     true,
   )
+})
+
+function westernAvailability(stayDate, available, booked = 0, base = 12) {
+  return {
+    stay_date: stayDate,
+    room_type_id: 'we',
+    base_sellable_quantity: base,
+    booked_quantity: booked,
+    available_quantity: available,
+  }
+}
+
+function westernCalendarQuantity(stayDate, availability, inventory = []) {
+  return getInventoryCalendarSummaries(
+    capacities,
+    inventory,
+    availability,
+    stayDate,
+  ).find((summary) => summary.roomTypeId === 'we')
+}
+
+test('shows 12, 10, 12 around a one-night two-room booking', () => {
+  const availability = [
+    westernAvailability('2026-09-04', 12),
+    westernAvailability('2026-09-05', 10, 2),
+    westernAvailability('2026-09-06', 12),
+  ]
+  assert.equal(
+    westernCalendarQuantity('2026-09-04', availability)?.sellableQuantity,
+    12,
+  )
+  assert.equal(
+    westernCalendarQuantity('2026-09-05', availability)?.sellableQuantity,
+    10,
+  )
+  assert.equal(
+    westernCalendarQuantity('2026-09-06', availability)?.sellableQuantity,
+    12,
+  )
+})
+
+test('subtracts both occupied nights and excludes the checkout date', () => {
+  const availability = [
+    westernAvailability('2026-09-05', 10, 2),
+    westernAvailability('2026-09-06', 10, 2),
+    westernAvailability('2026-09-07', 12),
+  ]
+  assert.deepEqual(
+    ['2026-09-05', '2026-09-06', '2026-09-07'].map(
+      (date) => westernCalendarQuantity(date, availability)?.sellableQuantity,
+    ),
+    [10, 10, 12],
+  )
+})
+
+test('reflects cancellation and multiple active reservations by status-derived availability', () => {
+  assert.equal(
+    westernCalendarQuantity('2026-09-05', [
+      westernAvailability('2026-09-05', 10, 2),
+    ])?.sellableQuantity,
+    10,
+  )
+  assert.equal(
+    westernCalendarQuantity('2026-09-05', [
+      westernAvailability('2026-09-05', 12, 0),
+    ])?.sellableQuantity,
+    12,
+  )
+  assert.equal(
+    westernCalendarQuantity('2026-09-05', [
+      westernAvailability('2026-09-05', 7, 5),
+    ])?.sellableQuantity,
+    7,
+  )
+  assert.equal(
+    westernCalendarQuantity('2026-09-05', [
+      westernAvailability('2026-09-05', 9, 3),
+    ])?.sellableQuantity,
+    9,
+  )
+})
+
+test('applies a date override before subtracting reservations and preserves star semantics', () => {
+  const inventory = [
+    {
+      id: 'override-we',
+      room_type_id: 'we',
+      stay_date: '2026-09-05',
+      sellable_quantity: 8,
+      created_at: '',
+      updated_at: '',
+    },
+  ]
+  const summary = westernCalendarQuantity(
+    '2026-09-05',
+    [westernAvailability('2026-09-05', 6, 2, 8)],
+    inventory,
+  )
+  assert.equal(summary?.sellableQuantity, 6)
+  assert.equal(summary?.isDefault, false)
+
+  const defaultSummary = westernCalendarQuantity('2026-09-05', [
+    westernAvailability('2026-09-05', 10, 2),
+  ])
+  assert.equal(defaultSummary?.sellableQuantity, 10)
+  assert.equal(defaultSummary?.isDefault, true)
+})
+
+test('uses reservation_rooms regardless of physical room assignment', () => {
+  assert.match(availabilityMigration, /from public\.reservation_rooms/)
+  assert.doesNotMatch(
+    availabilityMigration.match(
+      /booked as \([\s\S]*?\n {2}\)\n {2}select/,
+    )?.[0] ?? '',
+    /room_id is not null/,
+  )
+  assert.match(
+    availabilityMigration,
+    /reservation\.status in \('pending', 'confirmed', 'checked_in'\)/,
+  )
+  assert.match(
+    availabilityMigration,
+    /reservation\.check_in <= p_stay_date[\s\S]*p_stay_date < reservation\.check_out/,
+  )
+})
+
+test('uses one canonical server calculation for customer search and Admin calendar', () => {
+  const references = availabilityMigration.match(
+    /public\.calculate_room_type_availability/g,
+  )
+  assert.ok(references && references.length >= 4)
+  assert.match(
+    availabilityMigration,
+    /create or replace function public\.search_available_room_types/,
+  )
+  assert.match(
+    availabilityMigration,
+    /create or replace function public\.get_admin_inventory_availability/,
+  )
+  assert.match(api, /supabase\.rpc\([\s\S]*'get_admin_inventory_availability'/)
+  assert.doesNotMatch(api, /from\('reservations'\)/)
+  assert.match(calendar, /getInventoryCalendarSummaries/)
 })
 
 test('accepts zero and rejects quantities above active capacity', () => {

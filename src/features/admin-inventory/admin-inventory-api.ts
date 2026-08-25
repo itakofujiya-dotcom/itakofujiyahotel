@@ -8,6 +8,7 @@ import type {
   InventoryQuantity,
   InventorySaveInput,
   RoomTypeCapacity,
+  RoomTypeAvailability,
   RoomTypeInventory,
 } from './types'
 
@@ -58,6 +59,25 @@ export async function fetchInventoryForMonth(
   if (error) {
     logInventoryError('load monthly inventory', error)
     throw new Error('INVENTORY_MONTH_FETCH_FAILED')
+  }
+  return data
+}
+
+export async function fetchInventoryAvailabilityForMonth(
+  startDate: string,
+  endDate: string,
+): Promise<RoomTypeAvailability[]> {
+  const { data, error } = await supabase.rpc(
+    'get_admin_inventory_availability',
+    {
+      p_start_date: startDate,
+      p_end_date: endDate,
+    },
+  )
+
+  if (error) {
+    logInventoryError('load monthly availability', error)
+    throw new Error('INVENTORY_AVAILABILITY_FETCH_FAILED')
   }
   return data
 }

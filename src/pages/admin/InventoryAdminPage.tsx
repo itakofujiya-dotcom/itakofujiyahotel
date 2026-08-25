@@ -36,6 +36,7 @@ export function InventoryAdminPage() {
   const {
     capacities,
     inventory,
+    availability,
     maxBookingDays,
     isLoading,
     isMutating,
@@ -150,6 +151,7 @@ export function InventoryAdminPage() {
             selectedDates={selectedDates}
             capacities={capacities}
             inventory={inventory}
+            availability={availability}
             maxBookingDays={maxBookingDays}
             onMonthChange={changeMonth}
             onSelectionChange={setSelectedDates}

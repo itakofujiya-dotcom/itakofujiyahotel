@@ -18,6 +18,14 @@ export type RoomTypeInventory = {
   updated_at: string
 }
 
+export type RoomTypeAvailability = {
+  stay_date: string
+  room_type_id: string
+  base_sellable_quantity: number
+  booked_quantity: number
+  available_quantity: number
+}
+
 export type InventoryRoomTypeSummary = RoomTypeCapacity & {
   sellableQuantity: number
   isDefault: boolean

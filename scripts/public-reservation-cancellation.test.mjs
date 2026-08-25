@@ -28,6 +28,34 @@ const seed = readFileSync(
   new URL('../supabase/seed/seed.sql', import.meta.url),
   'utf8',
 )
+const bookingMigration = readFileSync(
+  new URL(
+    '../supabase/migrations/202608210007_mixed_room_meal_plans.sql',
+    import.meta.url,
+  ),
+  'utf8',
+)
+const schemaMigration = readFileSync(
+  new URL(
+    '../supabase/migrations/202608190001_initial_schema.sql',
+    import.meta.url,
+  ),
+  'utf8',
+)
+const notificationMigration = readFileSync(
+  new URL(
+    '../supabase/migrations/202608250001_reservation_created_email_notifications.sql',
+    import.meta.url,
+  ),
+  'utf8',
+)
+const adminReservationMigration = readFileSync(
+  new URL(
+    '../supabase/migrations/202608200002_admin_reservations.sql',
+    import.meta.url,
+  ),
+  'utf8',
+)
 const page = readFileSync(
   new URL('../src/pages/public/ReservationLookupPage.tsx', import.meta.url),
   'utf8',
@@ -54,11 +82,11 @@ const translations = readFileSync(
 const app = readFileSync(new URL('../src/app/App.tsx', import.meta.url), 'utf8')
 
 const policies = [
-  { min: 8, max: null, fee: 0 },
-  { min: 4, max: 7, fee: 30 },
-  { min: 2, max: 3, fee: 50 },
-  { min: 1, max: 1, fee: 100 },
-  { min: 0, max: 0, fee: 100 },
+  { code: 'free_7_plus', rule: '8日以上前', min: 8, max: null, fee: 0 },
+  { code: 'days_6_to_4', rule: '7～4日前', min: 4, max: 7, fee: 30 },
+  { code: 'days_3_to_2', rule: '3～2日前', min: 2, max: 3, fee: 50 },
+  { code: 'previous_day', rule: '前日', min: 1, max: 1, fee: 100 },
+  { code: 'same_day', rule: '当日', min: 0, max: 0, fee: 100 },
 ]
 
 function policyFor(daysBefore) {
@@ -73,6 +101,69 @@ function policyFor(daysBefore) {
 function onlineCancellationFor(daysBefore) {
   const policy = policyFor(daysBefore)
   return daysBefore >= 8 && policy?.fee === 0
+}
+
+function calculateCancellation(daysBefore, totalAmountYen = 10_000) {
+  const policy = policyFor(daysBefore)
+  assert.ok(policy, `policy missing for ${daysBefore} days before check-in`)
+  return {
+    daysBefore,
+    policyCode: policy.code,
+    appliedRule: policy.rule,
+    feePercent: policy.fee,
+    feeYen: Math.round((totalAmountYen * policy.fee) / 100),
+    onlineCancellable: onlineCancellationFor(daysBefore),
+  }
+}
+
+const inventoryBlockingStatuses = new Set([
+  'pending',
+  'confirmed',
+  'checked_in',
+])
+
+function availableQuantity(sellableQuantity, reservations) {
+  const bookedRooms = reservations
+    .filter((reservation) => inventoryBlockingStatuses.has(reservation.status))
+    .reduce((total, reservation) => total + reservation.roomQuantity, 0)
+  return Math.max(sellableQuantity - bookedRooms, 0)
+}
+
+function cancelFixture(fixture, channel = 'public') {
+  if (fixture.status === 'cancelled')
+    return { code: 'ALREADY_CANCELLED', releasedBlocks: 0 }
+  if (!['pending', 'confirmed'].includes(fixture.status))
+    return { code: 'RESERVATION_NOT_CANCELLABLE', releasedBlocks: 0 }
+
+  fixture.status = 'cancelled'
+  fixture.cancelledAt = '2026-08-25T00:00:00.000Z'
+  fixture.cancellation = calculateCancellation(fixture.daysBefore)
+  let releasedBlocks = 0
+  for (const block of fixture.inventoryBlocks) {
+    if (block.status === 'held' || block.status === 'active') {
+      block.status = 'released'
+      releasedBlocks += 1
+    }
+  }
+  if (channel === 'public') {
+    fixture.notifications.add('reservation_cancelled:customer')
+    fixture.notifications.add('reservation_cancelled:hotel')
+  }
+  return { code: 'RESERVATION_CANCELLED', releasedBlocks }
+}
+
+function reservationFixture(roomQuantity, daysBefore = 8) {
+  return {
+    status: 'confirmed',
+    roomQuantity,
+    daysBefore,
+    cancelledAt: null,
+    cancellation: null,
+    inventoryBlocks: Array.from({ length: roomQuantity }, () => ({
+      status: 'active',
+    })),
+    notifications: new Set(),
+  }
 }
 
 test('covers the current cancellation policy boundaries', () => {
@@ -102,6 +193,105 @@ test('matches the approved online cancellation and fee matrix', () => {
     assert.equal(policyFor(daysBefore)?.fee, fee)
   }
   assert.match(seed, /'no_show',[\s\S]*?\n\s*null,\n\s*null,[\s\S]*?\n\s*100,/)
+})
+
+test('calculates boundary fees, amounts, day differences, and applied rules', () => {
+  const expected = [
+    [8, 'free_7_plus', '8日以上前', 0, 0],
+    [7, 'days_6_to_4', '7～4日前', 30, 3_000],
+    [4, 'days_6_to_4', '7～4日前', 30, 3_000],
+    [3, 'days_3_to_2', '3～2日前', 50, 5_000],
+    [2, 'days_3_to_2', '3～2日前', 50, 5_000],
+    [1, 'previous_day', '前日', 100, 10_000],
+    [0, 'same_day', '当日', 100, 10_000],
+  ]
+
+  for (const [daysBefore, policyCode, rule, feePercent, feeYen] of expected) {
+    assert.deepEqual(calculateCancellation(daysBefore), {
+      daysBefore,
+      policyCode,
+      appliedRule: rule,
+      feePercent,
+      feeYen,
+      onlineCancellable: daysBefore === 8,
+    })
+  }
+})
+
+test('keeps fee calculation separate from the 8-day online cancellation gate', () => {
+  for (const [daysBefore, feePercent, onlineCancellable] of [
+    [8, 0, true],
+    [7, 30, false],
+    [4, 30, false],
+    [3, 50, false],
+    [2, 50, false],
+    [1, 100, false],
+    [0, 100, false],
+  ]) {
+    const result = calculateCancellation(daysBefore)
+    assert.equal(result.feePercent, feePercent)
+    assert.equal(result.onlineCancellable, onlineCancellable)
+  }
+})
+
+test('applies 100 percent to no-show without using the online cancellation gate', () => {
+  const totalAmountYen = 10_000
+  const noShow = { feePercent: 100, feeYen: totalAmountYen }
+  assert.deepEqual(noShow, { feePercent: 100, feeYen: 10_000 })
+  assert.match(seed, /'no_show',[\s\S]*?\n\s*null,\n\s*null,[\s\S]*?\n\s*100,/)
+  assert.match(
+    baseMigration,
+    /if p_status = 'no_show'[\s\S]*cancellation_fee_rate = 100,[\s\S]*cancellation_fee_yen = coalesce\(reservation\.total_amount_yen, 0\)/,
+  )
+})
+
+test('restores exactly 1, 2, or 4 booked rooms to sellable inventory', () => {
+  for (const roomQuantity of [1, 2, 4]) {
+    const reservation = reservationFixture(roomQuantity)
+    const reservations = [reservation]
+    assert.equal(availableQuantity(5, reservations), 5 - roomQuantity)
+
+    const cancelled = cancelFixture(reservation)
+    assert.equal(cancelled.code, 'RESERVATION_CANCELLED')
+    assert.equal(cancelled.releasedBlocks, roomQuantity)
+    assert.equal(availableQuantity(5, reservations), 5)
+    assert.equal(
+      reservation.inventoryBlocks.filter((block) => block.status === 'released')
+        .length,
+      roomQuantity,
+    )
+  }
+})
+
+test('makes a repeated public cancellation inventory- and email-idempotent', () => {
+  const reservation = reservationFixture(1)
+  const reservations = [reservation]
+  assert.equal(availableQuantity(5, reservations), 4)
+
+  const first = cancelFixture(reservation)
+  assert.equal(first.code, 'RESERVATION_CANCELLED')
+  assert.equal(availableQuantity(5, reservations), 5)
+  assert.equal(reservation.notifications.size, 2)
+
+  const second = cancelFixture(reservation)
+  assert.equal(second.code, 'ALREADY_CANCELLED')
+  assert.equal(second.releasedBlocks, 0)
+  assert.equal(availableQuantity(5, reservations), 5)
+  assert.equal(reservation.notifications.size, 2)
+})
+
+test('customer and admin cancellations share fee, state, and inventory effects', () => {
+  const customer = reservationFixture(2, 4)
+  const admin = reservationFixture(2, 4)
+
+  assert.equal(cancelFixture(customer, 'public').code, 'RESERVATION_CANCELLED')
+  assert.equal(cancelFixture(admin, 'admin').code, 'RESERVATION_CANCELLED')
+  assert.equal(customer.status, admin.status)
+  assert.deepEqual(customer.cancellation, admin.cancellation)
+  assert.equal(availableQuantity(5, [customer]), 5)
+  assert.equal(availableQuantity(5, [admin]), 5)
+  assert.equal(customer.notifications.size, 2)
+  assert.equal(admin.notifications.size, 0)
 })
 
 test('uses active DB policies and the Asia/Tokyo hotel date', () => {
@@ -183,6 +373,108 @@ test('public cancellation locks, enforces 8-day limit, and releases every room b
     /where block\.reservation_room_id in \([\s\S]*where room\.reservation_id = v_reservation\.id[\s\S]*block\.status in \('held', 'active'\)/,
   )
   assert.match(completionMigration, /'automaticRefundProcessed', false/)
+})
+
+test('production SQL counts one reservation_rooms row per room and restores by status', () => {
+  assert.match(
+    bookingMigration,
+    /from jsonb_array_elements\(p_rooms\)[\s\S]*insert into public\.reservation_rooms/,
+  )
+  assert.match(
+    bookingMigration,
+    /select count\(\*\)::integer[\s\S]*from public\.reservation_rooms as reserved_room[\s\S]*reservation\.status in \('pending', 'confirmed', 'checked_in'\)/,
+  )
+  assert.match(schemaMigration, /sellable_quantity integer not null/)
+  assert.match(
+    completionMigration,
+    /where block\.reservation_room_id in \([\s\S]*where room\.reservation_id = v_reservation\.id/,
+  )
+})
+
+test('production SQL prevents duplicate state, inventory, and notification changes', () => {
+  const cancelFunction = completionMigration.match(
+    /create or replace function public\.cancel_public_reservation[\s\S]*?(?=create or replace function public\.claim_public_cancellation_notifications)/,
+  )?.[0]
+  assert.ok(cancelFunction)
+  const alreadyCancelledAt = cancelFunction.indexOf(
+    "if v_reservation.status = 'cancelled'",
+  )
+  const reservationUpdateAt = cancelFunction.indexOf(
+    'update public.reservations as reservation',
+  )
+  const inventoryReleaseAt = cancelFunction.indexOf(
+    'update public.inventory_blocks as block',
+  )
+  const notificationInsertAt = cancelFunction.indexOf(
+    'insert into public.notification_deliveries',
+  )
+  assert.ok(alreadyCancelledAt >= 0)
+  assert.ok(alreadyCancelledAt < reservationUpdateAt)
+  assert.ok(alreadyCancelledAt < inventoryReleaseAt)
+  assert.ok(alreadyCancelledAt < notificationInsertAt)
+  assert.match(
+    notificationMigration,
+    /unique \(reservation_id, notification_type, recipient_kind\)/,
+  )
+  assert.match(
+    cancelFunction,
+    /on conflict \(reservation_id, notification_type, recipient_kind\) do nothing/,
+  )
+})
+
+test('admin and public cancellation RPCs use the same quote and release rules', () => {
+  const publicCancel = completionMigration.match(
+    /create or replace function public\.cancel_public_reservation[\s\S]*?(?=create or replace function public\.claim_public_cancellation_notifications)/,
+  )?.[0]
+  const adminCancel = baseMigration.match(
+    /create or replace function public\.cancel_admin_reservation[\s\S]*?(?=-- General status transitions)/,
+  )?.[0]
+  assert.ok(publicCancel)
+  assert.ok(adminCancel)
+  for (const cancellationFunction of [publicCancel, adminCancel]) {
+    assert.match(
+      cancellationFunction,
+      /public\.calculate_reservation_cancellation/,
+    )
+    assert.match(cancellationFunction, /set status = 'cancelled'/)
+    assert.match(
+      cancellationFunction,
+      /cancellation_fee_rate = v_quote\.fee_percent/,
+    )
+    assert.match(
+      cancellationFunction,
+      /cancellation_fee_yen = v_quote\.fee_yen/,
+    )
+    assert.match(cancellationFunction, /set status = 'released'/)
+  }
+  assert.doesNotMatch(adminCancel, /notification_deliveries/)
+})
+
+test('persists cancellation state in existing schema fields and outbox records', () => {
+  assert.match(adminReservationMigration, /add column cancelled_at timestamptz/)
+  assert.match(
+    adminReservationMigration,
+    /add column cancellation_fee_rate integer/,
+  )
+  assert.match(
+    adminReservationMigration,
+    /add column cancellation_fee_yen integer/,
+  )
+  assert.match(completionMigration, /status = 'cancelled'/)
+  assert.match(completionMigration, /cancelled_at = v_cancelled_at/)
+  assert.match(
+    completionMigration,
+    /cancellation_fee_rate = v_quote\.fee_percent/,
+  )
+  assert.match(completionMigration, /cancellation_fee_yen = v_quote\.fee_yen/)
+  assert.match(
+    completionMigration,
+    /'releasedInventoryBlocks', v_released_blocks/,
+  )
+  assert.match(
+    notificationMigration,
+    /create table public\.notification_deliveries/,
+  )
 })
 
 test('cancellation closes only unpaid payments and preserves paid refund workflow', () => {

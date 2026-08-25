@@ -11,18 +11,23 @@ import {
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getSundayStartCalendarDays } from '../admin-rates/rate-helpers'
 import {
+  getInventoryCalendarSummaries,
   getInventoryByDate,
   getSelectableInventoryWeekendDates,
-  getInventorySummaries,
   toggleInventoryDateSelection,
 } from './inventory-helpers'
-import type { RoomTypeCapacity, RoomTypeInventory } from './types'
+import type {
+  RoomTypeAvailability,
+  RoomTypeCapacity,
+  RoomTypeInventory,
+} from './types'
 
 export function InventoryCalendar({
   month,
   selectedDates,
   capacities,
   inventory,
+  availability,
   maxBookingDays,
   onMonthChange,
   onSelectionChange,
@@ -31,6 +36,7 @@ export function InventoryCalendar({
   selectedDates: ReadonlySet<string>
   capacities: RoomTypeCapacity[]
   inventory: RoomTypeInventory[]
+  availability: RoomTypeAvailability[]
   maxBookingDays: number
   onMonthChange: (month: Date) => void
   onSelectionChange: (dates: Set<string>) => void
@@ -89,7 +95,12 @@ export function InventoryCalendar({
             !sameMonth || isBefore(day, today) || isAfter(day, bookingEnd)
           const selected = selectedDates.has(stayDate)
           const rows = inventoryByDate.get(stayDate) ?? []
-          const summaries = getInventorySummaries(capacities, rows, stayDate)
+          const summaries = getInventoryCalendarSummaries(
+            capacities,
+            rows,
+            availability,
+            stayDate,
+          )
           const allStopped =
             rows.length === capacities.length &&
             summaries.every((summary) => summary.sellableQuantity === 0)
@@ -148,7 +159,8 @@ export function InventoryCalendar({
         選択中: {selectedDates.size}日
       </p>
       <p className="mt-3 text-xs text-muted">
-        * は現在利用可能な客室数を使うデフォルト設定です。編集可能期間は本日から
+        *
+        は日別の販売数が未設定で、active客室数を販売上限に使う日です。表示数は予約済み客室を差し引いた残数です。編集可能期間は本日から
         {maxBookingDays}日後までです。
       </p>
     </section>

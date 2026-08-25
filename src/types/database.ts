@@ -766,6 +766,16 @@ export type Database = {
         Args: { p_reservation_id: string }
         Returns: Json
       }
+      get_admin_inventory_availability: {
+        Args: { p_start_date: string; p_end_date: string }
+        Returns: {
+          stay_date: string
+          room_type_id: string
+          base_sellable_quantity: number
+          booked_quantity: number
+          available_quantity: number
+        }[]
+      }
       lookup_public_reservation: {
         Args: { p_reservation_number: string; p_contact: string }
         Returns: Json

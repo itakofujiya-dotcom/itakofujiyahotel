@@ -12,6 +12,7 @@ import type {
   InventoryQuantity,
   InventorySaveInput,
   RoomTypeCapacity,
+  RoomTypeAvailability,
   RoomTypeInventory,
 } from './types'
 
@@ -75,6 +76,25 @@ export function getInventorySummaries(
       inventoryId: saved?.id ?? null,
     }
   })
+}
+
+export function getInventoryCalendarSummaries(
+  capacities: RoomTypeCapacity[],
+  inventory: RoomTypeInventory[],
+  availability: RoomTypeAvailability[],
+  stayDate: string,
+): InventoryRoomTypeSummary[] {
+  const settings = getInventorySummaries(capacities, inventory, stayDate)
+  const availableByRoomType = new Map(
+    availability
+      .filter((row) => row.stay_date === stayDate)
+      .map((row) => [row.room_type_id, row.available_quantity]),
+  )
+
+  return settings.map((summary) => ({
+    ...summary,
+    sellableQuantity: availableByRoomType.get(summary.roomTypeId) ?? 0,
+  }))
 }
 
 export function validateInventoryDrafts(

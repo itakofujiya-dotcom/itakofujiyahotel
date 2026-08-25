@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
+  fetchInventoryAvailabilityForMonth,
   fetchInventoryForMonth,
   fetchInventoryInitialData,
   resetInventoryForDates,
@@ -9,6 +10,7 @@ import { getInventoryMonthRange } from './inventory-helpers'
 import type {
   InventoryQuantity,
   RoomTypeCapacity,
+  RoomTypeAvailability,
   RoomTypeInventory,
 } from './types'
 
@@ -17,6 +19,7 @@ type Feedback = { type: 'success' | 'error'; message: string } | null
 export function useAdminInventory(month: Date) {
   const [capacities, setCapacities] = useState<RoomTypeCapacity[]>([])
   const [inventory, setInventory] = useState<RoomTypeInventory[]>([])
+  const [availability, setAvailability] = useState<RoomTypeAvailability[]>([])
   const [maxBookingDays, setMaxBookingDays] = useState(40)
   const [isLoading, setIsLoading] = useState(true)
   const [isMutating, setIsMutating] = useState(false)
@@ -29,13 +32,16 @@ export function useAdminInventory(month: Date) {
     setError(null)
     try {
       const range = getInventoryMonthRange(month)
-      const [initialData, monthInventory] = await Promise.all([
-        fetchInventoryInitialData(),
-        fetchInventoryForMonth(range.startDate, range.endDate),
-      ])
+      const [initialData, monthInventory, monthAvailability] =
+        await Promise.all([
+          fetchInventoryInitialData(),
+          fetchInventoryForMonth(range.startDate, range.endDate),
+          fetchInventoryAvailabilityForMonth(range.startDate, range.endDate),
+        ])
       setCapacities(initialData.capacities)
       setMaxBookingDays(initialData.maxBookingDays)
       setInventory(monthInventory)
+      setAvailability(monthAvailability)
     } catch {
       setError('在庫情報の取得に失敗しました。')
     } finally {
@@ -51,7 +57,12 @@ export function useAdminInventory(month: Date) {
 
   const reloadMonth = useCallback(async () => {
     const range = getInventoryMonthRange(month)
-    setInventory(await fetchInventoryForMonth(range.startDate, range.endDate))
+    const [monthInventory, monthAvailability] = await Promise.all([
+      fetchInventoryForMonth(range.startDate, range.endDate),
+      fetchInventoryAvailabilityForMonth(range.startDate, range.endDate),
+    ])
+    setInventory(monthInventory)
+    setAvailability(monthAvailability)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthKey])
 
@@ -112,6 +123,7 @@ export function useAdminInventory(month: Date) {
   return {
     capacities,
     inventory,
+    availability,
     maxBookingDays,
     isLoading,
     isMutating,
