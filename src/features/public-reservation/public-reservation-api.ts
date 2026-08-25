@@ -66,6 +66,17 @@ export async function cancelPublicReservation({
     throw new PublicReservationError(
       parseErrorCode(data, 'RESERVATION_CANCELLATION_FAILED'),
     )
+
+  const notificationReservationNumber =
+    typeof data.reservationNumber === 'string' && data.reservationNumber.trim()
+      ? data.reservationNumber.trim()
+      : reservationNumber.trim()
+  const notificationContact = contact.trim()
+  await requestCancellationNotifications(
+    notificationReservationNumber,
+    notificationContact,
+  )
+
   const result: PublicCancellationResult = {
     reservationNumber: requireString(data.reservationNumber),
     cancelledAt: requireString(data.cancelledAt),
@@ -77,7 +88,6 @@ export async function cancelPublicReservation({
     releasedInventoryBlocks: requireNumber(data.releasedInventoryBlocks),
     automaticRefundProcessed: false,
   }
-  await requestCancellationNotifications(result.reservationNumber, contact)
   return result
 }
 
@@ -85,22 +95,35 @@ async function requestCancellationNotifications(
   reservationNumber: string,
   contact: string,
 ): Promise<void> {
-  console.info('[cancellation-email] invoking', { reservationNumber })
+  const hasReservationNumber = reservationNumber.length > 0
+  const hasContact = contact.length > 0
+  console.info('[cancellation-email] preparing', {
+    hasReservationNumber,
+    hasContact,
+  })
+  if (!hasReservationNumber || !hasContact) {
+    console.error('[cancellation-email] identifiers-missing', {
+      hasReservationNumber,
+      hasContact,
+    })
+    return
+  }
+
+  console.info('[cancellation-email] invoking')
   try {
     const { error } = await supabase.functions.invoke(
       'send-cancellation-email',
       {
         body: {
           reservation_number: reservationNumber,
-          contact: contact.trim(),
+          contact,
         },
       },
     )
     if (error) throw error
-    console.info('[cancellation-email] success', { reservationNumber })
+    console.info('[cancellation-email] success')
   } catch (error) {
     console.error('[cancellation-email] failed', {
-      reservationNumber,
       errorType: error instanceof Error ? error.name : 'UnknownError',
       message:
         error instanceof Error

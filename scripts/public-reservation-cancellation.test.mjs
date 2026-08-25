@@ -229,14 +229,33 @@ test('customer route and UI expose bilingual detail and status-only cancellation
 test('email is invoked only after cancellation RPC and failure stays non-fatal', () => {
   const rpcAt = api.indexOf("supabase.rpc('cancel_public_reservation'")
   const invokeAt = api.indexOf('await requestCancellationNotifications')
-  const returnAt = api.indexOf('return result', invokeAt)
+  const parseResultAt = api.indexOf('const result: PublicCancellationResult')
+  const returnAt = api.indexOf('return result', parseResultAt)
   assert.ok(rpcAt >= 0)
   assert.ok(invokeAt > rpcAt)
-  assert.ok(returnAt > invokeAt)
+  assert.ok(parseResultAt > invokeAt)
+  assert.ok(returnAt > parseResultAt)
   assert.match(api, /await requestCancellationNotifications/)
   assert.match(api, /catch \(error\)/)
+  assert.match(api, /\[cancellation-email\] preparing/)
+  assert.match(api, /\[cancellation-email\] invoking/)
+  assert.match(api, /\[cancellation-email\] success/)
   assert.match(api, /\[cancellation-email\] failed/)
+  assert.match(api, /\[cancellation-email\] identifiers-missing/)
   assert.doesNotMatch(api, /void requestCancellationNotifications/)
+  assert.doesNotMatch(api, /setTimeout/)
+  assert.doesNotMatch(api, /\.then\(/)
+  assert.doesNotMatch(api, /console\.(?:info|error)\([^\n]*reservationNumber/)
+
+  const cancelPageAt = page.indexOf('await cancelPublicReservation')
+  const refreshPageAt = page.indexOf(
+    'await lookupPublicReservation',
+    cancelPageAt,
+  )
+  const updatePageAt = page.indexOf('setReservation(refreshed)', refreshPageAt)
+  assert.ok(cancelPageAt >= 0)
+  assert.ok(refreshPageAt > cancelPageAt)
+  assert.ok(updatePageAt > refreshPageAt)
 })
 
 test('cancellation email and admin displays use the recorded cancellation fee', () => {
