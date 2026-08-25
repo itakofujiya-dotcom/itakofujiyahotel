@@ -62,6 +62,51 @@ export type ReservationNotificationSnapshot = {
   }
 }
 
+export type CancellationNotificationSnapshot = {
+  deliveryId: string
+  recipientKind: NotificationRecipientKind
+  notificationType: 'reservation_cancelled'
+  reservationId: string
+  reservationNumber: string
+  locale: NotificationLocale
+  checkIn: string
+  checkOut: string
+  stayNights: number
+  roomCount: number
+  totalAmountYen: number
+  guestNote: string | null
+  cancelledAt: string
+  cancellationFeePercent: number
+  cancellationFeeYen: number
+  refundTargetYen: number
+  guest: {
+    name: string
+    kana: string | null
+    email: string
+    telephone: string
+  }
+  payment: {
+    method: 'pay_at_hotel' | 'bank_transfer' | 'card'
+    status: 'pending' | 'awaiting_payment' | 'paid' | 'refunded' | 'cancelled'
+    amountYen: number
+  }
+  rooms: Array<{
+    roomTypeNameJa: string
+    roomTypeNameKo: string | null
+    adults: number
+    paidChildren: number
+    freePreschoolChildren: number
+    mealPlan: 'breakfast' | 'breakfast_dinner'
+  }>
+  hotel: {
+    nameJa: string
+    nameKo: string | null
+    email: string | null
+    telephone: string | null
+    fax: string | null
+  }
+}
+
 export type EmailMessage = {
   to: string
   fromEmail: string

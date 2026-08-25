@@ -23,17 +23,31 @@ export type ReservationCancellationQuote = {
   refundTargetYen: number
 }
 
-export type PublicReservationLookup = ReservationCancellationQuote & {
+export type PublicReservationLookup = Omit<
+  ReservationCancellationQuote,
+  'policyCode' | 'feePercent' | 'feeYen' | 'refundTargetYen'
+> & {
+  policyCode: string | null
+  feePercent: number | null
+  feeYen: number | null
+  refundTargetYen: number | null
   reservationNumber: string
   guestName: string
+  guestKana: string | null
+  guestNote: string | null
   checkIn: string
   checkOut: string
+  stayNights: number
+  roomCount: number
   rooms: PublicReservationRoom[]
   totalAmountYen: number
   paymentMethod: PaymentMethod | null
   paymentStatus: PaymentStatus | null
   reservationStatus: ReservationStatus
   cancellable: boolean
+  onlineCancellationDeadlineDays: number
+  onlineCancellationReason:
+    'ALREADY_CANCELLED' | 'STATUS_NOT_CANCELLABLE' | 'CONTACT_HOTEL' | null
   cancelledAt: string | null
   recordedCancellationFeePercent: number | null
   recordedCancellationFeeYen: number | null
@@ -41,6 +55,9 @@ export type PublicReservationLookup = ReservationCancellationQuote & {
 
 export type PublicCancellationResult = {
   reservationNumber: string
+  cancelledAt: string
+  checkIn: string
+  checkOut: string
   feePercent: number
   feeYen: number
   refundTargetYen: number

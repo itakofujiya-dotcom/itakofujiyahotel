@@ -72,9 +72,11 @@ test('booking consent links open documents without replacing booking state', () 
 
 test('published cancellation documents match the database policy boundaries', () => {
   for (const document of [documents.cancellationJa, documents.termsJa]) {
-    assert.match(document, /7日前まで[\s\S]*無料/)
-    assert.match(document, /6日前～4日前[\s\S]*30％/)
-    assert.match(document, /3日前～2日前[\s\S]*50％/)
+    assert.match(document, /8日前まで[\s\S]*無料/)
+    assert.match(document, /4日前[\s\S]*30％/)
+    assert.match(document, /2日前[\s\S]*50％/)
+    assert.doesNotMatch(document, /7日前(?:から|～)4日前/)
+    assert.doesNotMatch(document, /3日前(?:から|～)2日前/)
     assert.match(document, /前日[\s\S]*100％/)
     assert.match(document, /当日[\s\S]*100％/)
     assert.match(document, /無連絡不泊[\s\S]*100％/)

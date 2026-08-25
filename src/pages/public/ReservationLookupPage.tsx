@@ -1,10 +1,15 @@
 import { useState, type FormEvent } from 'react'
 import { PageHero } from '../../components/common/PageHero'
 import { RateConfirmDialog } from '../../features/admin-rates/RateConfirmDialog'
-import { formatYen } from '../../features/admin-rates/rate-helpers'
 import {
+  buildLocalizedCancellationDescription,
+  formatLocalizedCount,
+  formatLocalizedYen,
   getLocalizedCancellationQuoteLabel,
   getLocalizedMealPlanLabel,
+  getLocalizedPaymentMethodLabel,
+  getLocalizedPaymentStatusLabel,
+  getLocalizedReservationStatusLabel,
   getLocalizedRoomTypeName,
 } from '../../features/booking/public-labels'
 import { formatBookingDate } from '../../features/booking/booking-format'
@@ -14,34 +19,11 @@ import {
   PublicReservationError,
 } from '../../features/public-reservation/public-reservation-api'
 import type { PublicReservationLookup } from '../../features/public-reservation/types'
-import type { SiteLocale } from '../../i18n/public-translations'
 import { useSiteTranslation } from '../../i18n/useSiteTranslation'
-
-const reservationStatusLabels = {
-  pending: '確認待ち',
-  confirmed: '予約確定',
-  cancelled: 'キャンセル済み',
-  checked_in: 'チェックイン済み',
-  checked_out: 'チェックアウト済み',
-  no_show: '無連絡不泊',
-} as const
-
-const paymentMethodLabels = {
-  pay_at_hotel: '現地払い',
-  bank_transfer: '銀行振込',
-  card: 'カード',
-} as const
-
-const paymentStatusLabels = {
-  pending: '未払い',
-  awaiting_payment: '入金待ち',
-  paid: '支払い済み',
-  refunded: '返金済み',
-  cancelled: '支払い取消',
-} as const
+import { hotelSettings, hotelTelephoneHref } from '../../data/hotel'
 
 export function ReservationLookupPage() {
-  const { locale } = useSiteTranslation()
+  const { locale, t } = useSiteTranslation()
   const [reservationNumber, setReservationNumber] = useState('')
   const [contact, setContact] = useState('')
   const [reservation, setReservation] =
@@ -50,26 +32,22 @@ export function ReservationLookupPage() {
   const [isCancelling, setIsCancelling] = useState(false)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
 
   async function lookup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!reservationNumber.trim() || !contact.trim()) {
-      setError('予約番号とメールアドレスまたは電話番号を入力してください。')
+      setError(t('reservation.missingInput'))
       return
     }
     setIsLoading(true)
     setError(null)
-    setSuccess(null)
     setReservation(null)
     try {
       setReservation(
         await lookupPublicReservation({ reservationNumber, contact }),
       )
     } catch {
-      setError(
-        '予約情報を確認できませんでした。予約番号と連絡先をご確認ください。',
-      )
+      setError(t('reservation.lookupFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -80,32 +58,27 @@ export function ReservationLookupPage() {
     setIsCancelling(true)
     setError(null)
     try {
-      await cancelPublicReservation({ reservationNumber, contact })
+      await cancelPublicReservation({
+        reservationNumber,
+        contact,
+      })
       const refreshed = await lookupPublicReservation({
         reservationNumber,
         contact,
       })
       setReservation(refreshed)
       setShowCancelDialog(false)
-      setSuccess(
-        '予約をキャンセルしました。客室は再び販売可能な状態になりました。',
-      )
     } catch (cancelError) {
       setShowCancelDialog(false)
-      if (
-        cancelError instanceof PublicReservationError &&
-        cancelError.code === 'ALREADY_CANCELLED'
-      )
-        setError('この予約はすでにキャンセルされています。')
-      else if (
-        cancelError instanceof PublicReservationError &&
-        cancelError.code === 'RESERVATION_NOT_CANCELLABLE'
-      )
-        setError('現在の予約状態ではキャンセルできません。')
-      else
-        setError(
-          '予約をキャンセルできませんでした。時間をおいて再度お試しください。',
-        )
+      if (cancelError instanceof PublicReservationError) {
+        if (cancelError.code === 'ALREADY_CANCELLED')
+          setError(t('reservation.alreadyCancelled'))
+        else if (cancelError.code === 'ONLINE_CANCELLATION_WINDOW_CLOSED')
+          setError(t('reservation.contactHotel'))
+        else if (cancelError.code === 'RESERVATION_NOT_CANCELLABLE')
+          setError(t('reservation.notCancellable'))
+        else setError(t('reservation.cancelFailed'))
+      } else setError(t('reservation.cancelFailed'))
     } finally {
       setIsCancelling(false)
     }
@@ -115,8 +88,8 @@ export function ReservationLookupPage() {
     <>
       <PageHero
         eyebrow="RESERVATION"
-        title="予約確認・キャンセル"
-        description="予約番号とご予約時の連絡先を入力してください。"
+        title={t('reservation.pageTitle')}
+        description={t('reservation.pageDescription')}
       />
       <section className="page-shell py-14 lg:py-20">
         <form
@@ -124,14 +97,14 @@ export function ReservationLookupPage() {
           className="mx-auto max-w-3xl border border-line bg-surface p-6 shadow-soft sm:p-8"
           noValidate
         >
-          <h2 className="font-serif text-2xl">ご予約を確認する</h2>
+          <h2 className="font-serif text-2xl">{t('reservation.formTitle')}</h2>
           <p className="mt-3 text-sm leading-7 text-muted">
-            予約番号だけでは照会できません。ご予約時のメールアドレスまたは電話番号も入力してください。
+            {t('reservation.formHelp')}
           </p>
           <div className="mt-6 grid gap-5 sm:grid-cols-2">
             <label>
               <span className="mb-2 block text-xs font-semibold text-muted">
-                予約番号
+                {t('reservation.number')}
               </span>
               <input
                 className="admin-input"
@@ -143,7 +116,7 @@ export function ReservationLookupPage() {
             </label>
             <label>
               <span className="mb-2 block text-xs font-semibold text-muted">
-                メールアドレスまたは電話番号
+                {t('reservation.contact')}
               </span>
               <input
                 className="admin-input"
@@ -156,33 +129,29 @@ export function ReservationLookupPage() {
           </div>
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || isCancelling}
             className="mt-6 min-h-12 bg-accent px-7 text-sm font-semibold text-white disabled:opacity-50"
           >
-            {isLoading ? '確認しています...' : '予約を確認'}
+            {isLoading ? t('reservation.lookingUp') : t('reservation.lookup')}
           </button>
         </form>
 
         {error && (
           <p
-            className="mx-auto mt-6 max-w-3xl border border-red-200 bg-red-50 p-5 text-sm text-red-800"
+            className="mx-auto mt-6 max-w-3xl border border-red-200 bg-red-50 p-5 text-sm leading-7 text-red-800"
             role="alert"
           >
-            {error}
-          </p>
-        )}
-        {success && (
-          <p
-            className="mx-auto mt-6 max-w-3xl border border-green-200 bg-green-50 p-5 text-sm text-green-800"
-            role="status"
-          >
-            {success}
+            {error}{' '}
+            {error === t('reservation.contactHotel') && (
+              <a className="font-semibold underline" href={hotelTelephoneHref}>
+                {hotelSettings.telephone}
+              </a>
+            )}
           </p>
         )}
         {reservation && (
           <ReservationResult
             reservation={reservation}
-            locale={locale}
             onCancel={() => setShowCancelDialog(true)}
           />
         )}
@@ -190,10 +159,13 @@ export function ReservationLookupPage() {
 
       {showCancelDialog && reservation && (
         <RateConfirmDialog
-          title="予約をキャンセルしますか？"
-          description={buildCancellationDescription(reservation, locale)}
-          confirmLabel="キャンセルを確定"
-          cancelLabel="戻る"
+          title={t('reservation.cancelTitle')}
+          description={buildLocalizedCancellationDescription(
+            reservation,
+            locale,
+          )}
+          confirmLabel={t('reservation.cancelConfirm')}
+          cancelLabel={t('reservation.back')}
           destructive
           isMutating={isCancelling}
           onCancel={() => setShowCancelDialog(false)}
@@ -206,68 +178,107 @@ export function ReservationLookupPage() {
 
 function ReservationResult({
   reservation,
-  locale,
   onCancel,
 }: {
   reservation: PublicReservationLookup
-  locale: SiteLocale
   onCancel: () => void
 }) {
+  const { locale, t } = useSiteTranslation()
   return (
     <div className="mx-auto mt-8 max-w-3xl space-y-6">
       <section className="border border-line bg-surface p-6 shadow-soft sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs text-muted">予約番号</p>
+            <p className="text-xs text-muted">{t('reservation.number')}</p>
             <h2 className="mt-1 text-xl font-bold">
               {reservation.reservationNumber}
             </h2>
           </div>
           <span className="bg-[#eee7d9] px-3 py-1 text-xs font-semibold">
-            {reservationStatusLabels[reservation.reservationStatus]}
+            {getLocalizedReservationStatusLabel(
+              reservation.reservationStatus,
+              locale,
+            )}
           </span>
         </div>
         <dl className="mt-6 grid gap-5 text-sm sm:grid-cols-2">
-          <ResultRow label="予約者" value={reservation.guestName} />
           <ResultRow
-            label="宿泊期間"
+            label={t('reservation.guest')}
+            value={reservation.guestName}
+          />
+          <ResultRow
+            label={t('reservation.kana')}
+            value={reservation.guestKana || '—'}
+          />
+          <ResultRow
+            label={t('reservation.stay')}
             value={`${formatBookingDate(reservation.checkIn, locale)}〜${formatBookingDate(reservation.checkOut, locale)}`}
           />
           <ResultRow
-            label="お支払い方法"
+            label={t('reservation.nights')}
+            value={formatLocalizedCount(
+              reservation.stayNights,
+              'nights',
+              locale,
+            )}
+          />
+          <ResultRow
+            label={t('reservation.rooms')}
+            value={formatLocalizedCount(reservation.roomCount, 'rooms', locale)}
+          />
+          <ResultRow
+            label={t('reservation.paymentMethod')}
             value={
               reservation.paymentMethod
-                ? paymentMethodLabels[reservation.paymentMethod]
-                : '要確認'
+                ? getLocalizedPaymentMethodLabel(
+                    reservation.paymentMethod,
+                    locale,
+                  )
+                : t('reservation.needsReview')
             }
           />
           <ResultRow
-            label="お支払い状態"
+            label={t('reservation.paymentStatus')}
             value={
               reservation.paymentStatus
-                ? paymentStatusLabels[reservation.paymentStatus]
-                : '要確認'
+                ? getLocalizedPaymentStatusLabel(
+                    reservation.paymentStatus,
+                    locale,
+                  )
+                : t('reservation.needsReview')
             }
           />
           <ResultRow
-            label="予約料金"
-            value={formatYen(reservation.totalAmountYen)}
+            label={t('reservation.total')}
+            value={formatLocalizedYen(reservation.totalAmountYen, locale)}
+          />
+          <ResultRow
+            label={t('reservation.request')}
+            value={reservation.guestNote || t('reservation.none')}
           />
         </dl>
       </section>
 
       <section className="border border-line bg-surface p-6 shadow-soft sm:p-8">
-        <h2 className="font-serif text-xl">客室情報</h2>
+        <h2 className="font-serif text-xl">{t('reservation.roomDetails')}</h2>
         <div className="mt-5 divide-y divide-line">
           {reservation.rooms.map((room) => (
             <div key={room.roomIndex} className="py-4 first:pt-0">
               <p className="font-semibold">
-                客室 {room.roomIndex + 1} ·{' '}
+                {t('reservation.room')} {room.roomIndex + 1} ·{' '}
                 {getLocalizedRoomTypeName(room.roomTypeNameJa, locale)}
               </p>
               <p className="mt-2 text-sm text-muted">
-                大人 {room.adultGuestCount}名 · 子ども {room.paidChildCount}名 ·
-                添い寝 {room.freePreschoolCount}名
+                {t('reservation.adults')}{' '}
+                {formatLocalizedCount(room.adultGuestCount, 'people', locale)} ·{' '}
+                {t('reservation.children')}{' '}
+                {formatLocalizedCount(room.paidChildCount, 'people', locale)} ·{' '}
+                {t('reservation.preschool')}{' '}
+                {formatLocalizedCount(
+                  room.freePreschoolCount,
+                  'people',
+                  locale,
+                )}
               </p>
               <p className="mt-1 text-sm">
                 {getLocalizedMealPlanLabel(room.mealPlan, locale)}
@@ -278,53 +289,76 @@ function ReservationResult({
       </section>
 
       <section className="border border-line bg-surface p-6 shadow-soft sm:p-8">
-        <h2 className="font-serif text-xl">キャンセルについて</h2>
-        <p className="mt-4 text-sm leading-7">
-          {getLocalizedCancellationQuoteLabel(
-            reservation.policyCode,
-            reservation.policyDescriptionJa,
-            reservation.feePercent,
-            locale,
+        <h2 className="font-serif text-xl">{t('reservation.cancellation')}</h2>
+        {reservation.policyCode !== null &&
+          reservation.feePercent !== null &&
+          reservation.feeYen !== null &&
+          reservation.refundTargetYen !== null && (
+            <>
+              <p className="mt-4 text-sm leading-7">
+                {getLocalizedCancellationQuoteLabel(
+                  reservation.policyCode,
+                  reservation.policyDescriptionJa,
+                  reservation.feePercent,
+                  locale,
+                )}
+              </p>
+              <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-3">
+                <ResultRow
+                  label={
+                    reservation.reservationStatus === 'cancelled'
+                      ? t('reservation.appliedRate')
+                      : t('reservation.currentRate')
+                  }
+                  value={`${reservation.feePercent}%`}
+                />
+                <ResultRow
+                  label={
+                    reservation.reservationStatus === 'cancelled'
+                      ? t('reservation.confirmedFee')
+                      : t('reservation.currentFee')
+                  }
+                  value={formatLocalizedYen(reservation.feeYen, locale)}
+                />
+                <ResultRow
+                  label={t('reservation.refundTarget')}
+                  value={formatLocalizedYen(
+                    reservation.refundTargetYen,
+                    locale,
+                  )}
+                />
+              </dl>
+            </>
           )}
-        </p>
-        <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-3">
-          <ResultRow
-            label={
-              reservation.reservationStatus === 'cancelled'
-                ? '適用済みキャンセル率'
-                : '現在のキャンセル率'
-            }
-            value={`${reservation.feePercent}%`}
-          />
-          <ResultRow
-            label={
-              reservation.reservationStatus === 'cancelled'
-                ? '確定キャンセル料'
-                : '現在のキャンセル料'
-            }
-            value={formatYen(reservation.feeYen)}
-          />
-          <ResultRow
-            label="返金対象額"
-            value={formatYen(reservation.refundTargetYen)}
-          />
-        </dl>
-        {reservation.refundTargetYen > 0 && (
-          <p className="mt-4 border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-900">
-            返金対象額は自動では返金されません。ホテルでの確認後、別途返金対応を行います。
+        {reservation.cancellable && reservation.feeYen === 0 && (
+          <p className="mt-4 border border-green-200 bg-green-50 p-4 text-sm text-green-900">
+            {t('reservation.freeCancellation')}
           </p>
         )}
+        {reservation.refundTargetYen !== null &&
+          reservation.refundTargetYen > 0 && (
+            <p className="mt-4 border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-900">
+              {t('reservation.refundNotice')}
+            </p>
+          )}
         {reservation.cancellable ? (
           <button
             type="button"
             onClick={onCancel}
             className="mt-6 min-h-12 border border-red-300 px-6 text-sm font-semibold text-red-700"
           >
-            予約をキャンセルする
+            {t('reservation.cancelButton')}
           </button>
         ) : (
-          <p className="mt-5 text-sm text-muted">
-            現在の予約状態ではオンラインでキャンセルできません。
+          <p className="mt-5 text-sm leading-7 text-muted">
+            {reservation.onlineCancellationReason === 'CONTACT_HOTEL'
+              ? t('reservation.contactHotel')
+              : t('reservation.notCancellable')}{' '}
+            {reservation.onlineCancellationReason === 'CONTACT_HOTEL' && (
+              <a className="font-semibold underline" href={hotelTelephoneHref}>
+                {hotelSettings.telephone}
+              </a>
+            )}
           </p>
         )}
       </section>
@@ -334,19 +368,9 @@ function ReservationResult({
 
 function ResultRow({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="min-w-0">
       <dt className="text-xs text-muted">{label}</dt>
-      <dd className="mt-1 font-semibold">{value}</dd>
+      <dd className="mt-1 break-words font-semibold">{value}</dd>
     </div>
   )
-}
-
-function buildCancellationDescription(
-  reservation: PublicReservationLookup,
-  locale: SiteLocale,
-): string {
-  const rooms = reservation.rooms
-    .map((room) => `客室${room.roomIndex + 1} ${room.roomTypeNameJa}`)
-    .join('・')
-  return `予約番号\n${reservation.reservationNumber}\n\nチェックイン\n${formatBookingDate(reservation.checkIn, locale)}\n\n客室\n${rooms}\n\n予約料金: ${formatYen(reservation.totalAmountYen)}\nキャンセル率: ${reservation.feePercent}%\nキャンセル料: ${formatYen(reservation.feeYen)}\n返金対象額: ${formatYen(reservation.refundTargetYen)}\n\nキャンセル後、客室は再び販売可能になります。\nこの操作は取り消せません。\n返金が必要な場合も自動返金は行われません。`
 }

@@ -3,23 +3,53 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { URL } from 'node:url'
 
-const migration = readFileSync(
+const baseMigration = readFileSync(
   new URL(
     '../supabase/migrations/202608210009_public_reservation_cancellation.sql',
     import.meta.url,
   ),
   'utf8',
 )
+const completionMigration = readFileSync(
+  new URL(
+    '../supabase/migrations/202608250003_public_cancellation_completion.sql',
+    import.meta.url,
+  ),
+  'utf8',
+)
+const seed = readFileSync(
+  new URL('../supabase/seed/seed.sql', import.meta.url),
+  'utf8',
+)
 const page = readFileSync(
   new URL('../src/pages/public/ReservationLookupPage.tsx', import.meta.url),
+  'utf8',
+)
+const api = readFileSync(
+  new URL(
+    '../src/features/public-reservation/public-reservation-api.ts',
+    import.meta.url,
+  ),
+  'utf8',
+)
+const labels = readFileSync(
+  new URL('../src/features/booking/public-labels.ts', import.meta.url),
+  'utf8',
+)
+const adminDetail = readFileSync(
+  new URL('../src/pages/admin/ReservationDetailPage.tsx', import.meta.url),
+  'utf8',
+)
+const translations = readFileSync(
+  new URL('../src/i18n/public-translations.ts', import.meta.url),
   'utf8',
 )
 const app = readFileSync(new URL('../src/app/App.tsx', import.meta.url), 'utf8')
 
 const policies = [
-  { min: 7, max: null, fee: 0 },
-  { min: 4, max: 6, fee: 30 },
-  { min: 2, max: 3, fee: 50 },
+  { min: 8, max: null, fee: 0 },
+  { min: 4, max: 4, fee: 30 },
+  { min: 2, max: 2, fee: 50 },
   { min: 1, max: 1, fee: 100 },
   { min: 0, max: 0, fee: 100 },
 ]
@@ -33,86 +63,200 @@ function policyFor(daysBefore) {
   )
 }
 
-test('covers all cancellation policy boundaries', () => {
-  assert.equal(policyFor(7)?.fee, 0)
-  assert.equal(policyFor(6)?.fee, 30)
+function onlineCancellationFor(daysBefore) {
+  const policy = policyFor(daysBefore)
+  return daysBefore >= 8 && policy?.fee === 0
+}
+
+test('covers the current cancellation policy boundaries', () => {
+  assert.equal(policyFor(8)?.fee, 0)
+  assert.equal(policyFor(7), undefined)
+  assert.equal(policyFor(5), undefined)
   assert.equal(policyFor(4)?.fee, 30)
-  assert.equal(policyFor(3)?.fee, 50)
+  assert.equal(policyFor(3), undefined)
   assert.equal(policyFor(2)?.fee, 50)
   assert.equal(policyFor(1)?.fee, 100)
   assert.equal(policyFor(0)?.fee, 100)
   assert.equal(policyFor(-1)?.fee, 100)
 })
 
-test('uses active cancellation policies and the Asia/Tokyo hotel date', () => {
-  assert.match(migration, /from public\.cancellation_policies as policy/)
-  assert.match(migration, /policy\.is_active = true/)
-  assert.match(migration, /policy\.is_no_show = false/)
-  assert.match(migration, /now\(\) at time zone 'Asia\/Tokyo'/)
-  assert.match(migration, /policy\.min_days_before/)
-  assert.match(migration, /policy\.max_days_before/)
+test('matches the approved online cancellation and fee matrix', () => {
+  for (const [daysBefore, online, fee] of [
+    [8, true, 0],
+    [7, false, undefined],
+    [5, false, undefined],
+    [4, false, 30],
+    [3, false, undefined],
+    [2, false, 50],
+    [1, false, 100],
+    [0, false, 100],
+  ]) {
+    assert.equal(onlineCancellationFor(daysBefore), online)
+    assert.equal(policyFor(daysBefore)?.fee, fee)
+  }
+  assert.match(seed, /'no_show',[\s\S]*?\n\s*null,\n\s*null,[\s\S]*?\n\s*100,/)
+})
+
+test('uses active DB policies and the Asia/Tokyo hotel date', () => {
+  assert.match(baseMigration, /from public\.cancellation_policies as policy/)
+  assert.match(baseMigration, /policy\.is_active = true/)
+  assert.match(baseMigration, /now\(\) at time zone 'Asia\/Tokyo'/)
+  assert.match(completionMigration, /min_days_before = 8/)
+  assert.match(
+    completionMigration,
+    /set min_days_before = 4,[\s\S]*max_days_before = 4/,
+  )
+  assert.match(
+    completionMigration,
+    /set min_days_before = 2,[\s\S]*max_days_before = 2/,
+  )
+  assert.match(seed, /'days_6_to_4',[\s\S]*?\n\s*4,\n\s*4,/)
+  assert.match(seed, /'days_3_to_2',[\s\S]*?\n\s*2,\n\s*2,/)
+  assert.doesNotMatch(seed, /7~4일 전\s+30%/)
+  assert.doesNotMatch(seed, /3~2일 전\s+50%/)
 })
 
 test('requires reservation number plus matching email or normalized phone', () => {
-  assert.match(migration, /length\(btrim\(coalesce\(p_reservation_number/)
-  assert.match(migration, /length\(v_contact\) < 3/)
   assert.match(
-    migration,
+    completionMigration,
+    /length\(btrim\(coalesce\(p_reservation_number/,
+  )
+  assert.match(completionMigration, /length\(v_contact\) < 3/)
+  assert.match(
+    completionMigration,
     /lower\(btrim\(v_guest\.email\)\) = lower\(v_contact\)/,
   )
   assert.match(
-    migration,
+    completionMigration,
     /regexp_replace\(v_guest\.telephone, '\[\^0-9\]', '', 'g'\) = v_contact_phone/,
   )
-  assert.match(migration, /'code', 'RESERVATION_NOT_FOUND'/)
+  assert.match(completionMigration, /'code', 'RESERVATION_NOT_FOUND'/)
 })
 
-test('public cancellation locks, validates, records fees, and releases every room block', () => {
+test('lookup exposes full safe detail and server-side online cancellation decision', () => {
+  assert.match(completionMigration, /'guestKana'/)
+  assert.match(completionMigration, /'guestNote'/)
+  assert.match(completionMigration, /'stayNights'/)
+  assert.match(completionMigration, /'roomCount'/)
   assert.match(
-    migration,
+    completionMigration,
+    /v_online_cancel_min_days constant integer := 8/,
+  )
+  assert.match(completionMigration, /'onlineCancellationReason'/)
+  assert.match(completionMigration, /'CONTACT_HOTEL'/)
+  assert.match(
+    completionMigration,
+    /Some dates intentionally have no fixed fee[\s\S]*v_days in \(4, 2, 1, 0\)/,
+  )
+  assert.match(completionMigration, /'daysBefore', v_days/)
+  assert.match(api, /typeof value\.feePercent === 'number'/)
+})
+
+test('public cancellation locks, enforces 8-day limit, and releases every room block', () => {
+  assert.match(
+    completionMigration,
     /create or replace function public\.cancel_public_reservation[\s\S]*for update/,
   )
-  assert.match(
-    migration,
-    /v_reservation\.status not in \('pending', 'confirmed'\)/,
+  assert.match(completionMigration, /v_days < v_online_cancel_min_days/)
+  assert.match(completionMigration, /ONLINE_CANCELLATION_WINDOW_CLOSED/)
+  const cancelFunction = completionMigration.match(
+    /create or replace function public\.cancel_public_reservation[\s\S]*?(?=create or replace function public\.claim_public_cancellation_notifications)/,
+  )?.[0]
+  assert.ok(cancelFunction)
+  assert.ok(
+    cancelFunction.indexOf('if v_days < v_online_cancel_min_days') <
+      cancelFunction.indexOf('from public.calculate_reservation_cancellation'),
   )
-  assert.match(migration, /cancellation_fee_rate = v_quote\.fee_percent/)
-  assert.match(migration, /cancellation_fee_yen = v_quote\.fee_yen/)
   assert.match(
-    migration,
+    completionMigration,
+    /cancellation_fee_rate = v_quote\.fee_percent/,
+  )
+  assert.match(completionMigration, /cancellation_fee_yen = v_quote\.fee_yen/)
+  assert.match(
+    completionMigration,
     /where block\.reservation_room_id in \([\s\S]*where room\.reservation_id = v_reservation\.id[\s\S]*block\.status in \('held', 'active'\)/,
   )
-  assert.match(migration, /'automaticRefundProcessed', false/)
+  assert.match(completionMigration, /'automaticRefundProcessed', false/)
 })
 
-test('admin cancellation shares the calculator and generic status changes cannot cancel', () => {
-  const adminCancel = migration.match(
+test('cancellation closes only unpaid payments and preserves paid refund workflow', () => {
+  assert.match(
+    completionMigration,
+    /payment\.status in \('pending', 'awaiting_payment'\)/,
+  )
+  assert.match(
+    completionMigration,
+    /when v_payment\.status = 'paid'[\s\S]*greatest\(v_payment\.amount_yen - v_quote\.fee_yen, 0\)/,
+  )
+  assert.doesNotMatch(completionMigration, /set status = 'refunded'/)
+})
+
+test('cancellation outbox is transactional and idempotent', () => {
+  assert.match(completionMigration, /'reservation_cancelled', 'customer'/)
+  assert.match(completionMigration, /'reservation_cancelled', 'hotel'/)
+  assert.match(
+    completionMigration,
+    /on conflict \(reservation_id, notification_type, recipient_kind\) do nothing/,
+  )
+  assert.match(completionMigration, /for update of delivery skip locked/)
+  assert.match(completionMigration, /to service_role/)
+})
+
+test('customer route and UI expose bilingual detail and status-only cancellation completion', () => {
+  assert.match(app, /path: '\/reservation', element: <ReservationLookupPage/)
+  assert.match(page, /reservation\.guestKana/)
+  assert.match(page, /reservation\.guestNote/)
+  assert.match(page, /reservation\.stayNights/)
+  assert.match(page, /reservation\.onlineCancellationReason/)
+  assert.match(page, /getLocalizedReservationStatusLabel/)
+  assert.doesNotMatch(page, /CancellationCompletion/)
+  assert.doesNotMatch(page, /cancellation-complete-title/)
+  assert.match(labels, /cancelled: 'キャンセル済み'/)
+  assert.match(labels, /cancelled: '취소 완료'/)
+  assert.doesNotMatch(
+    `${page}\n${labels}\n${translations}`,
+    /客室は再び販売可能|객실은 다시 판매 가능/,
+  )
+  assert.match(page, /hotelTelephoneHref/)
+})
+
+test('email is invoked only after cancellation RPC and failure stays non-fatal', () => {
+  const rpcAt = api.indexOf("supabase.rpc('cancel_public_reservation'")
+  const invokeAt = api.indexOf('await requestCancellationNotifications')
+  const returnAt = api.indexOf('return result', invokeAt)
+  assert.ok(rpcAt >= 0)
+  assert.ok(invokeAt > rpcAt)
+  assert.ok(returnAt > invokeAt)
+  assert.match(api, /await requestCancellationNotifications/)
+  assert.match(api, /catch \(error\)/)
+  assert.match(api, /\[cancellation-email\] failed/)
+  assert.doesNotMatch(api, /void requestCancellationNotifications/)
+})
+
+test('cancellation email and admin displays use the recorded cancellation fee', () => {
+  assert.match(
+    completionMigration,
+    /'cancellationFeePercent', coalesce\(reservation\.cancellation_fee_rate, 0\)/,
+  )
+  assert.match(
+    completionMigration,
+    /'cancellationFeeYen', coalesce\(reservation\.cancellation_fee_yen, 0\)/,
+  )
+  assert.match(labels, /宿泊日の4日前：宿泊料金の30％/)
+  assert.match(labels, /宿泊日の2日前：宿泊料金の50％/)
+})
+
+test('admin cancellation still shares policy calculation and generic status cannot cancel', () => {
+  const adminCancel = baseMigration.match(
     /create or replace function public\.cancel_admin_reservation[\s\S]*?(?=-- General status transitions)/,
   )?.[0]
   assert.ok(adminCancel)
   assert.match(adminCancel, /public\.calculate_reservation_cancellation/)
   assert.match(adminCancel, /public\.is_admin\(\)/)
-  assert.match(migration, /if p_status = 'cancelled' then/)
-  assert.match(migration, /USE_RESERVATION_CANCELLATION_RPC/)
-  assert.doesNotMatch(
-    migration,
-    /v_current = 'pending' and p_status in \('confirmed', 'cancelled'\)/,
-  )
-})
-
-test('customer lookup route and confirmation UI expose required safe workflow', () => {
-  assert.match(app, /path: '\/reservation', element: <ReservationLookupPage/)
-  assert.match(page, /予約番号だけでは照会できません/)
-  assert.match(page, /メールアドレスまたは電話番号/)
-  assert.match(page, /予約をキャンセルする/)
-  assert.match(page, /この操作は取り消せません/)
-  assert.match(page, /自動返金は行われません/)
-})
-
-test('paid payments calculate a refund target without changing payment status', () => {
+  assert.match(baseMigration, /if p_status = 'cancelled' then/)
+  assert.match(baseMigration, /USE_RESERVATION_CANCELLATION_RPC/)
   assert.match(
-    migration,
-    /when v_payment\.status = 'paid'[\s\S]*greatest\(v_payment\.amount_yen - v_quote\.fee_yen, 0\)/,
+    adminDetail,
+    /該当日のキャンセル料は設定されていません。ホテルで確認してください。/,
   )
-  assert.doesNotMatch(migration, /update public\.payments/)
 })

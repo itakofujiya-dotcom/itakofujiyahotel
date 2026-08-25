@@ -9,6 +9,7 @@ export type PublicReservationErrorCode =
   | 'RESERVATION_NOT_FOUND'
   | 'ALREADY_CANCELLED'
   | 'RESERVATION_NOT_CANCELLABLE'
+  | 'ONLINE_CANCELLATION_WINDOW_CLOSED'
   | 'RESERVATION_LOOKUP_FAILED'
   | 'RESERVATION_CANCELLATION_FAILED'
 
@@ -65,13 +66,47 @@ export async function cancelPublicReservation({
     throw new PublicReservationError(
       parseErrorCode(data, 'RESERVATION_CANCELLATION_FAILED'),
     )
-  return {
+  const result: PublicCancellationResult = {
     reservationNumber: requireString(data.reservationNumber),
+    cancelledAt: requireString(data.cancelledAt),
+    checkIn: requireString(data.checkIn),
+    checkOut: requireString(data.checkOut),
     feePercent: requireNumber(data.feePercent),
     feeYen: requireNumber(data.feeYen),
     refundTargetYen: requireNumber(data.refundTargetYen),
     releasedInventoryBlocks: requireNumber(data.releasedInventoryBlocks),
     automaticRefundProcessed: false,
+  }
+  await requestCancellationNotifications(result.reservationNumber, contact)
+  return result
+}
+
+async function requestCancellationNotifications(
+  reservationNumber: string,
+  contact: string,
+): Promise<void> {
+  console.info('[cancellation-email] invoking', { reservationNumber })
+  try {
+    const { error } = await supabase.functions.invoke(
+      'send-cancellation-email',
+      {
+        body: {
+          reservation_number: reservationNumber,
+          contact: contact.trim(),
+        },
+      },
+    )
+    if (error) throw error
+    console.info('[cancellation-email] success', { reservationNumber })
+  } catch (error) {
+    console.error('[cancellation-email] failed', {
+      reservationNumber,
+      errorType: error instanceof Error ? error.name : 'UnknownError',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Cancellation email invocation failed.',
+    })
   }
 }
 
@@ -79,23 +114,34 @@ function parseLookup(value: Record<string, unknown>): PublicReservationLookup {
   return {
     reservationNumber: requireString(value.reservationNumber),
     guestName: requireString(value.guestName),
+    guestKana: typeof value.guestKana === 'string' ? value.guestKana : null,
+    guestNote: typeof value.guestNote === 'string' ? value.guestNote : null,
     checkIn: requireString(value.checkIn),
     checkOut: requireString(value.checkOut),
+    stayNights: requireNumber(value.stayNights),
+    roomCount: requireNumber(value.roomCount),
     rooms: parseRooms(value.rooms),
     totalAmountYen: requireNumber(value.totalAmountYen),
     paymentMethod: parseNullablePaymentMethod(value.paymentMethod),
     paymentStatus: parseNullablePaymentStatus(value.paymentStatus),
     reservationStatus: parseReservationStatus(value.reservationStatus),
     cancellable: value.cancellable === true,
-    policyCode: requireString(value.policyCode),
+    onlineCancellationDeadlineDays: requireNumber(
+      value.onlineCancellationDeadlineDays,
+    ),
+    onlineCancellationReason: parseOnlineCancellationReason(
+      value.onlineCancellationReason,
+    ),
+    policyCode: typeof value.policyCode === 'string' ? value.policyCode : null,
     policyDescriptionJa:
       typeof value.policyDescriptionJa === 'string'
         ? value.policyDescriptionJa
         : null,
     daysBefore: requireNumber(value.daysBefore),
-    feePercent: requireNumber(value.feePercent),
-    feeYen: requireNumber(value.feeYen),
-    refundTargetYen: requireNumber(value.refundTargetYen),
+    feePercent: typeof value.feePercent === 'number' ? value.feePercent : null,
+    feeYen: typeof value.feeYen === 'number' ? value.feeYen : null,
+    refundTargetYen:
+      typeof value.refundTargetYen === 'number' ? value.refundTargetYen : null,
     cancelledAt:
       typeof value.cancelledAt === 'string' ? value.cancelledAt : null,
     recordedCancellationFeePercent:
@@ -135,12 +181,21 @@ function parseErrorCode(
       'RESERVATION_NOT_FOUND',
       'ALREADY_CANCELLED',
       'RESERVATION_NOT_CANCELLABLE',
+      'ONLINE_CANCELLATION_WINDOW_CLOSED',
       'RESERVATION_LOOKUP_FAILED',
       'RESERVATION_CANCELLATION_FAILED',
     ].includes(value.code)
   )
     return value.code as PublicReservationErrorCode
   return fallback
+}
+
+function parseOnlineCancellationReason(value: unknown) {
+  return value === 'ALREADY_CANCELLED' ||
+    value === 'STATUS_NOT_CANCELLABLE' ||
+    value === 'CONTACT_HOTEL'
+    ? value
+    : null
 }
 
 function parseNullablePaymentMethod(value: unknown) {

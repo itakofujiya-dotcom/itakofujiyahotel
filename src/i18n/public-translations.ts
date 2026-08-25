@@ -23,6 +23,56 @@ export const siteTranslations = {
       '大きな窓から庭を望む、明るく開放的な空間。ご到着からご出発まで、どうぞゆっくりとお過ごしください。',
     'home.welcomeImageAlt': '庭を望む明るいラウンジ',
     'home.welcomeImageCaption': '庭を望む、寛ぎの時間',
+    'reservation.pageTitle': '予約確認・キャンセル',
+    'reservation.pageDescription':
+      '予約番号とご予約時の連絡先を入力してください。',
+    'reservation.formTitle': 'ご予約を確認する',
+    'reservation.formHelp':
+      '予約番号だけでは照会できません。ご予約時のメールアドレスまたは電話番号も入力してください。',
+    'reservation.number': '予約番号',
+    'reservation.contact': 'メールアドレスまたは電話番号',
+    'reservation.lookup': '予約を確認',
+    'reservation.lookingUp': '確認しています...',
+    'reservation.missingInput':
+      '予約番号とメールアドレスまたは電話番号を入力してください。',
+    'reservation.lookupFailed':
+      '予約情報を確認できませんでした。予約番号と連絡先をご確認ください。',
+    'reservation.guest': '予約者',
+    'reservation.kana': 'フリガナ',
+    'reservation.stay': '宿泊期間',
+    'reservation.nights': '泊数',
+    'reservation.rooms': '客室数',
+    'reservation.paymentMethod': 'お支払い方法',
+    'reservation.paymentStatus': 'お支払い状態',
+    'reservation.total': '予約料金',
+    'reservation.request': 'ご要望',
+    'reservation.none': 'なし',
+    'reservation.roomDetails': '客室情報',
+    'reservation.room': '客室',
+    'reservation.adults': '大人',
+    'reservation.children': '子ども',
+    'reservation.preschool': '添い寝',
+    'reservation.cancellation': 'キャンセルについて',
+    'reservation.currentRate': '現在のキャンセル率',
+    'reservation.appliedRate': '適用済みキャンセル率',
+    'reservation.currentFee': '現在のキャンセル料',
+    'reservation.confirmedFee': '確定キャンセル料',
+    'reservation.refundTarget': '返金対象額',
+    'reservation.cancelButton': '予約をキャンセルする',
+    'reservation.cancelTitle': '予約をキャンセルしますか？',
+    'reservation.cancelConfirm': 'キャンセルを確定',
+    'reservation.back': '戻る',
+    'reservation.cancelFailed':
+      '予約をキャンセルできませんでした。時間をおいて再度お試しください。',
+    'reservation.alreadyCancelled': 'この予約はすでにキャンセルされています。',
+    'reservation.notCancellable': '現在の予約状態ではキャンセルできません。',
+    'reservation.contactHotel':
+      'オンラインキャンセル受付期間を過ぎています。ホテルへお問い合わせください。',
+    'reservation.freeCancellation': 'キャンセル料 0円（無料）',
+    'reservation.refundNotice':
+      '返金はキャンセル後1週間以内を目安に対応します。口座情報はホテルのメールアドレスへお送りください。振込手数料はお客様負担となり、キャンセル料と振込手数料を差し引いて返金します。',
+    'reservation.irreversible': 'この操作は取り消せません。',
+    'reservation.needsReview': '要確認',
   },
   ko: {
     'common.korean': '한국어',
@@ -43,6 +93,56 @@ export const siteTranslations = {
       '큰 창 너머로 정원이 펼쳐지는 밝고 편안한 공간입니다. 도착부터 떠나는 순간까지, 편안하게 머물러 보세요.',
     'home.welcomeImageAlt': '정원이 보이는 밝은 라운지',
     'home.welcomeImageCaption': '정원을 바라보는, 여유로운 시간',
+    'reservation.pageTitle': '예약 조회·취소',
+    'reservation.pageDescription':
+      '예약번호와 예약 시 입력한 연락처를 입력해 주세요.',
+    'reservation.formTitle': '예약 확인',
+    'reservation.formHelp':
+      '예약번호만으로는 조회할 수 없습니다. 예약 시 입력한 이메일 또는 전화번호도 입력해 주세요.',
+    'reservation.number': '예약번호',
+    'reservation.contact': '이메일 또는 전화번호',
+    'reservation.lookup': '예약 확인',
+    'reservation.lookingUp': '확인 중...',
+    'reservation.missingInput':
+      '예약번호와 이메일 또는 전화번호를 입력해 주세요.',
+    'reservation.lookupFailed':
+      '예약 정보를 확인할 수 없습니다. 예약번호와 연락처를 확인해 주세요.',
+    'reservation.guest': '예약자',
+    'reservation.kana': '후리가나',
+    'reservation.stay': '숙박 기간',
+    'reservation.nights': '숙박 일수',
+    'reservation.rooms': '객실 수',
+    'reservation.paymentMethod': '결제 방법',
+    'reservation.paymentStatus': '결제 상태',
+    'reservation.total': '예약 요금',
+    'reservation.request': '요청사항',
+    'reservation.none': '없음',
+    'reservation.roomDetails': '객실 정보',
+    'reservation.room': '객실',
+    'reservation.adults': '성인',
+    'reservation.children': '어린이',
+    'reservation.preschool': '동반 취침',
+    'reservation.cancellation': '취소 안내',
+    'reservation.currentRate': '현재 취소율',
+    'reservation.appliedRate': '적용된 취소율',
+    'reservation.currentFee': '현재 취소 수수료',
+    'reservation.confirmedFee': '확정 취소 수수료',
+    'reservation.refundTarget': '환불 예정 금액',
+    'reservation.cancelButton': '예약 취소',
+    'reservation.cancelTitle': '예약을 취소하시겠습니까?',
+    'reservation.cancelConfirm': '취소 확정',
+    'reservation.back': '돌아가기',
+    'reservation.cancelFailed':
+      '예약을 취소할 수 없습니다. 잠시 후 다시 시도해 주세요.',
+    'reservation.alreadyCancelled': '이미 취소된 예약입니다.',
+    'reservation.notCancellable': '현재 예약 상태에서는 취소할 수 없습니다.',
+    'reservation.contactHotel':
+      '온라인 취소 접수 기간이 지났습니다. 호텔로 문의해 주세요.',
+    'reservation.freeCancellation': '취소 수수료 0엔(무료)',
+    'reservation.refundNotice':
+      '환불은 취소 후 1주 이내에 처리합니다. 환불받을 계좌정보를 호텔 이메일로 보내주세요. 송금수수료는 고객 부담이며, 취소 수수료와 송금수수료를 차감한 금액을 환불합니다.',
+    'reservation.irreversible': '이 작업은 되돌릴 수 없습니다.',
+    'reservation.needsReview': '확인 필요',
   },
 } as const
 
@@ -63,10 +163,7 @@ const publicPhrases: readonly [string, string][] = [
     '選択された日程ではご予約可能な客室がありません。',
     '선택하신 날짜에는 예약 가능한 객실이 없습니다.',
   ],
-  [
-    '別の日程で再度検索してください。',
-    '다른 날짜로 검색해 주세요.',
-  ],
+  ['別の日程で再度検索してください。', '다른 날짜로 검색해 주세요.'],
   [
     '予約番号だけでは照会できません。ご予約時のメールアドレスまたは電話番号も入力してください。',
     '예약번호만으로는 조회할 수 없습니다. 예약 시 입력한 이메일 또는 전화번호도 입력해 주세요.',
@@ -98,10 +195,6 @@ const publicPhrases: readonly [string, string][] = [
   [
     '予約情報を確認できませんでした。予約番号と連絡先をご確認ください。',
     '예약 정보를 확인할 수 없습니다. 예약번호와 연락처를 확인해 주세요.',
-  ],
-  [
-    '予約をキャンセルしました。客室は再び販売可能な状態になりました。',
-    '예약을 취소했습니다. 객실은 다시 판매 가능한 상태가 되었습니다.',
   ],
   [
     '予約をキャンセルできませんでした。時間をおいて再度お試しください。',
@@ -241,10 +334,6 @@ const publicPhrases: readonly [string, string][] = [
   [
     '現在の予約状態ではオンラインでキャンセルできません。',
     '현재 예약 상태에서는 온라인으로 취소할 수 없습니다.',
-  ],
-  [
-    'キャンセル後、客室は再び販売可能になります。',
-    '취소 후 객실은 다시 판매 가능해집니다.',
   ],
   [
     '返金が必要な場合も自動返金は行われません。',
@@ -471,7 +560,9 @@ const publicPhrases: readonly [string, string][] = [
   ['客室数は1〜4室で指定してください。', '객실 수는 1~4실로 지정해 주세요.'],
   ['カード', '카드'],
   ['前日・当日', '전날·당일'],
-  ['7日前まで', '7일 전까지'],
+  ['8日前まで', '8일 전까지'],
+  ['4日前', '4일 전'],
+  ['2日前', '2일 전'],
   [
     '旅の人数や過ごし方に合わせて、和室と洋室からお選びいただけます。',
     '여행 인원과 스타일에 맞춰 다다미방과 침대방 중 선택할 수 있습니다.',

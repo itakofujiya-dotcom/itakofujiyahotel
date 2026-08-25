@@ -948,7 +948,7 @@ function ReservationStatusActions({
       )}
       {nextStatuses.includes('cancelled') && !cancellationQuote && (
         <p className="mt-4 text-sm font-medium text-red-700" role="alert">
-          キャンセル料を取得できませんでした。ページを再読み込みしてください。
+          該当日のキャンセル料は設定されていません。ホテルで確認してください。
         </p>
       )}
     </div>

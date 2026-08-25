@@ -62,12 +62,12 @@ const baseSnapshot = {
   cancellationPolicies: [
     {
       code: 'free',
-      minDaysBefore: 7,
+      minDaysBefore: 8,
       maxDaysBefore: null,
       feePercent: 0,
       isNoShow: false,
-      descriptionJa: '7日前まで',
-      descriptionKo: '7일 전까지',
+      descriptionJa: '8日前まで',
+      descriptionKo: '8일 전까지',
     },
     {
       code: 'no_show',
