@@ -957,6 +957,10 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: Database['public']['Tables']['notification_deliveries']['Row'][]
       }
+      claim_pending_auto_cancellation_notifications: {
+        Args: { p_limit?: number }
+        Returns: Database['public']['Tables']['notification_deliveries']['Row'][]
+      }
       process_expired_bank_transfer_reservations: {
         Args: { p_now?: string; p_limit?: number }
         Returns: Json

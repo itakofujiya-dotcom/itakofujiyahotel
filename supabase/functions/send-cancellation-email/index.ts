@@ -2,7 +2,7 @@ import { isEmailAddress } from '../_shared/email-safety.ts'
 import type { MailProvider } from '../_shared/notification-types.ts'
 import { createGmailMailer, GmailError } from '../send-booking-email/gmail.ts'
 import {
-  claimPendingCancellationDeliveries,
+  claimPendingAutoCancellationDeliveries,
   claimPublicCancellationDeliveries,
   createCancellationEmailClient,
   loadCancellationSnapshot,
@@ -66,7 +66,7 @@ Deno.serve(async (request) => {
       )
 
     const deliveries = isWorker
-      ? await claimPendingCancellationDeliveries(client)
+      ? await claimPendingAutoCancellationDeliveries(client)
       : await claimPublicCancellationDeliveries(
           client,
           input!.reservationNumber,

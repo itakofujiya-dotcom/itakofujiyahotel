@@ -14,6 +14,13 @@ const migration = readFileSync(
   ),
   'utf8',
 )
+const workerNotificationMigration = readFileSync(
+  new URL(
+    '../supabase/migrations/202608260001_limit_expiration_worker_notifications.sql',
+    import.meta.url,
+  ),
+  'utf8',
+)
 const worker = readFileSync(
   new URL(
     '../supabase/functions/send-cancellation-email/index.ts',
@@ -202,8 +209,22 @@ test('hourly worker uses the existing cancellation email path', () => {
   assert.match(worker, /processExpiredBankTransferReservations\(client\)/)
   assert.ok(
     worker.indexOf('processExpiredBankTransferReservations(client)') <
-      worker.indexOf('claimPendingCancellationDeliveries(client)'),
+      worker.indexOf('claimPendingAutoCancellationDeliveries(client)'),
   )
+})
+
+test('scheduled worker claims only payment-expiration cancellation emails', () => {
+  assert.match(
+    workerNotificationMigration,
+    /claim_pending_auto_cancellation_notifications/,
+  )
+  assert.match(
+    workerNotificationMigration,
+    /入金期限切れによる自動キャンセル/,
+  )
+  assert.match(workerNotificationMigration, /delivery\.status = 'pending'/)
+  assert.match(worker, /claimPendingAutoCancellationDeliveries\(client\)/)
+  assert.doesNotMatch(worker, /claimPendingCancellationDeliveries\(client\)/)
 })
 
 const emailSnapshot = {

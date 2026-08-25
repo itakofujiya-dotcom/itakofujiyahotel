@@ -12,7 +12,7 @@ type CancellationEmailDatabase = {
         Args: { p_reservation_number: string; p_contact: string }
         Returns: DeliveryRow[]
       }
-      claim_pending_cancellation_notifications: {
+      claim_pending_auto_cancellation_notifications: {
         Args: { p_limit?: number }
         Returns: DeliveryRow[]
       }
@@ -101,12 +101,12 @@ export async function claimPublicCancellationDeliveries(
   return normalizeDeliveries(data)
 }
 
-export async function claimPendingCancellationDeliveries(
+export async function claimPendingAutoCancellationDeliveries(
   client: CancellationEmailClient,
-  limit = 10,
+  limit = 50,
 ): Promise<CancellationDelivery[]> {
   const { data, error } = await client.rpc(
-    'claim_pending_cancellation_notifications',
+    'claim_pending_auto_cancellation_notifications',
     { p_limit: limit },
   )
   if (error) throw new Error(`CLAIM_CANCELLATION_BATCH_${error.code}`)
