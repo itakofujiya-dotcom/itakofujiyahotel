@@ -17,6 +17,7 @@ import {
   cancelPublicReservation,
   lookupPublicReservation,
   PublicReservationError,
+  requestCancellationNotifications,
 } from '../../features/public-reservation/public-reservation-api'
 import type { PublicReservationLookup } from '../../features/public-reservation/types'
 import { useSiteTranslation } from '../../i18n/useSiteTranslation'
@@ -58,10 +59,55 @@ export function ReservationLookupPage() {
     setIsCancelling(true)
     setError(null)
     try {
-      await cancelPublicReservation({
+      const cancelResult = await cancelPublicReservation({
         reservationNumber,
         contact,
       })
+      console.info('[cancellation-email] after-cancel-rpc')
+
+      try {
+        console.info('[cancellation-email] preparing')
+        const notificationReservationNumber =
+          cancelResult.reservationNumber.trim()
+        const notificationContact = contact.trim()
+
+        if (!notificationReservationNumber || !notificationContact) {
+          console.error('[cancellation-email] identifiers-missing', {
+            hasReservationNumber: Boolean(notificationReservationNumber),
+            hasContact: Boolean(notificationContact),
+          })
+        } else {
+          console.info('[cancellation-email] invoking')
+          const notificationResult = await requestCancellationNotifications({
+            reservationNumber: notificationReservationNumber,
+            contact: notificationContact,
+          })
+          console.info('[cancellation-email] invoke-returned', {
+            hasError: Boolean(notificationResult.error),
+          })
+
+          if (notificationResult.error) {
+            console.error('[cancellation-email] failed', {
+              errorType: notificationResult.error.name,
+              message: notificationResult.error.message,
+            })
+          } else {
+            console.info('[cancellation-email] success')
+          }
+        }
+      } catch (notificationError) {
+        console.error('[cancellation-email] failed', {
+          errorType:
+            notificationError instanceof Error
+              ? notificationError.name
+              : 'UnknownError',
+          message:
+            notificationError instanceof Error
+              ? notificationError.message
+              : 'Cancellation email invocation failed.',
+        })
+      }
+
       const refreshed = await lookupPublicReservation({
         reservationNumber,
         contact,

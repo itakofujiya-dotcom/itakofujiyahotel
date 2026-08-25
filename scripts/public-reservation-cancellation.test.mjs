@@ -228,34 +228,58 @@ test('customer route and UI expose bilingual detail and status-only cancellation
 
 test('email is invoked only after cancellation RPC and failure stays non-fatal', () => {
   const rpcAt = api.indexOf("supabase.rpc('cancel_public_reservation'")
-  const invokeAt = api.indexOf('await requestCancellationNotifications')
   const parseResultAt = api.indexOf('const result: PublicCancellationResult')
   const returnAt = api.indexOf('return result', parseResultAt)
   assert.ok(rpcAt >= 0)
-  assert.ok(invokeAt > rpcAt)
-  assert.ok(parseResultAt > invokeAt)
+  assert.ok(parseResultAt > rpcAt)
   assert.ok(returnAt > parseResultAt)
-  assert.match(api, /await requestCancellationNotifications/)
-  assert.match(api, /catch \(error\)/)
-  assert.match(api, /\[cancellation-email\] preparing/)
-  assert.match(api, /\[cancellation-email\] invoking/)
-  assert.match(api, /\[cancellation-email\] success/)
-  assert.match(api, /\[cancellation-email\] failed/)
-  assert.match(api, /\[cancellation-email\] identifiers-missing/)
+  assert.match(api, /export async function requestCancellationNotifications/)
+  assert.match(api, /return await supabase\.functions\.invoke/)
+  assert.match(api, /reservation_number: reservationNumber/)
+  assert.match(api, /contact,/)
   assert.doesNotMatch(api, /void requestCancellationNotifications/)
   assert.doesNotMatch(api, /setTimeout/)
   assert.doesNotMatch(api, /\.then\(/)
-  assert.doesNotMatch(api, /console\.(?:info|error)\([^\n]*reservationNumber/)
 
-  const cancelPageAt = page.indexOf('await cancelPublicReservation')
+  const cancelPageAt = page.indexOf(
+    'const cancelResult = await cancelPublicReservation',
+  )
+  const afterRpcAt = page.indexOf(
+    "console.info('[cancellation-email] after-cancel-rpc')",
+    cancelPageAt,
+  )
+  const preparingAt = page.indexOf(
+    "console.info('[cancellation-email] preparing')",
+    afterRpcAt,
+  )
+  const invokeAt = page.indexOf(
+    'await requestCancellationNotifications',
+    preparingAt,
+  )
+  const invokeReturnedAt = page.indexOf(
+    "console.info('[cancellation-email] invoke-returned'",
+    invokeAt,
+  )
   const refreshPageAt = page.indexOf(
     'await lookupPublicReservation',
-    cancelPageAt,
+    invokeReturnedAt,
   )
   const updatePageAt = page.indexOf('setReservation(refreshed)', refreshPageAt)
   assert.ok(cancelPageAt >= 0)
-  assert.ok(refreshPageAt > cancelPageAt)
+  assert.ok(afterRpcAt > cancelPageAt)
+  assert.ok(preparingAt > afterRpcAt)
+  assert.ok(invokeAt > preparingAt)
+  assert.ok(invokeReturnedAt > invokeAt)
+  assert.ok(refreshPageAt > invokeReturnedAt)
   assert.ok(updatePageAt > refreshPageAt)
+  assert.match(page, /\[cancellation-email\] identifiers-missing/)
+  assert.match(page, /\[cancellation-email\] failed/)
+  assert.match(page, /\[cancellation-email\] success/)
+  assert.doesNotMatch(page, /void requestCancellationNotifications/)
+  assert.doesNotMatch(
+    page,
+    /console\.(?:info|error)\([^\n]*(?:reservationNumber|contact)/,
+  )
 })
 
 test('cancellation email and admin displays use the recorded cancellation fee', () => {
