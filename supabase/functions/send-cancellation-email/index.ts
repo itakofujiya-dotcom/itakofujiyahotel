@@ -8,6 +8,7 @@ import {
   loadCancellationSnapshot,
   markCancellationEmailFailed,
   markCancellationEmailSent,
+  processExpiredBankTransferReservations,
   type CancellationDelivery,
   type CancellationEmailClient,
 } from './cancellation-email.ts'
@@ -42,6 +43,21 @@ Deno.serve(async (request) => {
     if (!isWorker && !input)
       return jsonResponse({ ok: false, error: 'INVALID_REQUEST' }, 400)
 
+    const expirationResult = isWorker
+      ? await processExpiredBankTransferReservations(client)
+      : null
+    if (expirationResult) {
+      console.log(
+        JSON.stringify({
+          event: 'bank_transfer_expiration_processed',
+          processed: expirationResult.processed,
+          releasedInventoryBlocks:
+            expirationResult.releasedInventoryBlocks,
+          notificationsEnqueued: expirationResult.notificationsEnqueued,
+        }),
+      )
+    }
+
     const { provider, senderEmail, senderName } = createGmailMailer()
     if (!isEmailAddress(senderEmail))
       throw new GmailError(
@@ -57,7 +73,11 @@ Deno.serve(async (request) => {
           input!.contact,
         )
     if (deliveries.length === 0)
-      return jsonResponse({ ok: true, duplicateOrUnavailable: true })
+      return jsonResponse({
+        ok: true,
+        duplicateOrUnavailable: true,
+        autoCancellation: expirationResult,
+      })
 
     const outcomes = await processDeliveries(
       deliveries,
@@ -71,6 +91,7 @@ Deno.serve(async (request) => {
       processed: outcomes.length,
       sent: outcomes.filter((sent) => sent).length,
       failed: outcomes.filter((sent) => !sent).length,
+      autoCancellation: expirationResult,
     })
   } catch (error) {
     logError('send_cancellation_email_failed', error)

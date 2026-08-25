@@ -25,9 +25,15 @@ export function buildCustomerCancellationConfirmation(
   const hotelName =
     (ko ? snapshot.hotel.nameKo : snapshot.hotel.nameJa) ||
     snapshot.hotel.nameJa
-  const subject = ko
-    ? `[${hotelName}] 예약 취소가 완료되었습니다 (예약번호: ${snapshot.reservationNumber})`
-    : `【${hotelName}】ご予約のキャンセルを承りました（予約番号: ${snapshot.reservationNumber}）`
+  const automatic =
+    snapshot.cancellationReason === 'bank_transfer_payment_expired'
+  const subject = automatic
+    ? ko
+      ? `[${hotelName}] 미입금으로 예약이 자동 취소되었습니다 (예약번호: ${snapshot.reservationNumber})`
+      : `【${hotelName}】ご予約を自動キャンセルしました（予約番号: ${snapshot.reservationNumber}）`
+    : ko
+      ? `[${hotelName}] 예약 취소가 완료되었습니다 (예약번호: ${snapshot.reservationNumber})`
+      : `【${hotelName}】ご予約のキャンセルを承りました（予約番号: ${snapshot.reservationNumber}）`
   const refundNotice = customerRefundNotice(snapshot, locale)
   const roomList = snapshot.rooms
     .map((room, index) => {
@@ -64,12 +70,25 @@ export function buildCustomerCancellationConfirmation(
       formatYen(snapshot.refundTargetYen, locale),
     ],
   ]
+  const customerMessage = automatic
+    ? ko
+      ? '입금 기한까지 입금을 확인할 수 없어 예약이 자동으로 취소되었습니다.'
+      : 'お支払い期限までにご入金を確認できなかったため、ご予約は自動的にキャンセルされました。'
+    : ko
+      ? '예약이 취소되었습니다.'
+      : 'ご予約をキャンセルしました。'
   const html = shell(
     hotelName,
-    ko ? '예약이 취소되었습니다' : 'ご予約をキャンセルしました',
-    `<p>${escapeHtml(snapshot.guest.name)} ${ko ? '고객님' : '様'}</p>${table(rows)}${section(ko ? '취소 객실' : 'キャンセル対象客室', `<p style="white-space:pre-line">${escapeHtml(roomList)}</p>`)}${section(ko ? '환불 안내' : '返金のご案内', `<p style="white-space:pre-line">${escapeHtml(refundNotice)}</p>`)}<p style="color:#625f59;font-size:13px">${ko ? '문의처' : 'お問い合わせ'}: ${escapeHtml(contact(snapshot) || '—')}</p>`,
+    automatic
+      ? ko
+        ? '미입금으로 예약이 자동 취소되었습니다'
+        : 'ご予約を自動キャンセルしました'
+      : ko
+        ? '예약이 취소되었습니다'
+        : 'ご予約をキャンセルしました',
+    `<p>${escapeHtml(snapshot.guest.name)} ${ko ? '고객님' : '様'}</p>${automatic ? `<p>${escapeHtml(customerMessage)}</p>` : ''}${table(rows)}${section(ko ? '취소 객실' : 'キャンセル対象客室', `<p style="white-space:pre-line">${escapeHtml(roomList)}</p>`)}${section(ko ? '환불 안내' : '返金のご案内', `<p style="white-space:pre-line">${escapeHtml(refundNotice)}</p>`)}<p style="color:#625f59;font-size:13px">${ko ? '문의처' : 'お問い合わせ'}: ${escapeHtml(contact(snapshot) || '—')}</p>`,
   )
-  const text = `${hotelName}\n\n${ko ? '예약이 취소되었습니다.' : 'ご予約をキャンセルしました。'}\n\n${rows.map(([label, value]) => `${label}: ${value}`).join('\n')}\n\n${ko ? '취소 객실' : 'キャンセル対象客室'}\n${roomList}\n\n${ko ? '환불 안내' : '返金のご案内'}\n${refundNotice}\n\n${ko ? '문의처' : 'お問い合わせ'}: ${contact(snapshot) || '—'}`
+  const text = `${hotelName}\n\n${customerMessage}\n\n${rows.map(([label, value]) => `${label}: ${value}`).join('\n')}\n\n${ko ? '취소 객실' : 'キャンセル対象客室'}\n${roomList}\n\n${ko ? '환불 안내' : '返金のご案内'}\n${refundNotice}\n\n${ko ? '문의처' : 'お問い合わせ'}: ${contact(snapshot) || '—'}`
   return {
     to: snapshot.guest.email,
     fromEmail: senderEmail,
@@ -86,7 +105,9 @@ export function buildHotelCancellationNotification(
   senderEmail: string,
   senderName: string,
 ): EmailMessage {
-  const subject = `【予約キャンセル】${snapshot.guest.name}様｜${formatDate(snapshot.checkIn, 'ja')}〜${formatDate(snapshot.checkOut, 'ja')}｜予約番号 ${snapshot.reservationNumber}`
+  const automatic =
+    snapshot.cancellationReason === 'bank_transfer_payment_expired'
+  const subject = `${automatic ? '【入金期限切れ・自動キャンセル】' : '【予約キャンセル】'}${snapshot.guest.name}様｜${formatDate(snapshot.checkIn, 'ja')}〜${formatDate(snapshot.checkOut, 'ja')}｜予約番号 ${snapshot.reservationNumber}`
   const rooms = snapshot.rooms
     .map(
       (room, index) =>
@@ -108,12 +129,14 @@ export function buildHotelCancellationNotification(
     ['お支払い状況', snapshot.payment.status],
     ['キャンセル日時', formatTokyoDateTime(snapshot.cancelledAt, 'ja')],
   ]
+  if (automatic)
+    rows.push(['キャンセル理由', '入金期限切れによる自動キャンセル'])
   const html = shell(
     snapshot.hotel.nameJa,
-    'オンライン予約キャンセル',
+    automatic ? '入金期限切れによる自動キャンセル' : 'オンライン予約キャンセル',
     `${table(rows)}${section('客室情報', `<p style="white-space:pre-line">${escapeHtml(rooms)}</p>`)}${section('お客様からのご要望', `<p style="white-space:pre-line">${escapeHtml(snapshot.guestNote || 'なし')}</p>`)}`,
   )
-  const text = `オンライン予約キャンセル\n\n${rows.map(([label, value]) => `${label}: ${value}`).join('\n')}\n\n客室情報\n${rooms}\n\nお客様からのご要望\n${snapshot.guestNote || 'なし'}`
+  const text = `${automatic ? '入金期限切れによる自動キャンセル' : 'オンライン予約キャンセル'}\n\n${rows.map(([label, value]) => `${label}: ${value}`).join('\n')}\n\n客室情報\n${rooms}\n\nお客様からのご要望\n${snapshot.guestNote || 'なし'}`
   return {
     to: snapshot.hotel.email || '',
     fromEmail: senderEmail,

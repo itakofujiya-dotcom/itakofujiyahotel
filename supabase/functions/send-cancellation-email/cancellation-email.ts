@@ -16,6 +16,10 @@ type CancellationEmailDatabase = {
         Args: { p_limit?: number }
         Returns: DeliveryRow[]
       }
+      process_expired_bank_transfer_reservations: {
+        Args: { p_now?: string; p_limit?: number }
+        Returns: unknown
+      }
       get_cancellation_notification_snapshot: {
         Args: { p_delivery_id: string }
         Returns: unknown
@@ -63,6 +67,26 @@ export function createCancellationEmailClient(
 export type CancellationEmailClient = ReturnType<
   typeof createCancellationEmailClient
 >
+
+export type ExpiredBankTransferResult = {
+  processed: number
+  releasedInventoryBlocks: number
+  notificationsEnqueued: number
+}
+
+export async function processExpiredBankTransferReservations(
+  client: CancellationEmailClient,
+  limit = 100,
+): Promise<ExpiredBankTransferResult> {
+  const { data, error } = await client.rpc(
+    'process_expired_bank_transfer_reservations',
+    { p_limit: limit },
+  )
+  if (error) throw new Error(`AUTO_CANCEL_BANK_TRANSFER_${error.code}`)
+  if (!isExpiredBankTransferResult(data))
+    throw new Error('INVALID_AUTO_CANCEL_BANK_TRANSFER_RESULT')
+  return data
+}
 
 export async function claimPublicCancellationDeliveries(
   client: CancellationEmailClient,
@@ -167,6 +191,21 @@ function isCancellationSnapshot(
     typeof snapshot.hotel === 'object' &&
     snapshot.hotel !== null &&
     Array.isArray(snapshot.rooms)
+  )
+}
+
+function isExpiredBankTransferResult(
+  value: unknown,
+): value is ExpiredBankTransferResult {
+  if (typeof value !== 'object' || value === null) return false
+  const result = value as Partial<ExpiredBankTransferResult>
+  return (
+    typeof result.processed === 'number' &&
+    Number.isInteger(result.processed) &&
+    typeof result.releasedInventoryBlocks === 'number' &&
+    Number.isInteger(result.releasedInventoryBlocks) &&
+    typeof result.notificationsEnqueued === 'number' &&
+    Number.isInteger(result.notificationsEnqueued)
   )
 }
 

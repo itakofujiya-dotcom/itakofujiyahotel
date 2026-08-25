@@ -482,6 +482,7 @@ export type Database = {
             'pending' | 'awaiting_payment' | 'paid' | 'refunded' | 'cancelled'
           amount_yen: number
           paid_at: string | null
+          payment_due_at: string | null
           external_reference: string | null
           created_at: string
           updated_at: string
@@ -493,6 +494,7 @@ export type Database = {
           status?: Database['public']['Tables']['payments']['Row']['status']
           amount_yen: number
           paid_at?: string | null
+          payment_due_at?: string | null
           external_reference?: string | null
           created_at?: string
           updated_at?: string
@@ -954,6 +956,10 @@ export type Database = {
       claim_pending_notification_deliveries: {
         Args: { p_limit?: number }
         Returns: Database['public']['Tables']['notification_deliveries']['Row'][]
+      }
+      process_expired_bank_transfer_reservations: {
+        Args: { p_now?: string; p_limit?: number }
+        Returns: Json
       }
       claim_reservation_notification_deliveries: {
         Args: { p_reservation_id: string; p_booking_request_id: string }

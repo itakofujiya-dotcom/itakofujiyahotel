@@ -60,7 +60,7 @@ export const roomTypePreviews: RoomType[] = [
       '使いやすさを大切にした、穏やかにお過ごしいただける洋室です。',
     standardCapacity: 2,
     maxCapacity: 4,
-    image: '/images/rooms/western-room.webp',
+    image: '/images/rooms/fujiya_bedroom_01.jpg',
     areaSquareMeters: null,
     bedDescriptionJa: null,
   },

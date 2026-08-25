@@ -76,6 +76,7 @@ export type CancellationNotificationSnapshot = {
   totalAmountYen: number
   guestNote: string | null
   cancelledAt: string
+  cancellationReason: 'bank_transfer_payment_expired' | null
   cancellationFeePercent: number
   cancellationFeeYen: number
   refundTargetYen: number
