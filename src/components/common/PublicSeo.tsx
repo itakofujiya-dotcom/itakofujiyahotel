@@ -29,9 +29,9 @@ const routeSeo: Record<string, SeoEntry> = {
   ),
   '/facilities': createEntry(
     '館内施設 | 潮来富士屋ホテル',
-    '潮来富士屋ホテルの館内施設をご案内します。',
+    '潮来富士屋ホテルの館内施設をご案内します。旅の疲れをゆったりと癒していただける大浴場など、ご宿泊中にご利用いただける施設をご紹介します。',
     '호텔 시설 | 이타코 후지야 호텔',
-    '이타코 후지야 호텔의 시설을 안내합니다.',
+    '이타코 후지야 호텔의 시설을 안내합니다. 여행의 피로를 편안하게 풀 수 있는 대욕장 등 투숙 중 이용할 수 있는 시설을 소개합니다.',
   ),
   '/access': createEntry(
     'アクセス | 潮来富士屋ホテル',
@@ -40,10 +40,10 @@ const routeSeo: Record<string, SeoEntry> = {
     '이타코 후지야 호텔 교통편과 이타코역에서 오는 길을 안내합니다.',
   ),
   '/sightseeing': createEntry(
-    '周辺観光 | 潮来富士屋ホテル',
-    '水郷潮来の周辺観光情報をご案内します。',
+    '潮来・周辺観光 | 潮来富士屋ホテル',
+    '水郷潮来花火大会、鹿島神宮御船祭、水郷潮来あやめ園、十二橋めぐりなど、潮来富士屋ホテル周辺の観光スポットや季節のイベントをご紹介します。',
     '주변 관광 | 이타코 후지야 호텔',
-    '수향 도시 이타코의 주변 관광 정보를 안내합니다.',
+    '수향 이타코의 불꽃축제, 미후네마쓰리, 아야메원과 십이교 유람 등 주변 관광지와 계절 행사를 안내합니다.',
   ),
   '/faq': createEntry(
     'よくある質問 | 潮来富士屋ホテル',
@@ -120,11 +120,7 @@ function normalizeSeoRoute(pathname: string): string {
   return pathname === '/' ? '/' : pathname.replace(/\/+$/, '')
 }
 
-function setMeta(
-  attribute: 'name' | 'property',
-  key: string,
-  content: string,
-) {
+function setMeta(attribute: 'name' | 'property', key: string, content: string) {
   let element = document.head.querySelector<HTMLMetaElement>(
     'meta[' + attribute + '="' + key + '"]',
   )
