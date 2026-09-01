@@ -9,7 +9,11 @@ export const supabase: SupabaseClient<Database> = supabaseConfiguration.ok
       supabaseConfiguration.config.url,
       supabaseConfiguration.config.publishableKey,
       {
-        auth: { persistSession: true, autoRefreshToken: true },
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+        },
       },
     )
   : createUnavailableSupabaseClient()

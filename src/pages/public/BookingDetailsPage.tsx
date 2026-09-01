@@ -184,9 +184,6 @@ export function BookingDetailsPage() {
                   onChange={(event) => update('guestNote', event.target.value)}
                   placeholder="ご要望がございましたらご入力ください。"
                 />
-                <p className="mt-2 text-xs leading-6 text-muted">
-                  送迎をご希望の場合は、ご予約後にホテルへお問い合わせください。
-                </p>
               </Field>
             </div>
             <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">

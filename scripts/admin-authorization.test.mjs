@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  classifyAdminSignInError,
   hasAdminRole,
   resolveAdminRouteAccess,
 } from '../src/features/auth/authorization.ts'
@@ -76,4 +77,13 @@ test('checks allowed roles without trusting an inactive profile', () => {
     hasAdminRole({ ...activeOwner, is_active: false }, ['owner']),
     false,
   )
+})
+
+test('distinguishes bad credentials from network and service failures', () => {
+  assert.equal(
+    classifyAdminSignInError({ code: 'invalid_credentials', status: 400 }),
+    'invalid_credentials',
+  )
+  assert.equal(classifyAdminSignInError({ status: 503 }), 'network_error')
+  assert.equal(classifyAdminSignInError({}), 'network_error')
 })

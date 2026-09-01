@@ -2,6 +2,7 @@ import { ExternalLink, Maximize2, Phone } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { PageHero } from '../../components/common/PageHero'
 import { FacilityLightbox } from '../../components/facilities/FacilityLightbox'
+import { parkingInformation } from '../../data/access'
 import { hotelSettings, hotelTelephoneHref } from '../../data/hotel'
 
 const accessMaps = [
@@ -60,26 +61,27 @@ export function AccessPage() {
             <AccessMapButton image={accessMaps[0]} onOpen={() => openMap(0)} />
 
             <div className="mt-7 border-t border-line pt-6">
-              <p className="font-serif text-lg">無料駐車場</p>
+              <p className="font-serif text-lg">{parkingInformation.title}</p>
               <p className="mt-2 text-sm leading-7 text-muted">
-                ホテル向かいの潮来市営駐車場
+                {parkingInformation.location}
               </p>
               <ul className="mt-4 flex flex-wrap gap-x-0 gap-y-2 text-sm text-ink">
-                {['約20台', '大型車駐車可', '24時間利用可能'].map(
-                  (detail, index) => (
-                    <li
-                      key={detail}
-                      className={
-                        index === 0
-                          ? 'pr-4'
-                          : 'border-l border-line px-4 last:pr-0'
-                      }
-                    >
-                      {detail}
-                    </li>
-                  ),
-                )}
+                {parkingInformation.details.map((detail, index) => (
+                  <li
+                    key={detail}
+                    className={
+                      index === 0
+                        ? 'pr-4'
+                        : 'border-l border-line px-4 last:pr-0'
+                    }
+                  >
+                    {detail}
+                  </li>
+                ))}
               </ul>
+              <p className="mt-3 text-xs leading-6 text-muted">
+                {parkingInformation.notice}
+              </p>
             </div>
           </article>
 
@@ -91,10 +93,6 @@ export function AccessPage() {
             </p>
 
             <AccessMapButton image={accessMaps[1]} onOpen={() => openMap(1)} />
-
-            <p className="mt-7 border-t border-line pt-6 text-sm leading-7 text-muted">
-              潮来駅からの送迎も承っております。ご希望の方は事前にお問い合わせください。
-            </p>
           </article>
         </div>
       </section>

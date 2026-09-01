@@ -14,6 +14,8 @@ import { BookingCompletePage } from '../pages/public/BookingCompletePage'
 import { PolicyPage } from '../pages/public/PolicyPage'
 import { ReservationLookupPage } from '../pages/public/ReservationLookupPage'
 import { LoginPage } from '../pages/admin/LoginPage'
+import { ForgotPasswordPage } from '../pages/admin/ForgotPasswordPage'
+import { ResetPasswordPage } from '../pages/admin/ResetPasswordPage'
 import { DashboardPage } from '../pages/admin/DashboardPage'
 import { ReservationsAdminPage } from '../pages/admin/ReservationsAdminPage'
 import { ReservationDetailPage } from '../pages/admin/ReservationDetailPage'
@@ -56,6 +58,8 @@ const router = createBrowserRouter([
     ],
   },
   { path: '/admin/login', element: <LoginPage /> },
+  { path: '/admin/forgot-password', element: <ForgotPasswordPage /> },
+  { path: '/admin/reset-password', element: <ResetPasswordPage /> },
   {
     element: <AdminProtectedRoute />,
     children: [

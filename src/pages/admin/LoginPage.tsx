@@ -8,6 +8,7 @@ import { AdminLocaleSwitcher } from '../../components/admin/AdminLocaleSwitcher'
 
 const errorMessages: Record<AdminAccessIssue, string> = {
   invalid_credentials: 'メールアドレスまたはパスワードが正しくありません。',
+  network_error: '通信エラーが発生しました。接続を確認して再度お試しください。',
   no_profile: '管理者権限がありません。',
   inactive: 'この管理者アカウントは現在利用できません。',
   profile_error:
@@ -55,6 +56,11 @@ export function LoginPage() {
   }
 
   const displayedIssue = formIssue ?? accessIssue
+  const passwordReset =
+    typeof location.state === 'object' &&
+    location.state !== null &&
+    'passwordReset' in location.state &&
+    location.state.passwordReset === true
 
   return (
     <main
@@ -72,6 +78,14 @@ export function LoginPage() {
           <AdminLocaleSwitcher />
         </div>
         <form className="mt-9 space-y-5" onSubmit={handleSubmit} noValidate>
+          {passwordReset && (
+            <p
+              className="rounded border border-green-200 bg-green-50 p-3 text-sm leading-6 text-green-900"
+              role="status"
+            >
+              パスワードを変更しました。新しいパスワードでログインしてください。
+            </p>
+          )}
           <label className="block">
             <span className="mb-2 block text-sm">メールアドレス</span>
             <input
@@ -112,6 +126,12 @@ export function LoginPage() {
             {isSubmitting ? '確認しています…' : 'ログイン'}
           </button>
         </form>
+        <Link
+          to="/admin/forgot-password"
+          className="mt-5 inline-block text-sm text-accent"
+        >
+          パスワードをお忘れですか？
+        </Link>
         <Link to="/" className="mt-6 inline-block text-sm text-accent">
           ← ホテルサイトへ戻る
         </Link>

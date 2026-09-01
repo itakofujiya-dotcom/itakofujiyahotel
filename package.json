@@ -10,7 +10,7 @@
     "check:rates-data": "node scripts/check-rate-data.mjs",
     "check:booking-search": "node scripts/check-booking-search.mjs",
     "check:public-booking": "node scripts/check-public-booking.mjs",
-    "test:auth": "node --experimental-strip-types --test scripts/admin-authorization.test.mjs",
+    "test:auth": "node --experimental-strip-types --test scripts/admin-authorization.test.mjs scripts/admin-security.test.mjs",
     "test:rooms": "node --experimental-strip-types --test scripts/admin-rooms.test.mjs",
     "test:rates": "node --experimental-strip-types --test scripts/admin-rates.test.mjs",
     "test:rate-rules": "node --experimental-strip-types --test scripts/admin-rates.test.mjs",

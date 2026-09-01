@@ -24,6 +24,9 @@ export function MassageChairSection() {
           <p className="mt-5 text-sm leading-7 text-muted sm:text-base sm:leading-8">
             {massageChair.description}
           </p>
+          <p className="mt-3 text-xs leading-6 text-muted sm:text-[0.8rem]">
+            {massageChair.notice}
+          </p>
 
           <dl className="mt-7 grid grid-cols-2 gap-5 border-t border-line pt-5">
             {massageChair.info.map((item) => (

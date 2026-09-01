@@ -167,8 +167,14 @@ test('uses both massage chair photographs in a shorter non-gallery section', asy
   assert.doesNotMatch(massageSection, /lg:h-\[clamp/)
 })
 
-test('does not invent massage chair pricing or opening hours', () => {
-  for (const unverified of ['無料', '有料', '利用時間', '営業時間'])
+test('shows the verified massage chair price as subdued supporting copy', () => {
+  assert.match(
+    data,
+    /notice: '※マッサージチェアは有料です。15分500円でご利用いただけます。'/,
+  )
+  assert.match(massageSection, /\{massageChair\.notice\}/)
+  assert.match(massageSection, /mt-3 text-xs leading-6 text-muted/)
+  for (const unverified of ['無料', '利用時間', '営業時間'])
     assert.doesNotMatch(`${massageSection}\n${data}`, new RegExp(unverified))
 })
 

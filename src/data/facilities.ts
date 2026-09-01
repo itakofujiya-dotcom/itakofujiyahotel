@@ -102,6 +102,7 @@ export const massageChair = {
   catchcopy: '旅の疲れを、ゆったりリフレッシュ。',
   description:
     '1階にマッサージチェアを2台ご用意しております。ご宿泊中のリラックスタイムに、どうぞご利用ください。',
+  notice: '※マッサージチェアは有料です。15分500円でご利用いただけます。',
   info: [
     { label: 'LOCATION', value: '1階' },
     { label: 'NUMBER', value: '2台' },

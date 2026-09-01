@@ -1,4 +1,8 @@
-import type { AdminProfile, AdminRole } from '../../types/admin'
+import type {
+  AdminAccessIssue,
+  AdminProfile,
+  AdminRole,
+} from '../../types/admin'
 
 export type AdminRouteAccess =
   'loading' | 'unauthenticated' | 'unauthorized' | 'inactive' | 'authorized'
@@ -32,4 +36,15 @@ export function hasAdminRole(
   return Boolean(
     adminProfile?.is_active && allowedRoles.includes(adminProfile.role),
   )
+}
+
+export function classifyAdminSignInError(error: {
+  code?: string
+  status?: number
+}): Extract<AdminAccessIssue, 'invalid_credentials' | 'network_error'> {
+  if (error.code === 'invalid_credentials' || error.status === 400) {
+    return 'invalid_credentials'
+  }
+
+  return 'network_error'
 }

@@ -7,6 +7,10 @@ const page = await readFile(
   new URL('../src/pages/public/AccessPage.tsx', import.meta.url),
   'utf8',
 )
+const accessData = await readFile(
+  new URL('../src/data/access.ts', import.meta.url),
+  'utf8',
+)
 const lightbox = await readFile(
   new URL('../src/components/facilities/FacilityLightbox.tsx', import.meta.url),
   'utf8',
@@ -28,13 +32,17 @@ test('shows the exact confirmed directions and parking details', () => {
     '無料駐車場',
     'ホテル向かいの潮来市営駐車場',
     '約20台',
-    '大型車駐車可',
+    '複数台駐車可',
     '24時間利用可能',
+    '※大型バスは駐車できません。トラックは駐車可能です。',
     'JR鹿島線「潮来駅」よりタクシーで約7分',
-    '潮来駅からの送迎も承っております。ご希望の方は事前にお問い合わせください。',
   ]) {
-    assert.ok(page.includes(text), `${text} is missing`)
+    assert.ok(`${page}\n${accessData}`.includes(text), `${text} is missing`)
   }
+  assert.doesNotMatch(`${page}\n${accessData}`, /大型車駐車可/)
+  assert.doesNotMatch(`${page}\n${accessData}`, /送迎|お迎え|シャトル/)
+  assert.match(page, /\{parkingInformation\.notice\}/)
+  assert.match(page, /mt-3 text-xs leading-6 text-muted/)
 })
 
 test('uses both supplied uncropped map images and opens the reused lightbox', async () => {

@@ -10,7 +10,7 @@ import type {
 } from '../../types/admin'
 import { fetchAdminProfile } from './admin-profile'
 import { AdminAuthContext } from './admin-auth-context'
-import { hasAdminRole } from './authorization'
+import { classifyAdminSignInError, hasAdminRole } from './authorization'
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -98,8 +98,11 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         setUser(null)
         setAdminProfile(null)
         setIsLoading(false)
-        setAccessIssue('invalid_credentials')
-        return { success: false, issue: 'invalid_credentials' }
+        const issue = error
+          ? classifyAdminSignInError(error)
+          : 'invalid_credentials'
+        setAccessIssue(issue)
+        return { success: false, issue }
       }
 
       const issue = await synchronizeUser(data.user)

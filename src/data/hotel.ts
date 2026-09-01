@@ -19,8 +19,6 @@ export const hotelTelephoneHref = `tel:${hotelSettings.telephone.replaceAll('-',
 
 export const accessInfo = {
   train: 'JR鹿島線「潮来駅」よりタクシーで約7分',
-  pickup: '潮来駅まではお車でお迎えにあがります。',
-  pickupNotice: 'ご利用条件はホテルへお問い合わせください。',
   car: '東関東自動車道 潮来ICから約10分',
 } as const
 

@@ -3,7 +3,10 @@ import type { AdminAccessIssue, AdminProfile } from '../../types/admin'
 
 export type AdminProfileResult =
   | { profile: AdminProfile; issue: null }
-  | { profile: null; issue: Exclude<AdminAccessIssue, 'invalid_credentials'> }
+  | {
+      profile: null
+      issue: Exclude<AdminAccessIssue, 'invalid_credentials' | 'network_error'>
+    }
 
 export async function fetchAdminProfile(
   userId: string,

@@ -138,7 +138,7 @@ export function HomePage() {
           <SectionHeading
             eyebrow="ACCESS"
             title="潮来のまちへ、ようこそ"
-            description="電車でもお車でもお越しいただけます。潮来駅へのお迎えについては、事前にホテルまでお問い合わせください。"
+            description="電車でもお車でもお越しいただけます。"
             tone="dark"
           />
           <div className="grid gap-px bg-white/15 sm:grid-cols-2">

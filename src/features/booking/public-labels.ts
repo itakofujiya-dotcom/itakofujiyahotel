@@ -82,10 +82,8 @@ export function getLocalizedArrivalContact(
   locale: SiteLocale,
 ): string {
   return locale === 'ja'
-    ? '送迎や到着時間の変更は、ホテル（' +
-        telephone +
-        '）へお問い合わせください。'
-    : '픽업이나 도착 시간 변경은 호텔(' + telephone + ')로 문의해 주세요.'
+    ? '到着時間の変更は、ホテル（' + telephone + '）へお問い合わせください。'
+    : '도착 시간 변경은 호텔(' + telephone + ')로 문의해 주세요.'
 }
 
 export function getLocalizedMealPlanLabel(

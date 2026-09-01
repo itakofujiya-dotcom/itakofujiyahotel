@@ -38,7 +38,7 @@ npm run format:check
 
 Confirmed data includes the hotel contact details and operating hours supplied for this project, access directions, 40 physical room numbers, Japanese/western room classification, capacity assumptions explicitly supplied, room 501's provisional inactive state, and common amenities.
 
-No prices, room areas, cancellation rules, booking confirmation policy, pickup conditions, or card-payment behavior have been invented. Saleable `room_types` and rate rows are intentionally absent from the database seed until hotel operations confirms them.
+No prices, room areas, cancellation rules, booking confirmation policy, or card-payment behavior have been invented. Saleable `room_types` and rate rows are intentionally absent from the database seed until hotel operations confirms them.
 
 ## Booking safety boundary
 

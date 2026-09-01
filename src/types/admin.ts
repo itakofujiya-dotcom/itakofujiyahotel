@@ -8,7 +8,11 @@ export type AdminProfile = {
 }
 
 export type AdminAccessIssue =
-  'invalid_credentials' | 'no_profile' | 'inactive' | 'profile_error'
+  | 'invalid_credentials'
+  | 'network_error'
+  | 'no_profile'
+  | 'inactive'
+  | 'profile_error'
 
 export type AdminLoginResult =
   { success: true } | { success: false; issue: AdminAccessIssue }
