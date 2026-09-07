@@ -38,6 +38,8 @@ export async function createPublicReservation(
       code: error.code,
       message: error.message,
     })
+    if (/INSUFFICIENT_INVENTORY|SOLD_OUT/.test(error.message))
+      return { ok: false, code: 'BOOKING_NO_LONGER_AVAILABLE' }
     return { ok: false, code: 'BOOKING_FAILED' }
   }
   return parsePublicBookingResult(data)
@@ -123,6 +125,11 @@ export async function getPublicBookingInformation(): Promise<{
 function parsePublicBookingResult(value: unknown): PublicBookingResult {
   if (!isRecord(value) || typeof value.code !== 'string')
     return { ok: false, code: 'BOOKING_FAILED' }
+  if (
+    value.ok === false &&
+    ['INSUFFICIENT_INVENTORY', 'SOLD_OUT'].includes(value.code)
+  )
+    return { ok: false, code: 'BOOKING_NO_LONGER_AVAILABLE' }
   if (value.ok === true && value.code === 'BOOKING_CONFIRMED') {
     return {
       ok: true,

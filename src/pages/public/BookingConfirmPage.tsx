@@ -110,7 +110,9 @@ export function BookingConfirmPage() {
         setPolicyConsent(false)
       } else if (result.code === 'BOOKING_NO_LONGER_AVAILABLE') {
         setError(
-          '申し訳ありません。選択した客室は満室となりました。もう一度空室検索をお願いします。',
+          locale === 'ko'
+            ? '선택하신 객실의 예약 가능 수량이 방금 변경되었습니다. 객실을 다시 선택해주세요.'
+            : '選択された客室の空室状況が変更されました。恐れ入りますが、もう一度客室を選択してください。',
         )
       } else if (result.code === 'INVALID_BOOKING') {
         setError('予約内容を確認できませんでした。入力内容をご確認ください。')
