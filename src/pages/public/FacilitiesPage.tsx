@@ -3,6 +3,7 @@ import { HotelLobbySection } from '../../components/facilities/HotelLobbySection
 import { LoungeArirangSection } from '../../components/facilities/LoungeArirangSection'
 import { MassageChairSection } from '../../components/facilities/MassageChairSection'
 import { PublicBathSection } from '../../components/facilities/PublicBathSection'
+import { RestaurantSection } from '../../components/facilities/RestaurantSection'
 
 export function FacilitiesPage() {
   return (
@@ -24,6 +25,7 @@ export function FacilitiesPage() {
       </section>
       <PublicBathSection />
       <HotelLobbySection />
+      <RestaurantSection />
       <MassageChairSection />
       <LoungeArirangSection />
     </>

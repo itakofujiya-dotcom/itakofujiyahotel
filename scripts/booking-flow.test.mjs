@@ -19,7 +19,7 @@ const validGuest = {
   nameKanaOrRoman: 'ヤマダ タロウ',
   telephone: '+81-90-1234-5678',
   email: 'guest@example.com',
-  expectedCheckInTime: '15:00',
+  expectedCheckInTime: '16:00',
   guestNote: '',
 }
 
@@ -67,7 +67,7 @@ test('accepts international telephone formats without Japan-only validation', ()
 
 test('rejects check-in times outside front desk hours', () => {
   assert.deepEqual(
-    validateBookingGuest({ ...validGuest, expectedCheckInTime: '15:00' }),
+    validateBookingGuest({ ...validGuest, expectedCheckInTime: '16:00' }),
     {},
   )
   assert.deepEqual(
@@ -75,7 +75,7 @@ test('rejects check-in times outside front desk hours', () => {
     {},
   )
   assert.ok(
-    validateBookingGuest({ ...validGuest, expectedCheckInTime: '14:30' })
+    validateBookingGuest({ ...validGuest, expectedCheckInTime: '15:00' })
       .expectedCheckInTime,
   )
   assert.ok(
@@ -195,19 +195,19 @@ test('public booking migration enforces idempotency and anonymous RPC-only write
   assert.doesNotMatch(sql, /grant insert[\s\S]+to anon/)
 })
 
-test('operational-hours migration changes defaults and public RPC validation without rewriting reservations', async () => {
+test('operational-hours correction restores 16:00 defaults and public RPC validation without rewriting reservations', async () => {
   const sql = await readFile(
     new URL(
-      '../supabase/migrations/202608210004_check_in_time_1500.sql',
+      '../supabase/migrations/202610120001_restore_check_in_time_1600.sql',
       import.meta.url,
     ),
     'utf8',
   )
-  assert.match(sql, /check_in_time set default time '15:00'/)
-  assert.match(sql, /front_desk_open set default time '15:00'/)
-  assert.match(sql, /check_in_time = time '15:00'/)
-  assert.match(sql, /front_desk_open = time '15:00'/)
-  assert.match(sql, /p_expected_check_in_time < time ''15:00''/)
+  assert.match(sql, /check_in_time set default time '16:00'/)
+  assert.match(sql, /front_desk_open set default time '16:00'/)
+  assert.match(sql, /check_in_time = time '16:00'/)
+  assert.match(sql, /front_desk_open = time '16:00'/)
+  assert.match(sql, /p_expected_check_in_time < time ''16:00''/)
   assert.doesNotMatch(sql, /update public\.reservations/)
 })
 

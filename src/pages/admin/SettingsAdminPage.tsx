@@ -19,9 +19,9 @@ const emptyForm: AdminHotelSettingsForm = {
   telephone: '',
   fax: '',
   email: '',
-  checkInTime: '15:00',
+  checkInTime: '16:00',
   checkOutTime: '10:00',
-  frontDeskOpen: '15:00',
+  frontDeskOpen: '16:00',
   frontDeskClose: '22:00',
 }
 

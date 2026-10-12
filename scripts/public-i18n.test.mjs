@@ -45,6 +45,14 @@ const bookingFormat = readFileSync(
   new URL('../src/features/booking/booking-format.ts', import.meta.url),
   'utf8',
 )
+const bookingConfirm = readFileSync(
+  new URL('../src/pages/public/BookingConfirmPage.tsx', import.meta.url),
+  'utf8',
+)
+const faqPage = readFileSync(
+  new URL('../src/pages/public/FaqPage.tsx', import.meta.url),
+  'utf8',
+)
 
 test('uses a site locale key independent from the admin locale', () => {
   assert.match(translations, /SITE_LOCALE_STORAGE_KEY = 'site_locale'/)
@@ -128,6 +136,12 @@ test('localizes native booking controls explicitly instead of relying on browser
     "'booking.checkIn': '체크인'",
     "'booking.dateInputFormat': '年. 月. 日.'",
     "'booking.dateInputFormat': '연도. 월. 일.'",
+    "'booking.availabilityChanged':",
+    "'booking.petPolicy': 'ペット同伴でのご宿泊はできません。'",
+    "'booking.petPolicy': '반려동물 동반은 불가합니다.'",
+    "'faq.petQuestion': 'ペットと一緒に宿泊できますか？'",
+    "'faq.petQuestion': '반려동물과 함께 숙박할 수 있나요?'",
+    "'faq.petAnswer':",
   ])
     assert.ok(translations.includes(expected), `missing ${expected}`)
 
@@ -143,6 +157,21 @@ test('formats public booking dates with the active locale in Japan time', () => 
   assert.match(bookingFormat, /timeZone: 'Asia\/Tokyo'/)
   assert.match(bookingFormat, /locale: SiteLocale = 'ja'/)
   assert.doesNotMatch(bookingFormat, /yyyy年M月d日/)
+})
+
+test('renders the pet policy and FAQ through translation keys', () => {
+  assert.match(bookingConfirm, /t\('booking\.petPolicy'\)/)
+  assert.match(faqPage, /t\('faq\.petQuestion'\)/)
+  assert.match(faqPage, /t\('faq\.petAnswer'\)/)
+  assert.match(translations, /ペット同伴でのご宿泊はできません。/)
+  assert.match(translations, /반려동물 동반은 불가합니다./)
+  assert.match(translations, /ペットと一緒に宿泊できますか？/)
+  assert.match(translations, /반려동물과 함께 숙박할 수 있나요\?/)
+  assert.match(
+    translations,
+    /申し訳ございませんが、ペット同伴でのご宿泊はできません。/,
+  )
+  assert.match(translations, /죄송하지만 반려동물 동반 숙박은 불가합니다./)
 })
 
 test('does not hardcode Korean UI copy in Japanese-first public render files', () => {

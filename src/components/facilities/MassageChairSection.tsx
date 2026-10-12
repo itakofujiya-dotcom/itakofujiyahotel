@@ -15,7 +15,7 @@ export function MassageChairSection() {
                 {massageChair.title}
               </h2>
             </div>
-            <p className="font-serif text-4xl text-accent/20 sm:text-5xl">03</p>
+            <p className="font-serif text-4xl text-accent/20 sm:text-5xl">04</p>
           </header>
 
           <p className="mt-7 font-serif text-xl leading-relaxed text-accent sm:text-2xl">

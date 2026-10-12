@@ -28,6 +28,13 @@ const massageSection = await readFile(
   ),
   'utf8',
 )
+const restaurantSection = await readFile(
+  new URL(
+    '../src/components/facilities/RestaurantSection.tsx',
+    import.meta.url,
+  ),
+  'utf8',
+)
 const loungeSection = await readFile(
   new URL(
     '../src/components/facilities/LoungeArirangSection.tsx',
@@ -60,16 +67,45 @@ test('renders the completed facilities in the approved order', () => {
   assert.match(page, /<PublicBathSection/)
   assert.match(
     page,
-    /<PublicBathSection \/>[\s\S]*<HotelLobbySection \/>[\s\S]*<MassageChairSection \/>[\s\S]*<LoungeArirangSection \/>/,
+    /<PublicBathSection \/>[\s\S]*<HotelLobbySection \/>[\s\S]*<RestaurantSection \/>[\s\S]*<MassageChairSection \/>[\s\S]*<LoungeArirangSection \/>/,
   )
   assert.match(data, /PUBLIC BATH/)
   assert.match(data, /旅の疲れを癒す、くつろぎの湯。/)
   assert.match(data, /LOBBY/)
   assert.match(data, /ご到着からご出発まで、ほっとひと息。/)
+  assert.match(data, /RESTAURANT/)
+  assert.match(data, /館内レストランにてお食事をお楽しみいただけます。/)
   assert.match(data, /RELAX/)
   assert.match(data, /旅の疲れを、ゆったりリフレッシュ。/)
   assert.match(data, /LOUNGE/)
   assert.match(data, /お酒とともに、くつろぎのひとときを。/)
+})
+
+test('uses the restaurant gallery in the requested image order', async () => {
+  const images = [
+    'restaurant-01.png',
+    'restaurant-meal-01.png',
+    'restaurant-meal-02.png',
+    'restaurant-meal-03.png',
+    'restaurant-meal-04.png',
+  ]
+
+  for (const image of images) {
+    assert.match(data, new RegExp(image.replace('.', '\\.')))
+    await access(
+      new URL(`../public/images/restaurant/${image}`, import.meta.url),
+    )
+  }
+
+  const imagePositions = images.map((image) => data.indexOf(image))
+  assert.deepEqual(
+    imagePositions,
+    [...imagePositions].sort((a, b) => a - b),
+  )
+  assert.match(restaurantSection, /images=\{restaurant\.gallery\}/)
+  assert.match(restaurantSection, /initialIndex=\{0\}/)
+  assert.match(restaurantSection, /<FacilityGallery/)
+  assert.match(restaurantSection, />03</)
 })
 
 test('uses all four supplied bath photographs with the approved labels', async () => {

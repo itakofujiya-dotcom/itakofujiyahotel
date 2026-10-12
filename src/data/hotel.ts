@@ -8,9 +8,9 @@ export const hotelSettings: HotelSettings = {
   telephone: '0299-94-2662',
   fax: '0299-94-2663',
   email: null,
-  checkIn: '15:00',
+  checkIn: '16:00',
   checkOut: '10:00',
-  frontDeskOpen: '15:00',
+  frontDeskOpen: '16:00',
   frontDeskClose: '22:00',
   mapUrl: 'https://goo.gl/maps/GwPmVZCzfNbi5CRZ9',
 }

@@ -1,9 +1,8 @@
 import type { BookingGuestDraft } from './types'
 
-export const CHECK_IN_START_TIME = '15:00'
+export const CHECK_IN_START_TIME = '16:00'
 export const CHECK_IN_END_TIME = '22:00'
 export const CHECK_IN_TIME_OPTIONS = [
-  '15:00',
   '16:00',
   '17:00',
   '18:00',

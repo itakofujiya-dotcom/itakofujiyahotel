@@ -95,6 +95,59 @@ export const hotelLobby = {
   ],
 } as const
 
+export const restaurant = {
+  id: 'restaurant',
+  eyebrow: 'RESTAURANT',
+  title: 'レストラン',
+  catchcopy: '館内レストランにてお食事をお楽しみいただけます。',
+  description: [
+    '朝食は基本提供、夕食は追加でお選びいただけます。',
+    '落ち着いた雰囲気の中で、温かいお食事をご用意しております。',
+  ],
+  gallery: [
+    {
+      src: '/images/restaurant/restaurant-01.png',
+      title: 'レストラン',
+      alt: '潮来富士屋ホテル レストランの内観',
+      width: 1536,
+      height: 1024,
+      objectPosition: 'center',
+    },
+    {
+      src: '/images/restaurant/restaurant-meal-01.png',
+      title: 'お食事 1',
+      alt: '潮来富士屋ホテル レストランのお食事 1',
+      width: 1536,
+      height: 1024,
+      objectPosition: 'center',
+    },
+    {
+      src: '/images/restaurant/restaurant-meal-02.png',
+      title: 'お食事 2',
+      alt: '潮来富士屋ホテル レストランのお食事 2',
+      width: 1536,
+      height: 1024,
+      objectPosition: 'center',
+    },
+    {
+      src: '/images/restaurant/restaurant-meal-03.png',
+      title: 'お食事 3',
+      alt: '潮来富士屋ホテル レストランのお食事 3',
+      width: 1536,
+      height: 1024,
+      objectPosition: 'center',
+    },
+    {
+      src: '/images/restaurant/restaurant-meal-04.png',
+      title: 'お食事 4',
+      alt: '潮来富士屋ホテル レストランのお食事 4',
+      width: 1536,
+      height: 1024,
+      objectPosition: 'center',
+    },
+  ],
+} as const
+
 export const massageChair = {
   id: 'massage-chair',
   eyebrow: 'RELAX',

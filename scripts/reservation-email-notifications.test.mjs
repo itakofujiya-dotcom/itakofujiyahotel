@@ -104,7 +104,7 @@ const baseSnapshot = {
     email: 'hotel@example.com',
     telephone: '0299-94-2662',
     fax: '0299-94-2663',
-    checkInTime: '15:00',
+    checkInTime: '16:00',
     checkOutTime: '10:00',
     bankTransferInstructionsJa: '常陽銀行\n普通 1234567',
     bankTransferInstructionsKo: '조요은행\n보통 1234567',

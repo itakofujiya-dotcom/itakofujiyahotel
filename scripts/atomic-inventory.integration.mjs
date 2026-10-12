@@ -126,7 +126,7 @@ try {
   ) =>
     (
       await client.query(
-        "select create_public_mixed_reservation($1,$2,$3,$4,'Test Guest','TEST GUEST','09012345678','test@example.com','15:00','',$5,'ko') r",
+        "select create_public_mixed_reservation($1,$2,$3,$4,'Test Guest','TEST GUEST','09012345678','test@example.com','16:00','',$5,'ko') r",
         [id, dates.d, dates.out, JSON.stringify(rs), total],
       )
     ).rows[0].r
@@ -188,7 +188,7 @@ try {
   console.log('PASS A: zero inventory')
   const legacy = (
     await db.query(
-      "select create_public_reservation($1,$2,$3,1,0,0,1,$4,'Test Guest','TEST GUEST','09012345678','test@example.com','15:00','',$5) r",
+      "select create_public_reservation($1,$2,$3,1,0,0,1,$4,'Test Guest','TEST GUEST','09012345678','test@example.com','16:00','',$5) r",
       [randomUUID(), dates.d, dates.out, type, price],
     )
   ).rows[0].r

@@ -1,13 +1,20 @@
 import { PageHero } from '../../components/common/PageHero'
+import { useSiteTranslation } from '../../i18n/useSiteTranslation'
 
 const faqs = [
   [
     'チェックイン・チェックアウトの時間は？',
-    'チェックインは15:00、チェックアウトは10:00です。',
+    'チェックインは16:00、チェックアウトは10:00です。',
   ],
   ['客室は禁煙ですか？', '全客室禁煙です。'],
 ]
 export function FaqPage() {
+  const { t } = useSiteTranslation()
+  const localizedFaqs = [
+    ...faqs,
+    [t('faq.petQuestion'), t('faq.petAnswer')],
+  ]
+
   return (
     <>
       <PageHero
@@ -17,7 +24,7 @@ export function FaqPage() {
       />
       <section className="page-shell py-16 lg:py-24">
         <div className="mx-auto max-w-3xl divide-y divide-line border-y border-line">
-          {faqs.map(([q, a]) => (
+          {localizedFaqs.map(([q, a]) => (
             <details key={q} className="group py-6">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-6 font-medium">
                 <span>
@@ -35,9 +42,6 @@ export function FaqPage() {
             </details>
           ))}
         </div>
-        <p className="mx-auto mt-8 max-w-3xl text-sm text-muted">
-          予約・変更・キャンセル・お支払いに関する運用ルールは現在確認中です。
-        </p>
       </section>
     </>
   )

@@ -17,9 +17,9 @@ const validForm = {
   telephone: '0299-94-2662',
   fax: '0299-94-2663',
   email: 'info@example.com',
-  checkInTime: '15:00',
+  checkInTime: '16:00',
   checkOutTime: '10:00',
-  frontDeskOpen: '15:00',
+  frontDeskOpen: '16:00',
   frontDeskClose: '22:00',
 }
 
@@ -34,9 +34,9 @@ test('maps persisted settings into editable time and nullable text fields', () =
       telephone: validForm.telephone,
       fax: null,
       email: null,
-      check_in_time: '15:00:00',
+      check_in_time: '16:00:00',
       check_out_time: '10:00:00',
-      front_desk_open: '15:00:00',
+      front_desk_open: '16:00:00',
       front_desk_close: '22:00:00',
       updated_at: '2026-08-21T00:00:00Z',
     }),

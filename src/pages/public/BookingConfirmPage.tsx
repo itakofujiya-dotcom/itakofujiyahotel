@@ -43,7 +43,7 @@ const fallbackPolicies = [
 
 export function BookingConfirmPage() {
   const navigate = useNavigate()
-  const { locale } = useSiteTranslation()
+  const { locale, t } = useSiteTranslation()
   const [booking, setBooking] = useState<BookingDraft | null>(readBookingDraft)
   const [guest] = useState(readBookingGuestDraft)
   const [policies, setPolicies] = useState<CancellationPolicy[]>([])
@@ -109,11 +109,7 @@ export function BookingConfirmPage() {
         setPrivacyConsent(false)
         setPolicyConsent(false)
       } else if (result.code === 'BOOKING_NO_LONGER_AVAILABLE') {
-        setError(
-          locale === 'ko'
-            ? '선택하신 객실의 예약 가능 수량이 방금 변경되었습니다. 객실을 다시 선택해주세요.'
-            : '選択された客室の空室状況が変更されました。恐れ入りますが、もう一度客室を選択してください。',
-        )
+        setError(t('booking.availabilityChanged'))
       } else if (result.code === 'INVALID_BOOKING') {
         setError('予約内容を確認できませんでした。入力内容をご確認ください。')
       } else {
@@ -268,6 +264,12 @@ export function BookingConfirmPage() {
             <p className="font-semibold">現地払い</p>
             <p className="mt-2 text-sm leading-7 text-muted">
               ホテルにて現金またはクレジットカードでお支払いください。
+            </p>
+          </ConfirmSection>
+
+          <ConfirmSection title="ご利用案内">
+            <p className="text-sm leading-7 text-muted">
+              {t('booking.petPolicy')}
             </p>
           </ConfirmSection>
 

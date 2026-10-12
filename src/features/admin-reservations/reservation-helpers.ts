@@ -13,7 +13,7 @@ import type {
   RateRuleDate,
 } from '../admin-rates/types'
 
-export const ADMIN_CHECK_IN_START_TIME = '15:00'
+export const ADMIN_CHECK_IN_START_TIME = '16:00'
 export const ADMIN_CHECK_IN_END_TIME = '22:00'
 export const ADMIN_CHECK_IN_TIME_RANGE_MESSAGE = `${ADMIN_CHECK_IN_START_TIME}〜${ADMIN_CHECK_IN_END_TIME}の間で選択してください。`
 

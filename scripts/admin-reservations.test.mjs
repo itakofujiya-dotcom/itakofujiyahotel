@@ -468,7 +468,7 @@ test('validates one to ten nights and at most four rooms', () => {
       ...input,
       reservation: {
         ...input.reservation,
-        expected_check_in_time: '15:00',
+        expected_check_in_time: '16:00',
       },
     }),
     null,
@@ -488,10 +488,10 @@ test('validates one to ten nights and at most four rooms', () => {
       ...input,
       reservation: {
         ...input.reservation,
-        expected_check_in_time: '14:59',
+        expected_check_in_time: '15:00',
       },
     }) ?? '',
-    /15:00〜22:00/,
+    /16:00〜22:00/,
   )
   assert.deepEqual(getStayDates('2026-08-22', '2026-08-24'), [
     '2026-08-22',

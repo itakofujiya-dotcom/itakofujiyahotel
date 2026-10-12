@@ -22,7 +22,7 @@ export function LoungeArirangSection() {
               {loungeArirang.title}
             </h2>
           </div>
-          <p className="font-serif text-4xl text-accent/20 sm:text-5xl">04</p>
+          <p className="font-serif text-4xl text-accent/20 sm:text-5xl">05</p>
         </header>
 
         <div className="grid gap-5 py-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-14">
